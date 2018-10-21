@@ -1,7 +1,7 @@
 import assert from 'assert';
 import { describe, it } from 'mocha';
+import Schema from '../types/Schema';
 import Model from './Model';
-import Schema from './Schema';
 import withSchema from './withSchema';
 
 describe('model', () => {
@@ -9,7 +9,7 @@ describe('model', () => {
     const ExampleSchema: Schema = {
       model: 'Example',
       collection: 'examples',
-      timestamp: true,
+      timestamps: true,
       fields: {},
     };
 

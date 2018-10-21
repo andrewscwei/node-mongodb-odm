@@ -1,5 +1,5 @@
+import Schema from '../types/Schema';
 import Model from './Model';
-import Schema from './Schema';
 
 /**
  * Class decorator intended for ODM models that injects a `schema` static

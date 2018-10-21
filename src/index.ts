@@ -139,12 +139,3 @@ export function getModel(modelOrCollectionName: string): Model {
 
   throw new Error(`No model found for model/collection name ${modelOrCollectionName}`);
 }
-
-/**
- * Gets a Mongo DB collection by its name.
- *
- * @param collectionName - Collection name.
- */
-export async function getCollection(collectionName: string): Promise<Collection> {
-  return (await getInstance()).collection(collectionName);
-}
