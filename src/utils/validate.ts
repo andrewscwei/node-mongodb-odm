@@ -1,7 +1,7 @@
 import is from '@sindresorhus/is';
 import assert from 'assert';
 import { ObjectID } from 'mongodb';
-import { SchemaField, SchemaFieldType } from '../types/Schema';
+import { FieldSpecs, FieldType } from '../types';
 
 /**
  * Checks a value against field properties definied in a schema.
@@ -11,7 +11,7 @@ import { SchemaField, SchemaFieldType } from '../types/Schema';
  *
  * @return `true` if validation passes, `false` otherwise.
  */
-export default function validate(value: any, specs: SchemaField): boolean {
+export default function validate(value: any, specs: FieldSpecs): boolean {
   const errorPrefix = `[validate(${value}, ${JSON.stringify(specs)}]`;
 
   try {
@@ -122,7 +122,7 @@ export default function validate(value: any, specs: SchemaField): boolean {
         const t = value.reduce((prevVal: boolean, currVal: any) => {
           return prevVal && validate(currVal, {
             ...specs,
-            type: (specs.type as SchemaFieldType[])[0],
+            type: (specs.type as FieldType[])[0],
           });
         }, true);
 
@@ -144,7 +144,7 @@ export default function validate(value: any, specs: SchemaField): boolean {
 
         for (const subFieldName in specs.type) {
           if (!specs.type.hasOwnProperty(subFieldName)) continue;
-          assert(validate(value[subFieldName], (specs.type as { [key: string]: SchemaField })[subFieldName]), new TypeError(`${errorPrefix} One or more sub-fields are not valid`));
+          assert(validate(value[subFieldName], (specs.type as { [key: string]: FieldSpecs })[subFieldName]), new TypeError(`${errorPrefix} One or more sub-fields are not valid`));
         }
       }
     }

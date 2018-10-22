@@ -122,7 +122,7 @@ export async function getInstance(): Promise<Db> {
  *
  * @param modelOrCollectionName - Model or collection name.
  */
-export function getModel(modelOrCollectionName: string): Model {
+export function getModel(modelOrCollectionName: string): typeof Model {
   const models = options.models;
 
   if (models) {

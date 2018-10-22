@@ -1,7 +1,7 @@
 import assert from 'assert';
 import { describe, it } from 'mocha';
 import { ObjectID } from 'mongodb';
-import Schema from '../types/Schema';
+import { Schema } from '../types';
 import querify from './querify';
 
 const ExampleSchema: Schema = {

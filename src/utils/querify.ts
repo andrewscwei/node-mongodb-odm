@@ -1,19 +1,23 @@
 import is from '@sindresorhus/is';
 import assert from 'assert';
 import { ObjectID } from 'mongodb';
-import { Query } from '../types/Query';
-import Schema from '../types/Schema';
+import { Query, Schema } from '../types';
 
 /**
  * Options for querify().
  */
-export interface QuerifyOptions {
-  // If set to `true`, fields that are not specified in the schema will be
-  // deleted as part of the querifying process.
+interface QuerifyOptions {
+  /**
+   * If set to `true`, fields that are not specified in the schema will be
+   * deleted as part of the querifying process.
+   */
   strict: boolean;
 }
 
-export interface QuerifyOutput {
+/**
+ * Output of querify().
+ */
+interface QuerifyOutput {
   [key: string]: any;
 }
 

@@ -8,7 +8,7 @@
 import debug from 'debug';
 import { Collection } from 'mongodb';
 import * as db from '../';
-import Schema from '../types/Schema';
+import { Schema } from '../types';
 
 const log = debug('mongodb-odm:model');
 

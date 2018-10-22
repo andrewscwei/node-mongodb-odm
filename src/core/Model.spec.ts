@@ -1,6 +1,6 @@
 import assert from 'assert';
 import { describe, it } from 'mocha';
-import Schema from '../types/Schema';
+import { Schema } from '../types';
 import Model from './Model';
 import withSchema from './withSchema';
 
