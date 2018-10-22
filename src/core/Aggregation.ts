@@ -12,7 +12,7 @@ import querify from '../utils/querify';
 
 export type AggregationPipeline = (MatchStageDescriptor | LookupStageDescriptor | UnwindStageDescriptor | GroupStageDescriptor | SortStageDescriptor | ProjectStageDescriptor)[];
 
-interface PipelineFactoryOptions {
+export interface PipelineFactoryOptions {
   // Prefix for document attributes.
   prefix?: string;
 
@@ -20,7 +20,7 @@ interface PipelineFactoryOptions {
   pipeline?: AggregationPipeline;
 }
 
-interface PipelineFactorySpecs {
+export interface PipelineFactorySpecs {
   /**
    * Lookup stage spec.
    */
@@ -47,17 +47,13 @@ interface PipelineFactorySpecs {
   $sort?: SortStageFactorySpecs;
 }
 
-export interface AggregationGroupSpecs {
+export type MatchStageFactorySpecs = Query;
 
-}
-
-type MatchStageFactorySpecs = Query;
-
-interface MatchStageFactoryOptions {
+export interface MatchStageFactoryOptions {
   prefix?: string;
 }
 
-interface MatchStageDescriptor {
+export interface MatchStageDescriptor {
   $match: { [key: string]: any };
 }
 
@@ -71,11 +67,11 @@ interface MatchStageDescriptor {
  * will be ignored. Specs can be nested objects. `$unwind` is immediately
  * followed after the generated  `$lookup`.
  */
-interface LookupStageFactorySpecs {
+export interface LookupStageFactorySpecs {
   [modelName: string]: boolean | LookupStageFactorySpecs;
 }
 
-interface LookupStageFactoryOptions {
+export interface LookupStageFactoryOptions {
   /**
    * Prefix for current attributes to look up.
    */
@@ -87,11 +83,11 @@ interface LookupStageFactoryOptions {
   toPrefix?: string;
 }
 
-interface LookupStageDescriptor {
+export interface LookupStageDescriptor {
   $lookup: { [key: string]: any };
 }
 
-interface UnwindStageDescriptor {
+export interface UnwindStageDescriptor {
   $unwind: { [key: string]: any };
 }
 
@@ -99,21 +95,21 @@ interface UnwindStageDescriptor {
  * Specs that define the $group stage. If this is a string, a simple $group
  * stage will be generated with `_id` equal this string.
  */
-type GroupStageFactorySpecs = string | { [key: string]: any };
+export type GroupStageFactorySpecs = string | { [key: string]: any };
 
-interface GroupStageDescriptor {
+export interface GroupStageDescriptor {
   $group: { [key: string]: any };
 }
 
-interface SortStageFactorySpecs {
+export interface SortStageFactorySpecs {
   [key: string]: any;
 }
 
-interface SortStageDescriptor {
+export interface SortStageDescriptor {
   $sort: { [key: string]: any };
 }
 
-interface ProjectStageFactoryOptions {
+export interface ProjectStageFactoryOptions {
   /**
    * Prefix for current attributes.
    */
@@ -139,15 +135,15 @@ interface ProjectStageFactoryOptions {
   exclude?: any[];
 }
 
-interface ProjectStageFactoryOptionsPopulate {
+export interface ProjectStageFactoryOptionsPopulate {
   [modelName: string]: boolean | ProjectStageFactoryOptionsPopulate;
 }
 
-interface ProjectStageDescriptor {
+export interface ProjectStageDescriptor {
   $project: { [key: string]: any };
 }
 
-abstract class Aggregation {
+export default abstract class Aggregation {
   /**
    * Generates a pipeline to pass into the aggregation framework.
    *
@@ -397,5 +393,3 @@ abstract class Aggregation {
     return [{ $project: out }];
   }
 }
-
-export default Aggregation;

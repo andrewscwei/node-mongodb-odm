@@ -11,7 +11,7 @@ import { FieldSpecs, FieldType } from '../types';
  *
  * @return `true` if validation passes, `false` otherwise.
  */
-export default function validate(value: any, specs: FieldSpecs): boolean {
+export default function validateFieldValue(value: any, specs: FieldSpecs): boolean {
   const errorPrefix = `[validate(${value}, ${JSON.stringify(specs)}]`;
 
   try {

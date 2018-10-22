@@ -3,7 +3,16 @@ import { IndexOptions, ObjectID } from 'mongodb';
 /**
  * Query for finding documents in the MongoDB database.
  */
-export type Query = string | number | ObjectID | { [field: string]: FieldValue };
+export type Query = string | number | ObjectID | FieldCollection;
+
+/**
+ * JavaScript representation of MongoDB document.
+ */
+export interface Document extends FieldCollection {
+  _id: string | number | ObjectID;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
 
 /**
  * Data type for acceptable field types.
@@ -11,9 +20,17 @@ export type Query = string | number | ObjectID | { [field: string]: FieldValue }
 export type FieldType = typeof ObjectID | typeof String | typeof Number | typeof Boolean | typeof Date | typeof Array | (typeof Number)[] | { [key: string]: FieldSpecs };
 
 /**
+ * Object of key-value pairs, where the key is the name of the field and the
+ * value is the value of the field.
+ */
+export interface FieldCollection {
+  [field: string]: FieldValue;
+}
+
+/**
  * Data type for acceptable field values.
  */
-export type FieldValue = null | ObjectID | string | number | boolean | Date | any[] | { [key: string]: FieldValue };
+export type FieldValue = undefined | ObjectID | string | number | boolean | Date | any[] | { [key: string]: FieldValue };
 
 /**
  * Function for formatting field values, in which the value to be formatted will

@@ -29,12 +29,14 @@
     "@sindresorhus/is": "^0.12.0",
     "bcrypt": "^3.0.2",
     "debug": "^4.1.0",
+    "faker": "^4.1.0",
     "mongodb": "^3.1.8"
   },
   "devDependencies": {
     "@types/bcrypt": "^3.0.0",
     "@types/debug": "^0.0.31",
     "@types/dotenv": "^4.0.3",
+    "@types/faker": "^4.1.4",
     "@types/lodash": "^4.14.117",
     "@types/mocha": "^5.2.5",
     "@types/mongodb": "^3.1.12",
