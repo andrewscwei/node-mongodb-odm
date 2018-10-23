@@ -4,7 +4,7 @@ import { IndexOptions, ObjectID } from 'mongodb';
 /**
  * Query for finding documents in the MongoDB database.
  */
-export type Query = string | number | ObjectID | Document;
+export type Query = string | ObjectID | Document;
 
 /**
  * JavaScript representation of MongoDB document.

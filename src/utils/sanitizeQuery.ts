@@ -54,7 +54,7 @@ interface QuerifyOutput {
  */
 export default function sanitizeQuery(schema: Schema, query: Query, options: SanitizeQueryOptions = { strict: true }): QuerifyOutput {
   // If argument is an ObjectID, wrap it in a proper query.
-  if (ObjectID.isValid(query as any)) return { _id: (new ObjectID(query as any)).toHexString() };
+  if (ObjectID.isValid(query as any)) return { _id: new ObjectID(query as any) };
 
   assert(is.object(query), new TypeError('`query` is expected to be an object'));
 

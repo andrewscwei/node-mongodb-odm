@@ -6,6 +6,7 @@ import { describe, it } from 'mocha';
 import { ObjectID } from 'mongodb';
 import * as db from '../';
 import { Schema } from '../types';
+import isEqual from '../utils/isEqual';
 import Aggregation from './Aggregation';
 import Model from './Model';
 import withSchema from './withSchema';
@@ -103,25 +104,25 @@ describe('core/Aggregation', () => {
   });
 
   it('can generate $match stage', () => {
-    const objectId = (new ObjectID()).toHexString();
+    const objectId = new ObjectID();
 
-    assert.deepStrictEqual(Aggregation.matchStageFactory(BarSchema, { _id: objectId }), [{
+    assert(isEqual(Aggregation.matchStageFactory(BarSchema, { _id: objectId }), [{
       $match: { _id: objectId },
-    }]);
+    }]));
 
-    assert.deepStrictEqual(Aggregation.matchStageFactory(BarSchema, objectId), [{
+    assert(isEqual(Aggregation.matchStageFactory(BarSchema, objectId), [{
       $match: { _id: objectId },
-    }]);
+    }]));
   });
 
   it('can generate $lookup stage', () => {
-    assert.deepStrictEqual(Aggregation.lookupStageFactory(FooSchema, { aBar: true }), [{
+    assert(isEqual(Aggregation.lookupStageFactory(FooSchema, { aBar: true }), [{
       $lookup: { from: 'bars', localField: 'aBar', foreignField: '_id', as: 'aBar' },
     }, {
       $unwind: { path: '$aBar', preserveNullAndEmptyArrays: true },
-    }]);
+    }]));
 
-    assert.deepStrictEqual(Aggregation.lookupStageFactory(FooSchema, { aBar: { aBar: true } }), [{
+    assert(isEqual(Aggregation.lookupStageFactory(FooSchema, { aBar: { aBar: true } }), [{
       $lookup: { from: 'bars', localField: 'aBar', foreignField: '_id', as: 'aBar' },
     }, {
       $unwind: { path: '$aBar', preserveNullAndEmptyArrays: true },
@@ -129,9 +130,9 @@ describe('core/Aggregation', () => {
       $lookup: { from: 'bars', localField: 'aBar.aBar', foreignField: '_id', as: 'aBar.aBar' },
     }, {
       $unwind: { path: '$aBar.aBar', preserveNullAndEmptyArrays: true },
-    }]);
+    }]));
 
-    assert.deepStrictEqual(Aggregation.lookupStageFactory(FooSchema, { aBar: { aBar: true }, aFoo: true }), [{
+    assert(isEqual(Aggregation.lookupStageFactory(FooSchema, { aBar: { aBar: true }, aFoo: true }), [{
       $lookup: { from: 'bars', localField: 'aBar', foreignField: '_id', as: 'aBar' },
     }, {
       $unwind: { path: '$aBar', preserveNullAndEmptyArrays: true },
@@ -143,9 +144,9 @@ describe('core/Aggregation', () => {
       $lookup: { from: 'foos', localField: 'aFoo', foreignField: '_id', as: 'aFoo' },
     }, {
       $unwind: { path: '$aFoo', preserveNullAndEmptyArrays: true },
-    }]);
+    }]));
 
-    assert.deepStrictEqual(Aggregation.lookupStageFactory(FooSchema, { aBar: { aBar: true }, aFoo: true }, { fromPrefix: 'foo.', toPrefix: 'bar.' }), [{
+    assert(isEqual(Aggregation.lookupStageFactory(FooSchema, { aBar: { aBar: true }, aFoo: true }, { fromPrefix: 'foo.', toPrefix: 'bar.' }), [{
       $lookup: { from: 'bars', localField: 'foo.aBar', foreignField: '_id', as: 'bar.aBar' },
     }, {
       $unwind: { path: '$bar.aBar', preserveNullAndEmptyArrays: true },
@@ -157,50 +158,50 @@ describe('core/Aggregation', () => {
       $lookup: { from: 'foos', localField: 'foo.aFoo', foreignField: '_id', as: 'bar.aFoo' },
     }, {
       $unwind: { path: '$bar.aFoo', preserveNullAndEmptyArrays: true },
-    }]);
+    }]));
   });
 
   it('can generate $group stage', () => {
-    assert.deepStrictEqual(Aggregation.groupStageFactory(FooSchema, 'foo'), [{
-      $group: { _id: '$foo' }
-    }]);
+    assert(isEqual(Aggregation.groupStageFactory(FooSchema, 'foo'), [{
+      $group: { _id: '$foo' },
+    }]));
 
-    assert.deepStrictEqual(Aggregation.groupStageFactory(FooSchema, {
+    assert(isEqual(Aggregation.groupStageFactory(FooSchema, {
       _id: '$foo',
       bar: '$bar',
     }), [{
       $group: {
         _id: '$foo',
         bar: '$bar',
-      }
-    }]);
+      },
+    }]));
   });
 
   it('can generate $sort stage', () => {
-    assert.deepStrictEqual(Aggregation.sortStageFactory(FooSchema, {
+    assert(isEqual(Aggregation.sortStageFactory(FooSchema, {
       a: 1,
       b: -1,
     }), [{
       $sort: {
         a: 1,
         b: -1,
-      }
-    }]);
+      },
+    }]));
   });
 
   it('can generate $project stage for an entire schema', () => {
-    assert.deepStrictEqual(Aggregation.projectStageFactory(FooSchema), [{
+    assert(isEqual(Aggregation.projectStageFactory(FooSchema), [{
       $project: {
         ..._.mapValues(FooSchema.fields, (value: any, key: string) => `$${key}`),
         _id: '$_id',
         createdAt: '$createdAt',
         updatedAt: '$updatedAt',
       },
-    }]);
+    }]));
   });
 
   it('can generate $project stage with prefixes for an entire schema and its foreign keys', () => {
-    assert.deepStrictEqual(Aggregation.projectStageFactory(FooSchema, { populate: { aBar: true }, fromPrefix: 'foo.', toPrefix: 'bar.' }), [{
+    assert(isEqual(Aggregation.projectStageFactory(FooSchema, { populate: { aBar: true }, fromPrefix: 'foo.', toPrefix: 'bar.' }), [{
       $project: {
         ..._(FooSchema.fields).mapValues((v, k) => `$foo.${k}`).mapKeys((v, k) => `bar.${k}`).value(),
         ['bar._id']: '$foo._id',
@@ -211,37 +212,37 @@ describe('core/Aggregation', () => {
           ['_id']: '$_id',
         },
       },
-    }]);
+    }]));
   });
 
   it('can generate $project stage with exclusions for a schema', () => {
-    assert.deepStrictEqual(Aggregation.projectStageFactory(FooSchema, {
+    assert(isEqual(Aggregation.projectStageFactory(FooSchema, {
       exclude: ['createdAt', 'updatedAt'],
     }), [{
       $project: {
         ['_id']: '$_id',
         ..._(FooSchema.fields).mapValues((v, k) => `$${k}`).value(),
       },
-    }]);
+    }]));
   });
 
   it('can generate a full aggregation pipeline', () => {
-    const objectId = (new ObjectID()).toHexString();
+    const objectId = new ObjectID();
 
-    assert.deepStrictEqual(Aggregation.pipelineFactory(FooSchema), []);
+    assert(isEqual(Aggregation.pipelineFactory(FooSchema), []));
 
-    assert.deepStrictEqual(Aggregation.pipelineFactory(FooSchema, {
+    assert(isEqual(Aggregation.pipelineFactory(FooSchema, {
       $match: objectId,
     }), [
       ...Aggregation.matchStageFactory(FooSchema, objectId),
-    ]);
+    ]));
 
-    assert.deepStrictEqual(Aggregation.pipelineFactory(FooSchema, {
+    assert(isEqual(Aggregation.pipelineFactory(FooSchema, {
       $match: objectId,
       $lookup: { aBar: true },
     }), [
       ...Aggregation.matchStageFactory(FooSchema, objectId),
       ...Aggregation.lookupStageFactory(FooSchema, { aBar: true }),
-    ]);
+    ]));
   });
 });

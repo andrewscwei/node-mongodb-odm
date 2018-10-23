@@ -120,7 +120,7 @@ export default function validateFieldValue(value: any, specs: FieldSpecs): boole
         // Ensure that every element within the array conforms to the specified
         // type and passes the validation test.
         const t = value.reduce((prevVal: boolean, currVal: any) => {
-          return prevVal && validate(currVal, {
+          return prevVal && validateFieldValue(currVal, {
             ...specs,
             type: (specs.type as FieldType[])[0],
           });
@@ -144,7 +144,7 @@ export default function validateFieldValue(value: any, specs: FieldSpecs): boole
 
         for (const subFieldName in specs.type) {
           if (!specs.type.hasOwnProperty(subFieldName)) continue;
-          assert(validate(value[subFieldName], (specs.type as { [key: string]: FieldSpecs })[subFieldName]), new TypeError(`${errorPrefix} One or more sub-fields are not valid`));
+          assert(validateFieldValue(value[subFieldName], (specs.type as { [key: string]: FieldSpecs })[subFieldName]), new TypeError(`${errorPrefix} One or more sub-fields are not valid`));
         }
       }
     }
