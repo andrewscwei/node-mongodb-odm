@@ -6,7 +6,8 @@
   "scripts": {
     "clean": "rimraf build",
     "build": "npm run clean && tsc",
-    "test": "npm run build && NODE_ENV=test DEBUG=mongodb-odm* mocha --require dotenv/config --timeout 10000 --reporter spec --full-trace --colors --recursive --bail --exit $([ -z \"$npm_config_path\" ] && echo build || echo $npm_config_path)"
+    "test": "npm run build && NODE_ENV=test DEBUG=mongodb-odm* mocha --require dotenv/config --timeout 10000 --reporter spec --full-trace --colors --recursive --bail --exit $([ -z \"$npm_config_path\" ] && echo build || echo $npm_config_path)",
+    "foo": "NODE_ENV=test DEBUG=mongodb-odm* mocha --require dotenv/config --require ts-node/register --timeout 10000 --reporter spec --full-trace --colors --recursive --bail --exit $([ -z \"$npm_config_path\" ] && echo src || echo $npm_config_path)"
   },
   "repository": {
     "type": "git",

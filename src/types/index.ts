@@ -9,10 +9,11 @@ export type Query = string | ObjectID | Document;
 /**
  * JavaScript representation of MongoDB document.
  */
-export interface Document extends FieldCollection {
+export interface Document {
   _id?: ObjectID;
   createdAt?: Date;
   updatedAt?: Date;
+  [field: string]: FieldValue;
 }
 
 /**
@@ -123,7 +124,7 @@ export interface FieldSpecs {
   random?: FieldRandomValueFunction;
 }
 
-export interface Schema {
+export interface Schema<M = { [key: string]: any }> {
   /**
    * Name of the model. Should be in upper cammel-case, i.e. `Model`.
    */
@@ -157,7 +158,7 @@ export interface Schema {
    * @see FieldSpecs
    */
   fields: {
-    [fieldName: string]: FieldSpecs;
+    readonly [K in keyof M]: FieldSpecs;
   };
 
   /**

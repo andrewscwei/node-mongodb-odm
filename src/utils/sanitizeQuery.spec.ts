@@ -5,7 +5,7 @@ import { Schema } from '../types';
 import isEqual from './isEqual';
 import sanitizeQuery from './sanitizeQuery';
 
-const ExampleSchema: Schema = {
+const ExampleSchema: Schema<Example> = {
   model: 'Example',
   collection: 'examples',
   timestamps: false,
@@ -15,6 +15,10 @@ const ExampleSchema: Schema = {
     },
   },
 };
+
+interface Example {
+  foo: string;
+}
 
 describe('utils/sanitizeQuery', () => {
   it('can generate valid queries based on an Object ID string', () => {

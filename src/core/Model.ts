@@ -12,7 +12,7 @@ import debug from 'debug';
 import _ from 'lodash';
 import { Collection, CollectionAggregationOptions, CollectionInsertManyOptions, CollectionInsertOneOptions, FindOneAndReplaceOption, ObjectID, ReplaceOneOptions } from 'mongodb';
 import * as db from '../';
-import { Document, DocumentUpdate, FieldCollection, FieldSpecs, isDocumentUpdate, Query, Schema } from '../types';
+import { Document, DocumentUpdate, FieldSpecs, isDocumentUpdate, Query, Schema } from '../types';
 import sanitizeQuery from '../utils/sanitizeQuery';
 import validateFieldValue from '../utils/validateFieldValue';
 import Aggregation, { AggregationPipeline, PipelineFactoryOptions, PipelineFactorySpecs } from './Aggregation';
@@ -148,7 +148,7 @@ abstract class Model {
    *
    * @return A collection of fields whose values are randomly generated.
    */
-  static randomFields(fixedFields: FieldCollection = {}, { includeOptionals = false }: ModelRandomFieldsOptions = {}): FieldCollection {
+  static randomFields(fixedFields: Document = {}, { includeOptionals = false }: ModelRandomFieldsOptions = {}): Document {
     const o = {
       ...fixedFields,
     };
