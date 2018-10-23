@@ -4,12 +4,12 @@
  */
 
 import debug from 'debug';
-import { Collection, Db, MongoClient, MongoError } from 'mongodb';
+import { Db, MongoClient, MongoError } from 'mongodb';
 import Model from './core/Model';
 
 const log = debug('mongodb-odm');
 
-interface MongoODMOptions {
+export interface Configuration {
   host: string;
   name: string;
   username?: string;
@@ -19,7 +19,7 @@ interface MongoODMOptions {
 
 let client: MongoClient;
 
-let options: MongoODMOptions;
+let options: Configuration;
 
 // Be sure to disconnect the database if the app terminates.
 process.on('SIGINT', async () => {
@@ -31,16 +31,23 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
-export function configure(opts: MongoODMOptions) {
-  options = opts;
+/**
+ * Configures the ODM.
+ *
+ * @param descriptor - Configuration descriptor.
+ */
+export function configure(descriptor: Configuration) {
+  options = descriptor;
 }
 
 /**
- * Establishes a new connection to the database. If there already exists one,
- * this method does nothing.
+ * Establishes a new connection to the database based on the initialized
+ * configuration. If there already exists one, this method does nothing.
+ *
+ * @return No fulfillment value.
  */
 export async function connect(): Promise<void> {
-  if (client) return;
+  if (client && client.isConnected) return;
 
   if (!options) throw new Error('You must configure connection options by calling #configure()');
 
@@ -88,7 +95,9 @@ export async function connect(): Promise<void> {
 }
 
 /**
- * Destroys the existing database client.
+ * Disconnects the existing database client.
+ *
+ * @return No fulfillment value.
  */
 export async function disconnect(): Promise<void> {
   if (!client) return;
@@ -96,7 +105,9 @@ export async function disconnect(): Promise<void> {
 }
 
 /**
- * Checks if the db client is established.
+ * Checks if the database client is established.
+ *
+ * @return `true` if connected, `false` otherwise.
  */
 export function isConnected(): boolean {
   if (!client) return false;
@@ -106,6 +117,8 @@ export function isConnected(): boolean {
 
 /**
  * Gets the database instance from the client.
+ *
+ * @return The database instance as the fulfillment value.
  */
 export async function getInstance(): Promise<Db> {
   if (client) return client.db(options.name);
@@ -121,6 +134,8 @@ export async function getInstance(): Promise<Db> {
  * Gets a model class by its name or collection name.
  *
  * @param modelOrCollectionName - Model or collection name.
+ *
+ * @return The model class.
  */
 export function getModel(modelOrCollectionName: string): typeof Model {
   const models = options.models;

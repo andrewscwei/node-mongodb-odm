@@ -4,9 +4,9 @@ import { ObjectID } from 'mongodb';
 import { Query, Schema } from '../types';
 
 /**
- * Options for querify().
+ * Options for sanitizeQuery().
  */
-interface QuerifyOptions {
+interface SanitizeQueryOptions {
   /**
    * If set to `true`, fields that are not specified in the schema will be
    * deleted as part of the querifying process.
@@ -15,7 +15,7 @@ interface QuerifyOptions {
 }
 
 /**
- * Output of querify().
+ * Output of sanitizeQuery().
  */
 interface QuerifyOutput {
   [key: string]: any;
@@ -39,20 +39,20 @@ interface QuerifyOutput {
  *
  * @example
  * // Returns { "_id": 5927f337c5178b9665b56b1e }
- * querify(schema, 5927f337c5178b9665b56b1e)
- * querify(schema, '5927f337c5178b9665b56b1e')
- * querify(schema, { _id: '5927f337c5178b9665b56b1e' })
+ * sanitizeQuery(schema, 5927f337c5178b9665b56b1e)
+ * sanitizeQuery(schema, '5927f337c5178b9665b56b1e')
+ * sanitizeQuery(schema, { _id: '5927f337c5178b9665b56b1e' })
  *
  * @example
  * // Returns { a: 'b', b: 'c', garbage: 'garbage' }
- * querify(schema, { a: 'b', b: 'c', garbage: 'garbage' }, { strict: false })
+ * sanitizeQuery(schema, { a: 'b', b: 'c', garbage: 'garbage' }, { strict: false })
  *
  * @example
  * // Returns { a: 'b', b: 'c' }
- * querify(schema, { a: 'b', b: 'c', garbage: 'garbage' })
- * querify(schema, { a: 'b', b: 'c', garbage: 'garbage' }, { strict: true })
+ * sanitizeQuery(schema, { a: 'b', b: 'c', garbage: 'garbage' })
+ * sanitizeQuery(schema, { a: 'b', b: 'c', garbage: 'garbage' }, { strict: true })
  */
-export default function querify(schema: Schema, query: Query, options: QuerifyOptions = { strict: true }): QuerifyOutput {
+export default function sanitizeQuery(schema: Schema, query: Query, options: SanitizeQueryOptions = { strict: true }): QuerifyOutput {
   // If argument is an ObjectID, wrap it in a proper query.
   if (ObjectID.isValid(query as any)) return { _id: (new ObjectID(query as any)).toHexString() };
 

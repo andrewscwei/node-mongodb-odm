@@ -2,7 +2,7 @@ import assert from 'assert';
 import { describe, it } from 'mocha';
 import { ObjectID } from 'mongodb';
 import { Schema } from '../types';
-import querify from './querify';
+import sanitizeQuery from './sanitizeQuery';
 
 const ExampleSchema: Schema = {
   model: 'Example',
@@ -15,17 +15,17 @@ const ExampleSchema: Schema = {
   },
 };
 
-describe('utils/querify', () => {
+describe('utils/sanitizeQuery', () => {
   it('can generate valid queries based on an Object ID string', () => {
     const objectId = new ObjectID().toHexString();
 
-    assert.deepStrictEqual(querify(ExampleSchema, objectId), { _id: objectId });
+    assert.deepStrictEqual(sanitizeQuery(ExampleSchema, objectId), { _id: objectId });
   });
 
   it('can generate valid queries based on an Object ID', () => {
     const objectId = new ObjectID().toHexString();
 
-    assert.deepStrictEqual(querify(ExampleSchema, objectId), { _id: objectId });
+    assert.deepStrictEqual(sanitizeQuery(ExampleSchema, objectId), { _id: objectId });
   });
 
   it('can generate valid queries removing extraneous fields', () => {
@@ -36,7 +36,7 @@ describe('utils/querify', () => {
       foo: 'foo',
     };
 
-    const actual = querify(ExampleSchema, {
+    const actual = sanitizeQuery(ExampleSchema, {
       ...expected,
       bar: 'bar',
     });
@@ -52,7 +52,7 @@ describe('utils/querify', () => {
       foo: 'foo',
     };
 
-    const actual = querify(ExampleSchema, {
+    const actual = sanitizeQuery(ExampleSchema, {
       ...expected,
     }, {
       strict: false,

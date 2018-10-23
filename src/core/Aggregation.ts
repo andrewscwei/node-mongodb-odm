@@ -8,9 +8,9 @@ import assert from 'assert';
 import { isNullOrUndefined } from 'util';
 import * as db from '../';
 import { Query, Schema } from '../types';
-import querify from '../utils/querify';
+import sanitizeQuery from '../utils/sanitizeQuery';
 
-export type AggregationPipeline = (MatchStageDescriptor | LookupStageDescriptor | UnwindStageDescriptor | GroupStageDescriptor | SortStageDescriptor | ProjectStageDescriptor)[];
+export type AggregationPipeline = (MatchStageDescriptor | LookupStageDescriptor | UnwindStageDescriptor | GroupStageDescriptor | SortStageDescriptor | ProjectStageDescriptor | SampleStageDescriptor)[];
 
 export interface PipelineFactoryOptions {
   // Prefix for document attributes.
@@ -107,6 +107,10 @@ export interface SortStageFactorySpecs {
 
 export interface SortStageDescriptor {
   $sort: { [key: string]: any };
+}
+
+export interface SampleStageDescriptor {
+  $sample: { [key: string]: any };
 }
 
 export interface ProjectStageFactoryOptions {
@@ -206,7 +210,7 @@ export default abstract class Aggregation {
    * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/match/}
    */
   static matchStageFactory(schema: Schema, specs: MatchStageFactorySpecs, { prefix = '' }: MatchStageFactoryOptions = {}): AggregationPipeline {
-    const querifiedSpecs = querify(schema, specs, { strict: false });
+    const querifiedSpecs = sanitizeQuery(schema, specs, { strict: false });
     const query: { [key: string]: any } = {};
 
     for (const key in querifiedSpecs) {

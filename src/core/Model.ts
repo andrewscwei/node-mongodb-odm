@@ -7,18 +7,100 @@
 
 import is from '@sindresorhus/is';
 import assert from 'assert';
+import bcrypt from 'bcrypt';
 import debug from 'debug';
-import { Collection, ObjectID } from 'mongodb';
+import _ from 'lodash';
+import { Collection, CollectionAggregationOptions, CollectionInsertManyOptions, CollectionInsertOneOptions, FindOneAndReplaceOption, ObjectID, ReplaceOneOptions } from 'mongodb';
 import * as db from '../';
-import { Document, FieldCollection, FieldSpecs, Query, Schema } from '../types';
-import Aggregation, { AggregationPipeline, PipelineFactoryOptions, PipelineFactorySpecs } from './Aggregation';
+import { Document, DocumentUpdate, FieldCollection, FieldSpecs, isDocumentUpdate, Query, Schema } from '../types';
+import sanitizeQuery from '../utils/sanitizeQuery';
 import validateFieldValue from '../utils/validateFieldValue';
+import Aggregation, { AggregationPipeline, PipelineFactoryOptions, PipelineFactorySpecs } from './Aggregation';
 
 const log = debug('mongodb-odm:model');
 
+/**
+ * Options for Model.randomFields.
+ */
+interface ModelRandomFieldsOptions {
+  /**
+   * Specifies whether optional fields will be generated as well.
+   */
+  includeOptionals?: boolean;
+}
+
+/**
+ * Options for Model.validateOne.
+ */
+interface ModelValidateOneOptions {
+  /**
+   * Tells the validation process to account for required fields. That is, if
+   * this is `true` and some required fields are missing in the document to be
+   * validated, validation fails.
+   */
+  strict?: boolean;
+
+  /**
+   * Tells the validation process to account for unique indexes. That is, if
+   * this is `true` and one or more field values are not unique when it
+   * supposedly has a u nique index, validation fails.
+   */
+  checkUniqueIndex?: boolean;
+}
+
+/**
+ * Options for Model.findOne.
+ */
+interface ModelFindOneOptions extends CollectionAggregationOptions {}
+
+/**
+ * Options for Model.findMany.
+ */
+interface ModelFindManyOptions extends CollectionAggregationOptions {}
+
+/**
+ * Options for Model.insertOne.
+ */
+interface ModelInsertOneOptions extends ModelValidateOneOptions, CollectionInsertOneOptions {
+  /**
+   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are
+   * automatically generated before insertion.
+   */
+  ignoreTimestamps?: boolean;
+}
+
+/**
+ * Options for Model.insertMany.
+ */
+interface ModelInsertManyOptions extends ModelValidateOneOptions, CollectionInsertManyOptions {
+  /**
+   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are
+   * automatically generated before insertion.
+   */
+  ignoreTimestamps?: boolean;
+}
+
+/**
+ * Options for Model.updateOne.
+ */
+interface ModelUpdateOneOptions extends ModelInsertOneOptions, FindOneAndReplaceOption, ReplaceOneOptions {
+  /**
+   * Specifies whether upserting is enabled.
+   */
+  upsert?: boolean;
+
+  /**
+   * Specifies whether updated docs are returned when update completes.
+   */
+  returnDocs?: boolean;
+}
+
 abstract class Model {
   /**
-   * Schema of this model. This needs to be
+   * Schema of this model. This property must be overridden in the derived
+   * class.
+   *
+   * @see withSchema()
    */
   static schema: Schema;
 
@@ -28,9 +110,11 @@ abstract class Model {
    *
    * @return The MongoDB collection.
    *
+   * @todo Move this to root.
+   *
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html}
    */
-  static async collection(): Promise<Collection> {
+  static async getCollection(): Promise<Collection> {
     if (!this.schema) throw new Error('This model has no schema, see the `withSchema` decorator');
 
     const dbInstance = await db.getInstance();
@@ -53,22 +137,19 @@ abstract class Model {
   }
 
   /**
-   * Generates random fields for this model. Only fields that are defined in the
-   * schema marked as required and has a random function will be generated.
-   * Specify `includeOptionals` to generate unrequired fields. Fields whose type
-   * is an ObjectID or have default values are ignored.
+   * Generates random fields for this model. By default, only fields that are
+   * marked as required and has a random() function defined will have random
+   * values generated. Specify `includeOptionals` to generate unrequired fields
+   * as well.
    *
-   * @param fixedFields - Fields that must be present in the output.
-   * @param options.includeOptionals - Specifies whether optional fields will be
-   *                                   generated as well.
+   * @param fixedFields - A collection of fields that must be present in the
+   *                      output.
+   * @param options - @see ModelRandomFieldsOptions
    *
-   * @return An object of randomly generated properties that can be used to
-   *         create a new document of this model.
+   * @return A collection of fields whose values are randomly generated.
    */
-  static randomFields(fixedFields: FieldCollection = {}, { includeOptionals = false }: { includeOptionals?: boolean } = {}): FieldCollection {
-    assert(is.undefined(fixedFields) || is.object(fixedFields));
-
-    const out = {
+  static randomFields(fixedFields: FieldCollection = {}, { includeOptionals = false }: ModelRandomFieldsOptions = {}): FieldCollection {
+    const o = {
       ...fixedFields,
     };
 
@@ -76,68 +157,274 @@ abstract class Model {
       if (!this.schema.fields.hasOwnProperty(key)) continue;
 
       // If key is already present in the fixed fields, omit.
-      if (out.hasOwnProperty(key)) continue;
+      if (o.hasOwnProperty(key)) continue;
 
       const fieldSpecs: FieldSpecs = this.schema.fields[key];
 
-      // No need to generate random info for ObjectIDs.
-      if (fieldSpecs.type === ObjectID) continue;
-
       // If `includeOptionals` is not set, skip all the optional fields.
-      if (!includeOptionals && (fieldSpecs.default || !fieldSpecs.required)) continue;
+      if (!includeOptionals && !fieldSpecs.required) continue;
 
       // Use provided random function if provided in the schema.
-      if (fieldSpecs.random) out[key] = fieldSpecs.random();
+      if (fieldSpecs.random) o[key] = fieldSpecs.random();
     }
 
-    return out;
+    return o;
   }
 
   /**
-   * Generates an aggregation pipeline.
+   * Generates an aggregation pipeline specifically for the schema associated
+   * with this schema.
    *
-   * @param queryOrSpecs - This is either a query or aggregation factory specs.
-   * @param options - Options for aggregation pipeline factory.
+   * @param queryOrSpecs - This is either a query for the $match stage or specs
+   *                       for the aggregation factory function.
+   * @param options - @see PipelineFactoryOptions
    *
    * @return Aggregation pipeline.
    */
-  static pipeline(queryOrSpecs: Query | PipelineFactorySpecs, options: PipelineFactoryOptions): AggregationPipeline {
-    assert(!is.nullOrUndefined(queryOrSpecs));
+  static pipeline(queryOrSpecs?: Query | PipelineFactorySpecs, options?: PipelineFactoryOptions): AggregationPipeline {
+    if (!this.schema) throw new Error('This model has no schema, see the `withSchema` decorator');
 
-    // Check if this is a spec.
-    if (Object.keys(queryOrSpecs).some(val => val.startsWith('$'))) {
+    // Check if the argument conforms to aggregation factory specs.
+    if (queryOrSpecs && Object.keys(queryOrSpecs).some(val => val.startsWith('$'))) {
       return Aggregation.pipelineFactory(this.schema, queryOrSpecs as PipelineFactorySpecs, options);
     }
-    // Otherwise this is a query.
+    // Otherwise the argument is a query for the $match stage.
     else {
       return Aggregation.pipelineFactory(this.schema, { $match: queryOrSpecs as Query }, options);
     }
   }
 
   /**
-   * Validates a doc for this collection. It checks the following:
-   *   1. Whether each field is of the correct type as defined by the schema
-   *   2. Whether each field conforms to the defined constraints
-   *   3. Whether each field is defined in the schema
-   *   4. Whether required fields are specified (only if `strict` is enabled)
-   *   5. Whehter unique indexes are enforced (only if `)
+   * Returns a document whose values are formatted according to the format
+   * function sdefined in the schema. If the field is marked as encrypted in the
+   * schema, this process takes care of that too.
+   *
+   * @param doc - Document to format.
+   *
+   * @return The formatted document as the fulfillment value.
+   */
+  static async formatDocumentPerSchema(doc: Document): Promise<Document> {
+    const formattedDoc = _.cloneDeep(doc);
+
+    for (const key in this.schema.fields) {
+      if (!formattedDoc.hasOwnProperty(key)) continue;
+
+      const fieldSpecs = this.schema.fields[key];
+
+      assert(fieldSpecs, new Error(`Field ${key} not found in schema`));
+
+      // If the schema has a certain formatting function defined for this field,
+      // apply it.
+      if (is.function_(fieldSpecs.format)) {
+        const formattedValue = await fieldSpecs.format(formattedDoc[key]);
+        formattedDoc[key] = formattedValue;
+      }
+
+      // If the schema indicates that this field is encrypted, encrypt it.
+      if (fieldSpecs.encrypted === true) {
+        formattedDoc[key] = await bcrypt.hash(`${formattedDoc[key]}`, 10);
+      }
+    }
+
+    return formattedDoc;
+  }
+
+  /**
+   * Handler invoked right before a document is inserted or upserted. This is a
+   * good place to apply custom formatting to the document before it is saved to
+   * the database.
+   *
+   * @param doc - The document to be inserted.
+   * @param options - Combined options for both Model.insertOne and Model.insertMany.
+   *
+   * @return Document to be inserted/upserted to the database.
+   */
+  static async beforeInsert(doc: Document, { ignoreTimestamps = false, strict = true, checkUniqueIndex = false, ...insertOneOptions }: ModelInsertOneOptions | ModelInsertManyOptions = {}): Promise<Document> {
+    let o = _.cloneDeep(doc);
+
+    // Unless specified, always renew the `createdAt` and `updatedAt` fields.
+    if (this.schema.timestamps && !ignoreTimestamps) {
+      o.createdAt = new Date();
+      o.updatedAt = new Date();
+    }
+
+    // Before inserting this document, go through each field and make sure that
+    // it has default values and that they are formatted correctly.
+    for (const key in this.schema.fields) {
+      if (!this.schema.fields.hasOwnProperty(key)) continue;
+      if (o.hasOwnProperty(key)) continue;
+
+      const fieldSpecs = this.schema.fields[key];
+
+      // Check if the field has a default value defined in the schema. If so,
+      // apply it.
+      if (is.undefined(fieldSpecs.default)) continue;
+
+      o[key] = (is.function_(fieldSpecs.default)) ? fieldSpecs.default() : fieldSpecs.default;
+    }
+
+    // Apply format function defined in the schema if applicable.
+    o = await this.formatDocumentPerSchema(o);
+
+    // Finally, validate the document as a final sanity check.
+    await this.validateOne(o, { strict, checkUniqueIndex });
+
+    return o;
+  }
+
+  /**
+   * Handler invoked right after a document insertion.
+   *
+   * @param doc - The inserted document.
+   */
+  static async afterInsert(doc: Document, options?: ModelInsertOneOptions | ModelInsertManyOptions): Promise<void> {
+
+  }
+
+  /**
+   * Handler invoked right before an update. This is NOT invoked on an
+   * insertion.
+   *
+   * @param query - Query for document to update.
+   * @param update - The update to apply.
+   * @param options - @see ModelUpdateOneOptions
+   *
+   * @return The modified update to apply.
+   */
+  static async beforeUpdate(query: Query, update: Document | DocumentUpdate, { upsert = false, ignoreTimestamps = false, ...options }: ModelUpdateOneOptions = {}): Promise<DocumentUpdate> {
+    query = _.cloneDeep(query);
+    update = _.cloneDeep(update);
+
+    const out = isDocumentUpdate(update) ? update : { $set: update };
+
+    if (out.$set) {
+      await this.validateOne(out.$set, { checkUniqueIndex: false });
+      if (!upsert) out.$set = await this.formatDocumentPerSchema(out.$set);
+    }
+
+    if (upsert) {
+      const beforeInsert = await this.beforeInsert(query as Document, { strict: false, ...options });
+      const setOnInsert = _.omit(beforeInsert, Object.keys(update).concat(['updatedAt']));
+      if (Object.keys(setOnInsert).length > 0) out.$setOnInsert = setOnInsert;
+    }
+
+    if (this.schema.timestamps === true) {
+      if (!out.$set) out.$set = {};
+
+      if (!ignoreTimestamps) {
+        out.$set.updatedAt = new Date();
+      }
+    }
+
+    return out;
+  }
+
+  /**
+   * Handler invoked right after an update. This does not account for
+   * insertions.
+   *
+   * @param query - The original query for the document to update.
+   * @param update - The update applied.
+   * @param doc - The updated doc if `returnDocs` was used along with the update
+   *              operation.
+   */
+  static async afterUpdate(query: Query, update: Document | DocumentUpdate, doc?: Document) {
+
+  }
+
+  // /**
+  //  * Handler invoked right before a deletion.
+  //  *
+  //  * @param {Object|string|ObjectID} query - @see Model.delete
+  //  * @param {Object} [options] - @see Model.delete
+  //  */
+  // static async beforeDelete(query, options) {
+
+  // }
+
+  // /**
+  //  * Handler invoked right after a deletion.
+  //  *
+  //  * @param {Object} doc - The deleted doc if Model.deleteOne was
+  //  *                       used. Otherwise it is `undefined`.
+  //  * @param {Object} results - The results of the delete operation if
+  //  *                           Model#deleteOne was used. Otherwise it is
+  //  *                           `undefined`.
+  //  */
+  // static async afterDelete(doc, results) {
+  //   // If `cascade` property is specified, iterate in the order of the array and
+  //   // remove documents where the foreign field equals the `_id` of this
+  //   // document.
+  //   // NOTE: This only works for first-level foreign keys.
+  //   if (doc && doc._id && this.schema.cascade) {
+  //     const n = this.schema.cascade.length;
+
+  //     for (let i = 0; i < n; i++) {
+  //       const cascadeRef = this.schema.cascade[i];
+  //       const cascadeModel = db.getModel(cascadeRef);
+
+  //       assert.range(cascadeModel, `Trying to cascade delete from model ${cascadeRef} but model is not found`);
+
+  //       for (const key in cascadeModel.schema.fields) {
+  //         const field = cascadeModel.schema.fields[key];
+  //         if (field.ref === this.schema.model) {
+  //           log.debug(`Cascade deleting all ${cascadeRef} documents whose "${key}" field is ${doc._id}`);
+  //           await cascadeModel.deleteMany({ [`${key}`]: ObjectID(doc._id) });
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
+
+  /**
+   * Counts the documents that match the provided query.
+   *
+   * @param query - Query used for the $match stage of the aggregation pipeline.
+   *
+   * @return The total number of documents found.
+   */
+  static async count(query: Query, options?: CollectionAggregationOptions): Promise<number> {
+    const results = await this.findMany(query, options);
+
+    return results.length;
+  }
+
+  /**
+   * Identifies the ObjectID of exactly one document matching the given query.
+   * Error is thrown if the document cannot be identified.
+   *
+   * @param query - Query used for the $match stage of the aggregation pipeline.
+   *
+   * @return The matching ObjectID.
+   */
+  static async identifyOne(query: Query): Promise<ObjectID> {
+    const result = await this.findOne(query);
+
+    if (is.nullOrUndefined(result)) {
+      throw new Error(`No results found while identifying this ${this.schema.model} using the query ${JSON.stringify(query)}`);
+    }
+    else if (is.nullOrUndefined(result._id)) {
+      throw new Error(`Cannot identify this ${this.schema.model} using the query ${JSON.stringify(query)}`);
+    }
+    else {
+      return result._id!;
+    }
+  }
+
+  /**
+   * Validates a document for this collection. It checks for the following in
+   * order:
+   *   1. Each field is defined in the schema
+   *   2. Each field value conforms to the defined field specs
+   *   3. Unique indexes are enforced (only if `checkUniqueIndex` is enabled)
+   *   4. No required fields are missing (only if `strict` is enabled)
    *
    * @param doc - The doc to validate.
-   * @param options.strict - If this is set to `true`, validation fails if
-   *                         required fields are not present.
-   * @param options.checkUniqueIndex - Specifies whether to skip db index
-   *                                   validations (hence deferring this
-   *                                   validation to when the db writes the
-   *                                   document). If set to `false`, unique
-   *                                   fields will not be enforced.
+   * @param options - @see ModelValidateOneOptions
    *
    * @return `true` will be fulfilled if all tests have passed.
    */
-  static async validate(doc: Partial<Document>, { strict = false, checkUniqueIndex = true }: { strict?: boolean, checkUniqueIndex?: boolean } = {}): Promise<boolean> {
-    assert(is.object(doc));
-
-    if (Object.keys(doc).length <= 0) throw new Error('Blank \'doc\' detected');
-
+  static async validateOne(doc: Document, { strict = false, checkUniqueIndex = true }: ModelValidateOneOptions = {}): Promise<boolean> {
     for (const key in doc) {
       // Skip validation for fields `_id`, `updatedAt` and `createdAt` since
       // they are automatically generated.
@@ -147,10 +434,12 @@ abstract class Model {
 
       const val = doc[key];
 
-      // Check if field is defined in the schema.
-      if (!this.schema.fields.hasOwnProperty(key)) throw new Error(`The field '${key}' is not defined in the schema`);
+      // #1 Check if field is defined in the schema.
+      if (!this.schema.fields.hasOwnProperty(key)) {
+        throw new Error(`The field '${key}' is not defined in the schema`);
+      }
 
-      // Check if field value conforms to its defined specs.
+      // #2 Check if field value conforms to its defined specs.
       const fieldSpecs = this.schema.fields[key];
 
       if (!validateFieldValue(val, fieldSpecs)) {
@@ -158,7 +447,7 @@ abstract class Model {
       }
     }
 
-    // Check for unique fields only if `checkUniqueIndex` is `true`.
+    // #3 Check for unique fields only if `checkUniqueIndex` is `true`.
     if (checkUniqueIndex && this.schema.indexes) {
       const n = this.schema.indexes.length;
 
@@ -175,7 +464,7 @@ abstract class Model {
       }
     }
 
-    // Check for required fields if `strict` is `true`.
+    // #4 Check for required fields if `strict` is `true`.
     if (strict) {
       for (const key in this.schema.fields) {
         if (!this.schema.fields.hasOwnProperty(key)) continue;
@@ -190,163 +479,134 @@ abstract class Model {
     return true;
   }
 
-  // /**
-  //  * Finds one document of this collection using the aggregation framework.
-  //  *
-  //  * @param {Object|string|ObjectID} [query] - @see Model.pipeline
-  //  * @param {Object} [options] - @see module:mongodb.Collection#aggregate
-  //  *
-  //  * @return {Promise<?Object>} The matching document as the fulfillment value.
-  //  */
-  // static async findOne(query, options) {
-  //   assert.type(query, [Object, String, ObjectID], true);
-  //   assert.type(options, Object, true);
-  //   const results = await this.findMany(query, options);
-  //   if (results.length === 0) return null;
-  //   return results[0];
-  // }
+  /**
+   * Finds one document of this collection using the aggregation framework. If
+   * no query is specified, a random document will be fetched.
+   *
+   * @param query - Query used for the $match stage of the aggregation pipeline.
+   * @param options - @see module:mongodb.Collection#aggregate
+   *
+   * @return The matching document as the fulfillment value.
+   */
+  static async findOne(query?: Query, options?: ModelFindOneOptions): Promise<null | Document> {
+    if (is.nullOrUndefined(query)) {
+      const collection = await this.getCollection();
+      const results = await collection.aggregate(this.pipeline(query).concat([{ $sample: { size: 1 } }])).toArray();
 
-  // /**
-  //  * Finds multiple documents of this collection using the aggregation
-  //  * framework.
-  //  *
-  //  * @param {Object|string|ObjectID} [query] - @see Model.pipeline
-  //  * @param {Object} [options] - @see module:mongodb.Collection#aggregate
-  //  *
-  //  * @return {Promise<Object[]>} The matching documents as the fulfillment
-  //  *                             value.
-  //  */
-  // static async findMany(query, options) {
-  //   assert.type(query, [Object, String, ObjectID], true);
-  //   assert.type(options, Object, true);
-  //   const collection = await this.collection();
-  //   const results = await collection.aggregate(this.pipeline(query), options).toArray();
-  //   return results;
-  // }
+      assert(results.length <= 1, new Error('More than 1 random document found even though only 1 was supposed to be found.'));
 
-  // /**
-  //  * Finds one random document from this collection.
-  //  *
-  //  * @param {Object|string|ObjectID} [query] - @see Model.pipeline
-  //  *
-  //  * @return {Promise<Object|null>} - The random document as the fulfillment
-  //  *                                  value, `null` if none are found (happens
-  //  *                                  when the collection is empty).
-  //  */
-  // static async random(query) {
-  //   assert.type(query, [Object, String, ObjectID], true);
-  //   const collection = await this.collection();
-  //   const results = await collection.aggregate(this.pipeline(query).concat([{ $sample: { size: 1 } }])).toArray();
-  //   assert.range(results.length <= 1, 'More than 1 random document found even though only 1 was supposed to be found.');
-  //   if (results.length === 1) return results[0];
-  //   return null;
-  // }
+      if (results.length === 1) return results[0];
 
-  // /**
-  //  * Counts the documents that match the provided query.
-  //  *
-  //  * @param {Object|string|ObjectID} query - @see Model.findMany
-  //  *
-  //  * @return {Promise<number>} - The total number of documents found.
-  //  */
-  // static async count(query, options) {
-  //   const results = await this.findMany(query, options);
-  //   return results.length;
-  // }
+      return null;
+    }
+    else {
+      const results = await this.findMany(query, options);
+      if (results.length === 0) return null;
+      return results[0];
+    }
+  }
 
-  // /**
-  //  * Identifies the ObjectID of exactly one document matching the given query.
-  //  * Error is thrown if the document cannot be identified.
-  //  *
-  //  * @param {Object|string|ObjectID} query - @see Model.findOne
-  //  *
-  //  * @return {Promise<ObjectID>} The matching ObjectID.
-  //  */
-  // static async identifyOne(query) {
-  //   const result = await this.findOne(query);
-  //   assert.range(result, `Cannot identify this ${this.schema.model} using the query ${JSON.stringify(query)}`);
-  //   return result._id;
-  // }
+  /**
+   * Finds multiple documents of this collection using the aggregation
+   * framework. If no query is specified, all documents are fetched.
+   *
+   * @param query - Query used for the $match stage of the aggregation pipeline.
+   * @param options - @see module:mongodb.Collection#aggregate
+   *
+   * @return The matching documents as the fulfillment value.
+   */
+  static async findMany(query?: Query, options?: ModelFindManyOptions): Promise<Document[]> {
+    const collection = await this.getCollection();
+    const results = await collection.aggregate(this.pipeline(query), options).toArray();
+    return results;
+  }
 
-  // /**
-  //  * Inserts one document into this model's collection. If `doc` is not
-  //  * specified, random fields will be generated.
-  //  *
-  //  * @param {Object} [doc] - @see module:mongodb.Collection#insertOne
-  //  * @param {Object} [options] - @see module:mongodb.Collection#insertOne
-  //  *
-  //  * @return {Promise<?Object>} The inserted document as the fulfillment value.
-  //  *
-  //  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#insertOne}
-  //  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~insertWriteOpResult}
-  //  */
-  // static async insertOne(doc, options) {
-  //   assert.type(doc, Object, true);
-  //   assert.type(options, Object, true);
+  /**
+   * Inserts one document into this model's collection. If `doc` is not
+   * specified, random fields will be generated.
+   *
+   * @param doc - Document to be inserted. @see module:mongodb.Collection#insertOne
+   * @param options - @see ModelInsertOneOptions
+   *
+   * @return The inserted document.
+   *
+   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#insertOne}
+   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~insertWriteOpResult}
+   */
+  static async insertOne(doc?: Document, options?: ModelInsertOneOptions): Promise<null | Document> {
+    let t = doc ? sanitizeQuery(this.schema, doc) : this.randomFields();
 
-  //   doc = querify(this.schema, doc);
-  //   doc = await this.beforeInsert(doc || this.randomFields(), options);
+    // Apply before insert handler.
+    t = await this.beforeInsert(t, options);
 
-  //   log.debug(`${this.schema.model}.insertOne:`, JSON.stringify(doc, null, 2));
+    log(`${this.schema.model}.insertOne:`, JSON.stringify(doc, null, 2));
 
-  //   const collection = await this.collection();
-  //   const results = await collection.insertOne(doc, options).catch(e => { throw new RangeError(e.message); });
+    const collection = await this.getCollection();
+    const results = await collection.insertOne(doc, options).catch(error => { throw error; });
 
-  //   log.debug(`${this.schema.model}.insertOne results:`, JSON.stringify(results, null, 2));
+    log(`${this.schema.model}.insertOne results:`, JSON.stringify(results, null, 2));
 
-  //   assert(results.result.ok === 1);
-  //   assert(results.ops.length <= 1, 'Somehow insertOne() op inserted more than 1 document');
+    assert(results.result.ok === 1);
+    assert(results.ops.length <= 1, new Error('Somehow insertOne() op inserted more than 1 document'));
 
-  //   if (results.ops.length < 1) return null;
+    if (results.ops.length < 1) return null;
 
-  //   return await this.afterInsert(results.ops[0]);
-  // }
+    const o = results.ops[0];
 
-  // /**
-  //  * Inserts multiple documents into this model's collection.
-  //  *
-  //  * @param {Object[]} docs - @see module:mongodb.Collection#insertMany
-  //  * @param {Object} [options] - @see module:mongodb.Collection#insertMany
-  //  *
-  //  * @return {Promise<Object[]>} The inserted documents as the fulfillment
-  //  *                             value.
-  //  *
-  //  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#insertMany}
-  //  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~insertWriteOpResult}
-  //  */
-  // static async insertMany(docs, options) {
-  //   assert.type(docs, Array);
-  //   assert.type(options, Object, true);
+    // Apply after insert handler.
+    await this.afterInsert(o, options);
 
-  //   for (let i = 0; i < docs.length; i++) {
-  //     const doc = querify(this.schema, doc[i]);
-  //     docs[i] = await this.beforeInsert(doc, options);
-  //   }
+    return o;
+  }
 
-  //   log.debug(`${this.schema.model}.insertMany:`, JSON.stringify(docs, null, 2));
+  /**
+   * Inserts multiple documents into this model's collection.
+   *
+   * @param docs - Array of documents to insert. @see module:mongodb.Collection#insertMany
+   * @param options - @see ModelInsertManyOptions
+   *
+   * @return The inserted documents.
+   *
+   * @todo This method iterates through every document to apply the beforeInsert
+   *       hook. Consider a more cost-efficient approach?
+   *
+   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#insertMany}
+   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~insertWriteOpResult}
+   */
+  static async insertMany(docs: Document[], options?: ModelInsertManyOptions): Promise<Document[]> {
+    const n = docs.length;
+    const t: typeof docs = new Array(n);
 
-  //   const collection = await this.collection();
-  //   const results = await collection.insertMany(docs, options);
+    // Apply before insert handler to each document.
+    for (let i = 0; i < n; i++) {
+      t[i] = await this.beforeInsert(sanitizeQuery(this.schema, docs[i]), options);
+    }
 
-  //   log.debug(`${this.schema.model}.insertMany results:`, JSON.stringify(results, null, 2));
+    log(`${this.schema.model}.insertMany:`, JSON.stringify(t, null, 2));
 
-  //   docs = results.ops;
+    const collection = await this.getCollection();
+    const results = await collection.insertMany(t, options);
 
-  //   assert(results.result.ok === 1);
+    log(`${this.schema.model}.insertMany results:`, JSON.stringify(results, null, 2));
 
-  //   for (let i = 0; i < docs.length; i++) {
-  //     docs[i] = await this.afterInsert(docs[i]);
-  //   }
+    assert(results.result.ok === 1);
 
-  //   return docs;
-  // }
+    const o = results.ops as Document[];
+    const m = o.length;
+
+    for (let i = 0; i < m; i++) {
+      await this.afterInsert(o[i], options);
+    }
+
+    return o;
+  }
 
   // /**
   //  * Replaces one document with another. If `replacement` is not specified,
   //  * one with random info will be generated.
   //  *
-  //  * @param {Object} query - @see module:mongodb.Collection#findOneAndReplace
-  //  * @param {Object} [replacement] - @see module:mongodb.Collection#findOneAndReplace
+  //  * @param query - @see module:mongodb.Collection#findOneAndReplace
+  //  * @param replacement - @see module:mongodb.Collection#findOneAndReplace
   //  * @param {Object} [options] - @see module:mongodb.Collection#findOneAndReplace
   //  *
   //  * @return {Promise<Model>} The replaced document as the fulfillment value.
@@ -355,102 +615,108 @@ abstract class Model {
   //  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndReplace}
   //  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~findAndModifyWriteOpResult}
   //  */
-  // static async replaceOne(query, replacement = this.randomFields(), options) {
-  //   assert.type(query, [Object, String, ObjectID]);
-  //   assert.type(replacement, Object);
-  //   assert.type(options, Object, true);
-
-  //   query = querify(this.schema, query);
-  //   replacement = querify(this.schema, replacement);
-  //   replacement = await this.beforeInsert(replacement, options);
+  // static async replaceOne(query: Query, replacement: Document = this.randomFields(), options?: FindOneAndReplaceOption) {
+  //   query = sanitizeQuery(this.schema, query);
+  //   replacement = await this.beforeInsert(sanitizeQuery(this.schema, replacement), options);
 
   //   await this.beforeDelete(query, options);
 
   //   if (!options) options = {};
   //   options.returnOriginal = true;
 
-  //   log.debug(`${this.schema.model}.replaceOne:`, JSON.stringify(query, null, 2), JSON.stringify(replacement, null, 2));
+  //   log(`${this.schema.model}.replaceOne:`, JSON.stringify(query, null, 2), JSON.stringify(replacement, null, 2));
 
-  //   const collection = await this.collection();
+  //   const collection = await this.getCollection();
   //   const results = await collection.findOneAndReplace(query, replacement, options);
 
-  //   log.debug(`${this.schema.model}.replaceOne results:`, JSON.stringify(results, null, 2));
+  //   log(`${this.schema.model}.replaceOne results:`, JSON.stringify(results, null, 2));
 
-  //   assert(results.result.ok === 1);
+  //   assert(results.ok === 1);
 
-  //   if (!results.result.value) return null;
+  //   if (!results.value) return null;
 
-  //   await this.afterDelete(results.result.value, undefined);
+  //   await this.afterDelete(results.value, undefined);
   //   await this.afterInsert(await this.findOne(replacement));
 
-
-  //   return results.result.value;
+  //   return results.value;
   // }
 
-  // /**
-  //  * Updates one document matched by `query` with `update` object. Note that if
-  //  * upserting, all *required* fields must be in the `query` param instead of
-  //  * the `update` param.
-  //  *
-  //  * @param {Object|string|ObjectID} query - @see module:mongodb.Collection#updateOne
-  //  * @param {Object} update - @see module:mongodb.Collection#updateOne
-  //  * @param {Object} [options] - @see module:mongodb.Collection#findOneAndUpdate
-  //  *                             @see module:mongodb.Collection#updateOne
-  //  * @param {boolean} [options.returnDocs] - If `true`, `options` will refer to
-  //  *                                         module:mongodb.Collection#findOneAndUpdate,
-  //  *                                         otherwise `options` refer to
-  //  *                                         module:mongodb.Collection#updateOne.
-  //  *
-  //  * @return {Promise<boolean|?Object>} If `returnDocs` is specified, the
-  //  *                                    updated doc will be the fulfillment
-  //  *                                    value. If not, then `true` if update was
-  //  *                                    successful, `false` otherwise.
-  //  *
-  //  * @see {@link https://docs.mongodb.com/manual/reference/operator/update-field/}
-  //  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#updateOne}
-  //  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndUpdate}
-  //  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
-  //  */
-  // static async updateOne(query, update, { returnDocs = false, ...options } = {}) {
-  //   assert.type(query, [Object, String, ObjectID]);
-  //   assert.type(update, Object);
-  //   assert.type(returnDocs, Boolean);
+  /**
+   * Updates one document matched by `query` with `update` object. Note that if
+   * upserting, all *required* fields must be in the `query` param instead of
+   * the `update` param.
+   *
+   * @param {Object|string|ObjectID} query - @see module:mongodb.Collection#updateOne
+   * @param {Object} update - @see module:mongodb.Collection#updateOne
+   * @param {Object} [options] - @see module:mongodb.Collection#findOneAndUpdate
+   *                             @see module:mongodb.Collection#updateOne
+   * @param {boolean} [options.returnDocs] - If `true`, `options` will refer to
+   *                                         module:mongodb.Collection#findOneAndUpdate,
+   *                                         otherwise `options` refer to
+   *                                         module:mongodb.Collection#updateOne.
+   *
+   * @return {Promise<boolean|?Object>} If `returnDocs` is specified, the
+   *                                    updated doc will be the fulfillment
+   *                                    value. If not, then `true` if update was
+   *                                    successful, `false` otherwise.
+   *
+   * @see {@link https://docs.mongodb.com/manual/reference/operator/update-field/}
+   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#updateOne}
+   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndUpdate}
+   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
+   */
+  static async updateOne(query: Query, update: Document | DocumentUpdate, { returnDocs = false, ...options }: ModelUpdateOneOptions = {}): Promise<null | boolean | Document> {
+    const q = sanitizeQuery(this.schema, query);
 
-  //   query = querify(this.schema, query);
+    let u = _.cloneDeep(update);
 
-  //   // Check if the update object has special MongoDB update operators before
-  //   // normalizing the query.
-  //   if (Object.keys(update).some(val => val.startsWith('$'))) {
-  //     Object.keys(update).map(key => {
-  //       update[key] = querify(this.schema, update[key]);
-  //     });
-  //   }
-  //   else {
-  //     update = querify(this.schema, update);
-  //   }
+    // Check if the update object has special MongoDB update operators before
+    // sanitizing the query.
+    if (isDocumentUpdate(u)) {
+      for (const key in u) {
+        if (!u.hasOwnProperty(key)) continue;
+        u[key] = sanitizeQuery(this.schema, u[key]);
+      }
+    }
+    else {
+      u = sanitizeQuery(this.schema, u);
+    }
 
-  //   update = await this.beforeUpdate(query, update, { ...options });
+    const uu = await this.beforeUpdate(q, u, { returnDocs, ...options });
 
-  //   log.silly(`${this.schema.model}.updateOne:`, JSON.stringify(query, null, 2), JSON.stringify(update, null, 2));
+    log(`${this.schema.model}.updateOne:`, JSON.stringify(q, null, 2), JSON.stringify(uu, null, 2));
 
-  //   const collection = await this.collection();
-  //   const results = returnDocs ? await collection.findOneAndUpdate(query, update, { ...options, returnOriginal: !returnDocs }) : await collection.updateOne(query, update, { ...options });
+    const collection = await this.getCollection();
 
-  //   log.silly(`${this.schema.model}.updateOne results:`, JSON.stringify(results, null, 2));
+    if (returnDocs) {
+      const results = await collection.findOneAndUpdate(q, uu, { ...options, returnOriginal: !returnDocs });
 
-  //   assert(returnDocs ? results.ok === 1 : results.result.ok === 1);
+      log(`${this.schema.model}.updateOne results:`, JSON.stringify(results, null, 2));
 
-  //   if (returnDocs && !results.value) {
-  //     return null;
-  //   }
-  //   else if (!returnDocs && results.result.n <= 0) {
-  //     return false;
-  //   }
+      assert(results.ok === 1);
 
-  //   await this.afterUpdate(returnDocs ? results.value : undefined, update.$set, returnDocs ? undefined : results);
+      if (!results.value) return null;
 
-  //   return returnDocs ? results.value : true;
-  // }
+      await this.afterUpdate(q, uu.$set, results.value);
+
+      return results.value as Document;
+    }
+    else {
+      const results = await collection.updateOne(q, uu, { ...options });
+
+      log(`${this.schema.model}.updateOne results:`, JSON.stringify(results, null, 2));
+
+      assert(results.result.ok === 1);
+
+      if (results.result.n <= 0) {
+        return false;
+      }
+
+      await this.afterUpdate(q, uu.$set);
+
+      return true;
+    }
+  }
 
   // /**
   //  * Updates multiple documents matched by `query` with `update` object.
@@ -480,13 +746,13 @@ abstract class Model {
   //   assert.type(update, Object);
   //   assert.type(returnDocs, Boolean);
 
-  //   query = querify(this.schema, query);
-  //   update = querify(this.schema, update);
+  //   query = sanitizeQuery(this.schema, query);
+  //   update = sanitizeQuery(this.schema, update);
   //   update = await this.beforeUpdate(query, update, { ...options });
 
   //   log.debug(`${this.schema.model}.updateMany:`, JSON.stringify(query, null, 2), JSON.stringify(update, null, 2));
 
-  //   const collection = await this.collection();
+  //   const collection = await this.getCollection();
 
   //   if (returnDocs) {
   //     const docs = await this.findMany(query);
@@ -544,12 +810,12 @@ abstract class Model {
   //   assert.type(query, [Object, String, ObjectID]);
   //   assert.type(returnDocs, Boolean);
 
-  //   query = querify(this.schema, query);
+  //   query = sanitizeQuery(this.schema, query);
   //   await this.beforeDelete(query, { ...options });
 
   //   log.debug(`${this.schema.model}.deleteOne:`, JSON.stringify(query, null, 2));
 
-  //   const collection = await this.collection();
+  //   const collection = await this.getCollection();
   //   const results = returnDocs ? await collection.findOneAndDelete(query, { returnOriginal: !returnDocs, ...options }) : await collection.deleteOne(query, { ...options });
 
   //   log.debug(`${this.schema.model}.deleteOne results:`, JSON.stringify(results, null, 2));
@@ -594,12 +860,12 @@ abstract class Model {
   //   assert.type(options, Object, true);
   //   assert.key(options, 'returnDocs', Boolean, true);
 
-  //   query = querify(this.schema, query);
+  //   query = sanitizeQuery(this.schema, query);
   //   await this.beforeDelete(query, { ...options });
 
   //   log.debug(`${this.schema.model}.deleteMany:`, JSON.stringify(query, null, 2));
 
-  //   const collection = await this.collection();
+  //   const collection = await this.getCollection();
 
   //   if (returnDocs) {
   //     const docs = await this.findMany(query);
@@ -632,201 +898,6 @@ abstract class Model {
   //     if (results.result.n <= 0) return false;
   //     await this.afterDelete(undefined, results);
   //     return true;
-  //   }
-  // }
-
-  // /**
-  //  * Preformats docs based on the schema definition.
-  //  *
-  //  * @param {Object} doc
-  //  */
-  // static async preformat(doc) {
-  //   let formattedDoc = _.cloneDeep(doc);
-
-  //   for (const key in this.schema.fields) {
-  //     if (!formattedDoc.hasOwnProperty(key)) continue;
-
-  //     const field = this.schema.fields[key];
-
-  //     assert.range(field, `Field ${key} not found in schema`);
-
-  //     // If the schema has a certain formatting function defined for this field,
-  //     // apply it.
-  //     if (typeof field.format === 'function') {
-  //       formattedDoc[key] = await field.format(formattedDoc[key]);
-  //     }
-
-  //     // If the schema indicates that this field is encrypted, encrypt it.
-  //     if (field.encrypted === true) {
-  //       formattedDoc[key] = await bcrypt.hash(`${formattedDoc[key]}`, 10);
-  //     }
-  //   }
-
-  //   return formattedDoc;
-  // }
-
-  // /**
-  //  * Handler invoked right before a document insertion.
-  //  *
-  //  * @param {Object} doc - The document to be inserted.
-  //  * @param {Object} [options] - Options passed into Model.insertOne.
-  //  * @param {boolean} [options.strict=true] - Custom option. If true, strict
-  //  *                                          mode is used during validation.
-  //  *                                          @see Model.validate
-  //  *
-  //  * @return {Promise<Model>} The fulfillment value is the doc that was passed
-  //  *                           into this handler.
-  //  */
-  // static async beforeInsert(doc, { strict = true, ...options } = {}) {
-  //   let output = _.cloneDeep(doc);
-
-  //   if (this.schema.timestamps === true) {
-  //     // When in production, always renew the `createdAt` field.
-  //     if (config.env === 'production' || !output.createdAt) {
-  //       output.createdAt = new Date();
-  //     }
-
-  //     // When in production, always renew the `updatedAt` field.
-  //     if (config.env === 'production' || !output.updatedAt) {
-  //       output.updatedAt = new Date();
-  //     }
-  //   }
-
-  //   // Before inserting this document, go through each field and make sure that
-  //   // it has default values and is formatted correctly.
-  //   for (const key in this.schema.fields) {
-  //     const field = this.schema.fields[key];
-  //     const fieldIsInDoc = output.hasOwnProperty(key);
-
-  //     if (fieldIsInDoc) continue;
-
-  //     const fieldHasDefaultValue = field.hasOwnProperty('default');
-
-  //     // If this field is not in the inserting doc but the schema has a default
-  //     // value defined for it, set it as per the default value. If this field is
-  //     // a required field and there is no default value defined in the schema,
-  //     // throw an error.
-  //     if (fieldHasDefaultValue) {
-  //       output[key] = (typeof field.default === 'function') ? field.default() : field.default;
-  //     }
-  //   }
-
-  //   // Format first.
-  //   output = await this.preformat(output);
-
-  //   // Then validate.
-  //   await this.validate(output, { strict: strict, checkUniqueIndex: false });
-
-  //   return output;
-  // }
-
-  // /**
-  //  * Handler invoked right after a document insertion.
-  //  *
-  //  * @param {Object} doc - The inserted document.
-  //  *
-  //  * @return {Promise<Model>} The inserted doc.
-  //  */
-  // static async afterInsert(doc) {
-  //   return doc;
-  // }
-
-  // /**
-  //  * Handler invoked right before an update. This does not account for
-  //  * insertions. However, DO BE CAREFUL IF YOU ARE UPSERTING.
-  //  *
-  //  * @param {Object|string|ObjectID} query - @see Model.updateOne
-  //  * @param {Object} update - @see Model.updateOne
-  //  * @param {Object} options - @see Model.updateOne
-  //  *
-  //  * @return {Promise<Object>} The update object as fulfillment value.
-  //  */
-  // static async beforeUpdate(query, update, { upsert = false, ...options } = {}) {
-  //   query = _.cloneDeep(query);
-  //   update = _.cloneDeep(update);
-
-  //   const hasUpdateOperators = Object.keys(update).some(val => val.startsWith('$'));
-  //   const out = hasUpdateOperators ? update : { $set: update };
-
-  //   if (out.$set) {
-  //     await this.validate(out.$set, { checkUniqueIndex: false });
-  //     if (!upsert) out.$set = await this.preformat(out.$set);
-  //   }
-
-  //   if (upsert) {
-  //     const beforeInsert = await this.beforeInsert(query, { strict: false, ...options });
-  //     const setOnInsert = _.omit(beforeInsert, Object.keys(update).concat(['updatedAt']));
-  //     if (Object.keys(setOnInsert).length > 0) out.$setOnInsert = setOnInsert;
-  //   }
-
-  //   if (this.schema.timestamps === true) {
-  //     if (!out.$set) out.$set = {};
-
-  //     // When in production, always renew the `updatedAt` field.
-  //     if (config.env === 'production' || !out.$set.updatedAt) {
-  //       out.$set.updatedAt = new Date();
-  //     }
-  //   }
-
-  //   return out;
-  // }
-
-  // /**
-  //  * Handler invoked right after an update. This does not account for
-  //  * insertions.
-  //  *
-  //  * @param {Object} doc - The updated doc if `returnDocs` was used along with
-  //  *                       the update operation. Otherwise this is `undefined`.
-  //  * @param {Object} update - The update applied.
-  //  * @param {Object} results - The results of the update operation if
-  //  *                           Model#updateOne was used. Otherwise it is
-  //  *                           `undefined`.
-  //  */
-  // static async afterUpdate(doc, update, results) {
-
-  // }
-
-  // /**
-  //  * Handler invoked right before a deletion.
-  //  *
-  //  * @param {Object|string|ObjectID} query - @see Model.delete
-  //  * @param {Object} [options] - @see Model.delete
-  //  */
-  // static async beforeDelete(query, options) {
-
-  // }
-
-  // /**
-  //  * Handler invoked right after a deletion.
-  //  *
-  //  * @param {Object} doc - The deleted doc if Model.deleteOne was
-  //  *                       used. Otherwise it is `undefined`.
-  //  * @param {Object} results - The results of the delete operation if
-  //  *                           Model#deleteOne was used. Otherwise it is
-  //  *                           `undefined`.
-  //  */
-  // static async afterDelete(doc, results) {
-  //   // If `cascade` property is specified, iterate in the order of the array and
-  //   // remove documents where the foreign field equals the `_id` of this
-  //   // document.
-  //   // NOTE: This only works for first-level foreign keys.
-  //   if (doc && doc._id && this.schema.cascade) {
-  //     const n = this.schema.cascade.length;
-
-  //     for (let i = 0; i < n; i++) {
-  //       const cascadeRef = this.schema.cascade[i];
-  //       const cascadeModel = db.getModel(cascadeRef);
-
-  //       assert.range(cascadeModel, `Trying to cascade delete from model ${cascadeRef} but model is not found`);
-
-  //       for (const key in cascadeModel.schema.fields) {
-  //         const field = cascadeModel.schema.fields[key];
-  //         if (field.ref === this.schema.model) {
-  //           log.debug(`Cascade deleting all ${cascadeRef} documents whose "${key}" field is ${doc._id}`);
-  //           await cascadeModel.deleteMany({ [`${key}`]: ObjectID(doc._id) });
-  //         }
-  //       }
-  //     }
   //   }
   // }
 }

@@ -91,7 +91,7 @@ class Foo extends Model {}
 class Bar extends Model {}
 
 describe('core/Aggregation', () => {
-  before(async() => {
+  before(async () => {
     db.configure({
       host: 'localhost:27017',
       name: 'mongodb_odm_test',

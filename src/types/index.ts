@@ -1,17 +1,25 @@
+import is from '@sindresorhus/is';
 import { IndexOptions, ObjectID } from 'mongodb';
 
 /**
  * Query for finding documents in the MongoDB database.
  */
-export type Query = string | number | ObjectID | FieldCollection;
+export type Query = string | number | ObjectID | Document;
 
 /**
  * JavaScript representation of MongoDB document.
  */
 export interface Document extends FieldCollection {
-  _id: string | number | ObjectID;
+  _id?: ObjectID;
   createdAt?: Date;
   updatedAt?: Date;
+}
+
+/**
+ * Document update descriptor.
+ */
+export interface DocumentUpdate {
+  [updateOperator: string]: Document;
 }
 
 /**
@@ -88,6 +96,11 @@ export interface FieldSpecs {
    * process).
    */
   required?: boolean;
+
+  /**
+   * Specifies if this field should be encrypted.
+   */
+  encrypted?: boolean;
 
   /**
    * Default value of the field.
@@ -172,4 +185,9 @@ export interface SchemaIndex {
    * @see {@link https://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#createIndex}
    */
   options?: IndexOptions;
+}
+
+export function isDocumentUpdate(value: any): value is DocumentUpdate {
+  if (!is.object(value)) return false;
+  return Object.keys(value).some(val => val.startsWith('$'));
 }
