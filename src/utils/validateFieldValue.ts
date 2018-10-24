@@ -7,7 +7,7 @@ import { FieldSpecs, FieldType } from '../types';
  * Checks a value against field properties definied in a schema.
  *
  * @param value - The value to check.
- * @param specs - Schema field definition.
+ * @param specs - @see FieldSpecs
  *
  * @return `true` if validation passes, `false` otherwise.
  */
