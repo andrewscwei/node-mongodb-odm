@@ -6,7 +6,7 @@
   "scripts": {
     "clean": "rimraf build",
     "build": "npm run clean && tsc",
-    "test": "npm run build && NODE_ENV=test DEBUG=mongodb-odm* mocha --require dotenv/config --timeout 10000 --reporter spec --full-trace --colors --recursive --bail --exit $([ -z \"$npm_config_path\" ] && echo build/tests || echo $npm_config_path)",
+    "test": "npm run build && NODE_ENV=test mocha --require dotenv/config --timeout 10000 --reporter spec --full-trace --colors --recursive --bail --exit $([ -z \"$npm_config_path\" ] && echo build/tests || echo $npm_config_path)",
     "db": "mkdirp .mongodb/data && mongod --bind_ip 0.0.0.0 --dbpath .mongodb/data --logpath .mongodb/mongod.log --fork",
     "db:stop": "kill -15 $(pgrep mongo)"
   },
@@ -43,6 +43,7 @@
     "@types/mocha": "^5.2.5",
     "@types/mongodb": "^3.1.12",
     "dotenv": "^6.1.0",
+    "faker": "^4.1.0",
     "mocha": "^5.2.0",
     "rimraf": "^2.6.2",
     "ts-node": "^7.0.1",

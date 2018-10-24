@@ -1,7 +1,7 @@
 import is from '@sindresorhus/is';
-import assert from 'assert';
 import { ObjectID } from 'mongodb';
 import { Document, Query, Schema } from '../types';
+import sanitizeDocument from './sanitizeDocument';
 
 /**
  * Options for sanitizeQuery().
@@ -9,26 +9,25 @@ import { Document, Query, Schema } from '../types';
 interface SanitizeQueryOptions {
   /**
    * If set to `true`, fields that are not specified in the schema will be
-   * deleted as part of the querifying process.
+   * deleted as part of the sanitizing process.
    */
   strict?: boolean;
 }
 
 /**
  * Magically transforms any supported value into a valid input for querying db
- * collections. Note that this only handles generating a valid query. It does
- * not apply validation. The transformation process includes the following:
- *   1. Wraps an Object ID into a proper query.
+ * collections. Note that this process does not perform any data validation. The
+ * transformation process includes the following:
+ *   1. Wraps an ObjectID instance or string representing an ObjectID into a
+ *      proper query.
  *   2. If strict mode is enabled, the provided schema will be used to strip out
- *      all extraneous fields from the input
- *   3. Performs a deep JSON parse of the value to undo any stringification,
- *      i.e. `'6'` becomes `6`.
+ *      all extraneous fields from the input.
  *
  * @param schema - The collection schema.
- * @param query - The input query to normalize.
- * @param options - Additional options.
+ * @param query - The input query to sanitize.
+ * @param options - @see SanitizeQueryOptions
  *
- * @return The normalized query.
+ * @return The sanitized query.
  *
  * @example
  * // Returns { "_id": 5927f337c5178b9665b56b1e }
@@ -46,37 +45,16 @@ interface SanitizeQueryOptions {
  * sanitizeQuery(schema, { a: 'b', b: 'c', garbage: 'garbage' }, { strict: true })
  */
 export default function sanitizeQuery<T extends Document = Document>(schema: Schema, query: Query<T>, { strict = true }: SanitizeQueryOptions = {}): Partial<T> {
-  // If argument is an ObjectID, wrap it in a proper query.
   if (is.directInstanceOf(query, ObjectID)) {
-    return {
-      _id: query,
-    } as any;
+    return { _id: query } as Partial<T>;
   }
   else if (is.string(query)) {
-    const objectId = new ObjectID(query);
-
-    return {
-      _id: objectId,
-    } as any;
+    return { _id: new ObjectID(query) } as Partial<T>;
   }
-
-  assert(is.object(query), new TypeError('`query` is expected to be an object'));
-
-  const o = query as Partial<T>;
-
-  // In strict mode, delete keys that are not in the schema. Ignore `_id`,
-  // `createdAt`, and `updatedAt` fields because they are automatically
-  // generated.
-  if (strict) {
-    for (const key in o) {
-      if (key === '_id') continue;
-      if (schema.timestamps && (key === 'createdAt')) continue;
-      if (schema.timestamps && (key === 'updatedAt')) continue;
-      if (schema.fields.hasOwnProperty(key)) continue;
-
-      delete o[key];
-    }
+  else if (strict) {
+    return sanitizeDocument<T>(schema, query);
   }
-
-  return o;
+  else {
+    return query as Partial<T>;
+  }
 }

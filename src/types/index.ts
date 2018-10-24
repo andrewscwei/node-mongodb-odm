@@ -1,10 +1,10 @@
 import is from '@sindresorhus/is';
-import { IndexOptions, ObjectID } from 'mongodb';
+import { IndexOptions, ObjectID, UpdateQuery } from 'mongodb';
 
 /**
  * Query for finding documents in the MongoDB database.
  */
-export type Query<T extends Document = Document> = string | ObjectID | Partial<T>;
+export type Query<T extends Document = Document> = string | ObjectID | Partial<T> | { [key: string]: any };
 
 /**
  * MongoDB document structure.
@@ -19,8 +19,8 @@ export interface Document {
 /**
  * Document update descriptor.
  */
-export interface Update {
-  [updateOperator: string]: Document;
+export interface Update<T extends Document = Document> extends UpdateQuery<T> {
+
 }
 
 /**
@@ -150,7 +150,7 @@ export interface Schema<T extends Document = Document> {
    * @see FieldSpecs
    */
   fields: {
-    readonly [F in keyof T]: FieldSpecs;
+    [F in keyof T]: FieldSpecs;
   };
 
   /**
@@ -180,7 +180,7 @@ export interface SchemaIndex {
   options?: IndexOptions;
 }
 
-export function typeIsUpdate(value: any): value is Update {
+export function typeIsUpdate<T extends Document = Document>(value: any): value is Update<T> {
   if (!is.object(value)) return false;
   return Object.keys(value).some(val => val.startsWith('$'));
 }

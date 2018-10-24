@@ -20,6 +20,48 @@ describe('core/Model', () => {
     assert(Foo.schema);
   });
 
+  it('can find a document', async () => {
+    const t: Partial<BazDocument> = { aString: '0' };
+    const res = await Baz.insertOne(t);
+
+    assert(res);
+
+    const doc = await Baz.findOne(res!._id);
+
+    assert(doc);
+    assert(doc!._id!.equals(res!._id!));
+  });
+
+  it('can find multiple documents', async () => {
+    await Baz.insertOne({ aString: 'Hello, world!'});
+    await Baz.insertOne({ aString: 'Hello, world!'});
+    await Baz.insertOne({ aString: 'Hello, world!'});
+
+    const docs = await Baz.findMany({ aString: 'Hello, world!' });
+
+    assert(docs.length === 3);
+  });
+
+  it('can find a random document', async () => {
+    const doc = await Baz.findOne();
+    assert(doc);
+  });
+
+  it('can count the total number of documents in the collection', async () => {
+    await Baz.insertOne({ aString: 'Hello, world, again!'});
+    await Baz.insertOne({ aString: 'Hello, world, again!'});
+    await Baz.insertOne({ aString: 'Hello, world, again!'});
+
+    const count = await Baz.count({ aString: 'Hello, world, again!' });
+
+    assert(count === 3);
+  });
+
+  it('can generate random required fields', async () => {
+    const res = await Baz.randomFields();
+    assert(Object.keys(res).indexOf('aString') > -1);
+  });
+
   it('can insert a new document', async () => {
     const t: Partial<BazDocument> = { aString: 'foo' };
     const doc = await Baz.insertOne<BazDocument>(t);
@@ -54,7 +96,6 @@ describe('core/Model', () => {
   it('can format documents according to the schema', async () => {
     const t: Partial<BazDocument> = { aFormattedString: 'foo' };
     const res = await Baz.formatDocument(t);
-
     assert(Baz.schema.fields.aFormattedString.format!(t.aFormattedString) === res.aFormattedString);
   });
 
@@ -65,38 +106,41 @@ describe('core/Model', () => {
   });
 
   it('should automatically generate default values on insert', async () => {
-    const doc = await Baz.insertOne({ aString: 'foo' });
-    assert(doc!.aBoolean === Baz.schema.fields.aBoolean.default);
+    const t: Partial<BazDocument> = { aString: 'foo' };
+    const res = await Baz.insertOne(t);
+    assert(res!.aBoolean === Baz.schema.fields.aBoolean.default);
   });
 
   it('should automatically format values on insert according to the schema', async () => {
+    const t: Partial<BazDocument> = { aString: 'foo', aFormattedString: 'foo' };
+    const res = await Baz.insertOne(t);
+    assert(Baz.schema.fields.aFormattedString.format!(t.aFormattedString) === res!.aFormattedString);
   });
+
+  it('can update an existing doc', async () => {
+    const t: Partial<BazDocument> = { aString: 'foo' };
+    const original = await Baz.insertOne(t);
+    const updated = await Baz.updateOne(t, { aString: 'bar' }, { returnDoc: true });
+
+    assert((updated! as Partial<BazDocument>).aString === 'bar');
+  });
+
+  // it('can upate multiple existing docs', async () => {
+  //   const t: Partial<BazDocument>[] = [{ aString: 'baz' }, { aString: 'baz' }, { aString: 'baz' }];
+  //   const docs = await Baz.insertMany<BazDocument>(t);
+
+  //   assert(docs);
+  //   assert(docs!.reduce((prev, curr) => prev && ObjectID.isValid(curr._id!), true));
+
+  //   const res = await Baz.updateMany())
+  //   docs!.forEach((doc, i) => assert(doc.aString === t[i].aString));
+  // });
 
   it('should automatically format values on update according to the schema', async () => {
 
   });
 
   it('should automatically format values on upsert according to the schema', async () => {
-
-  });
-
-  it('can find a document', async () => {
-
-  });
-
-  it('can find multiple documents', async () => {
-
-  });
-
-  it('can find a random document', async () => {
-
-  });
-
-  it('can count the total number of documents in the collection', async () => {
-
-  });
-
-  it('can generate random required fields', async () => {
 
   });
 });

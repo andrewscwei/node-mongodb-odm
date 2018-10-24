@@ -1,3 +1,4 @@
+import faker from 'faker';
 import Model from '../../core/Model';
 import { Document, Schema } from '../../types';
 
@@ -13,7 +14,7 @@ export const BazSchema: Schema<BazDocument> = {
   model: 'Baz',
   collection: 'bazs',
   fields: {
-    aString: { type: String, required: true },
+    aString: { type: String, required: true, random: () => faker.name.firstName() },
     aNumber: { type: Number, default: () => Math.random() },
     aBoolean: { type: Boolean, default: true },
     aFormattedString: { type: String, format: (v: string) => v.toUpperCase() },
