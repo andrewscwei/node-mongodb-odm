@@ -1,11 +1,11 @@
 import Model from '../../core/Model';
 import { Document, Schema } from '../../types';
 
-interface BazDocument extends Document {
+export interface BazDocument extends Document {
   aString: string;
-  aNumber: number;
-  aBoolean: boolean;
-  aFormattedString: string;
+  aNumber?: number;
+  aBoolean?: boolean;
+  aFormattedString?: string;
 }
 
 export const BazSchema: Schema<BazDocument> = {
