@@ -66,7 +66,6 @@ interface ModelUpdateOneOptions extends FindOneAndReplaceOption, ReplaceOneOptio
    */
   upsert?: boolean;
 
-
   /**
    * Specifies whether updated doc is returned when update completes.
    */
@@ -172,7 +171,7 @@ abstract class Model {
    *
    * @return Aggregation pipeline.
    */
-  static pipeline(queryOrSpecs?: Query | PipelineFactorySpecs, options?: PipelineFactoryOptions): AggregationPipeline {
+  static pipeline<U extends Document = Document>(queryOrSpecs?: Query<U> | PipelineFactorySpecs, options?: PipelineFactoryOptions): AggregationPipeline {
     if (!this.schema) throw new Error('This model has no schema, you must define this static proerty in the derived class');
 
     // Check if the argument conforms to aggregation factory specs.
@@ -193,8 +192,8 @@ abstract class Model {
    *
    * @return The matching ObjectID.
    */
-  static async identifyOne(query: Query): Promise<ObjectID> {
-    const result = await this.findOne(query);
+  static async identifyOne<U extends Document = Document>(query: Query<U>): Promise<ObjectID> {
+    const result = await this.findOne<U>(query);
 
     if (is.nullOrUndefined(result)) {
       throw new Error(`No results found while identifying this ${this.schema.model} using the query ${JSON.stringify(query)}`);
@@ -216,10 +215,10 @@ abstract class Model {
    *
    * @return The matching document as the fulfillment value.
    */
-  static async findOne(query?: Query, options?: ModelFindOneOptions): Promise<null | Document> {
+  static async findOne<U extends Document = Document>(query?: Query<U>, options?: ModelFindOneOptions): Promise<null | Partial<U>> {
     if (is.nullOrUndefined(query)) {
       const collection = await this.getCollection();
-      const results = await collection.aggregate(this.pipeline(query).concat([{ $sample: { size: 1 } }])).toArray();
+      const results = await collection.aggregate(this.pipeline<U>(query).concat([{ $sample: { size: 1 } }])).toArray();
 
       assert(results.length <= 1, new Error('More than 1 random document found even though only 1 was supposed to be found.'));
 
@@ -228,8 +227,10 @@ abstract class Model {
       return null;
     }
     else {
-      const results = await this.findMany(query, options);
+      const results = await this.findMany<U>(query, options);
+
       if (results.length === 0) return null;
+
       return results[0];
     }
   }
@@ -243,9 +244,9 @@ abstract class Model {
    *
    * @return The matching documents as the fulfillment value.
    */
-  static async findMany(query?: Query, options?: ModelFindManyOptions): Promise<Document[]> {
+  static async findMany<U extends Document = Document>(query?: Query<U>, options?: ModelFindManyOptions): Promise<Partial<U>[]> {
     const collection = await this.getCollection();
-    const results = await collection.aggregate(this.pipeline(query), options).toArray();
+    const results = await collection.aggregate(this.pipeline<U>(query), options).toArray();
     return results;
   }
 
@@ -282,7 +283,7 @@ abstract class Model {
     const o = results.ops[0];
 
     // Apply after insert handler.
-    await this.afterInsert(o);
+    await this.afterInsert<U>(o);
 
     return o;
   }
@@ -402,7 +403,7 @@ abstract class Model {
 
       if (!res.value) return null;
 
-      await this.afterUpdate(query, u, res.value);
+      await this.afterUpdate<U>(query, u, res.value);
 
       return res.value as Partial<U>;
     }
@@ -415,7 +416,7 @@ abstract class Model {
 
       if (res.result.n <= 0) return false;
 
-      await this.afterUpdate(query, u);
+      await this.afterUpdate<U>(query, u);
 
       return true;
     }
@@ -782,8 +783,10 @@ abstract class Model {
    * @return The modified update to apply.
    */
   private static async beforeUpdate<U extends Document = Document>(query: Query<U>, update: Partial<U> | Update<U>, { upsert = false, ignoreTimestamps = false, strict = false }: ModelBeforeUpdateOptions & ModelBeforeInsertOptions = {}): Promise<[Partial<U>, Update<U>]> {
+    // First sanitize the inputs. We want to be able to make sure the query is
+    // valid and that the update object is a proper update query.
     let q = sanitizeQuery<U>(this.schema, query);
-    let u;
+    let u: Update<U>;
 
     if (typeIsUpdate<U>(update)) {
       u = {
@@ -796,31 +799,39 @@ abstract class Model {
       if (u.$push) u.$push = sanitizeDocument<U>(this.schema, u.$push);
     }
     else {
-      u = sanitizeDocument<U>(this.schema, update);
+      u = {
+        $set: sanitizeDocument<U>(this.schema, update),
+      };
     }
 
-    const o: Update<U> = typeIsUpdate<U>(u) ? u : { $set: u };
-
+    // In the case of an upsert, we need to preprocess the query as if this was
+    // an insertion. We also need to tell the database to save all fields in the
+    // query to the database as well, unless they are already in the update
+    // query.
     if (upsert) {
       q = await this.beforeInsert<U>(q, { strict });
-      o.$setOnInsert = _.omit(q, [
+
+      u.$setOnInsert = _.omit(q, [
         'updatedAt',
         ...Object.keys(u),
       ]);
     }
-    else {
-      if (this.schema.timestamps === true) {
-        if (!o.$set) o.$set = {};
-        if (!ignoreTimestamps) o.$set.updatedAt = new Date();
-      }
 
-      if (o.$set) {
-        o.$set = await this.formatDocument<U>(o.$set as Partial<U>);
-        await this.validateDocument<U>(o.$set as Partial<U>, { checkUniqueIndex: false });
-      }
+    // Create $set operator if it doesn't exist.
+    if (!u.$set) u.$set = {};
+
+    // Add updated timestamps if applicable.
+    if (this.schema.timestamps && !ignoreTimestamps) {
+      u.$set.updatedAt = new Date();
     }
 
-    return [q, o];
+    // Format all fields in the update query.
+    u.$set = await this.formatDocument<U>(u.$set as Partial<U>);
+
+    // Validate all fields in the update query.
+    await this.validateDocument<U>(u.$set as Partial<U>, { checkUniqueIndex: false });
+
+    return [q, u];
   }
 
   /**
