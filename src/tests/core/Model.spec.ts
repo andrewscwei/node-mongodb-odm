@@ -1,3 +1,4 @@
+import is from '@sindresorhus/is';
 import assert from 'assert';
 import bcrypt from 'bcrypt';
 import { describe, it } from 'mocha';
@@ -123,6 +124,23 @@ describe('core/Model', () => {
     const updated = await Baz.updateOne(t, { aString: 'bar' }, { returnDoc: true });
 
     assert((updated! as Partial<BazDocument>).aString === 'bar');
+  });
+
+  it('can upsert a doc if it does not already exist', async () => {
+    const t: Partial<BazDocument> = { aString: 'This doc does not exist' };
+    const res = await Baz.updateOne(t, { aString: 'This doc exists now' }, { upsert: true, returnDoc: true });
+    const doc = await Baz.findOne({ aString: 'This doc exists now' });
+    assert(doc);
+  });
+
+  it('should return false if update fails and returnDoc is false', async () => {
+    const res = await Baz.updateOne(new ObjectID(), { aString: 'baz' });
+    assert(res === false);
+  });
+
+  it('should return null if update fails and returnDoc is true', async () => {
+    const res = await Baz.updateOne(new ObjectID(), { aString: 'baz' }, { returnDoc: true });
+    assert(is.null_(res));
   });
 
   // it('can upate multiple existing docs', async () => {
