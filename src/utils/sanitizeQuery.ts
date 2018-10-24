@@ -2,7 +2,6 @@ import is from '@sindresorhus/is';
 import assert from 'assert';
 import { ObjectID } from 'mongodb';
 import { Document, Query, Schema } from '../types';
-import _ from 'lodash';
 
 /**
  * Options for sanitizeQuery().

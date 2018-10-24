@@ -28,7 +28,7 @@ describe('utils/sanitizeQuery', () => {
   it('can generate valid queries removing extraneous fields', () => {
     const objectId = new ObjectID();
 
-    const expected: BazDocument = {
+    const expected: Partial<BazDocument> = {
       _id: objectId,
       aString: 'baz',
     };
@@ -44,7 +44,7 @@ describe('utils/sanitizeQuery', () => {
   it('can generate valid queries while keeping extraneous fields', () => {
     const objectId = new ObjectID();
 
-    const expected: BazDocument = {
+    const expected: Partial<BazDocument> = {
       _id: objectId,
       aString: 'baz',
     };
