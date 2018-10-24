@@ -177,14 +177,38 @@ describe('core/Model', () => {
     assert((res as Partial<BazDocument>).aFormattedString === Baz.schema.fields.aFormattedString.format!(s));
   });
 
-  // it('can upate multiple existing docs', async () => {
-  //   const t: Partial<BazDocument>[] = [{ aString: 'baz' }, { aString: 'baz' }, { aString: 'baz' }];
-  //   const docs = await Baz.insertMany<BazDocument>(t);
+  it('can update multiple existing docs', async () => {
+    const s = Faker.random.alphaNumeric(10);
+    const t = Faker.random.alphaNumeric(10);
+    const q: Partial<BazDocument>[] = [{ aString: s }, { aString: s }, { aString: s }];
+    const docs = await Baz.insertMany<BazDocument>(q);
 
-  //   assert(docs);
-  //   assert(docs!.reduce((prev, curr) => prev && ObjectID.isValid(curr._id!), true));
+    assert(docs);
+    assert(docs!.reduce((prev, curr) => prev && ObjectID.isValid(curr._id!), true));
 
-  //   const res = await Baz.updateMany())
-  //   docs!.forEach((doc, i) => assert(doc.aString === t[i].aString));
-  // });
+    const res = await Baz.updateMany<BazDocument>({ aString: s }, { aString: t }, { returnDocs: true }) as Partial<BazDocument>[];
+
+    assert(res.length === docs.length);
+    assert(res.reduce((o, v) => o && (v.aString === t), true));
+  });
+
+  it('can upsert a doc in an updateMany op while `returnDocs` is true', async () => {
+    const s = Faker.random.alphaNumeric(10);
+    const t = Faker.random.alphaNumeric(10);
+
+    const res = await Baz.updateMany<BazDocument>({ aString: s }, { aFormattedString: t }, { returnDocs: true, upsert: true }) as Partial<BazDocument>[];
+
+    assert(res.length === 1);
+    assert(!is.nullOrUndefined(await Baz.findOne<BazDocument>({ aString: s })));
+  });
+
+  it('can upsert a doc in an updateMany op while `returnDocs` is false', async () => {
+    const s = Faker.random.alphaNumeric(10);
+    const t = Faker.random.alphaNumeric(10);
+
+    const res = await Baz.updateMany<BazDocument>({ aString: s }, { aFormattedString: t }, { upsert: true }) as boolean;
+
+    assert(res === true);
+    assert(!is.nullOrUndefined(await Baz.findOne<BazDocument>({ aString: s })));
+  });
 });

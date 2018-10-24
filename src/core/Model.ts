@@ -10,7 +10,7 @@ import assert from 'assert';
 import bcrypt from 'bcrypt';
 import debug from 'debug';
 import _ from 'lodash';
-import { Collection, CollectionAggregationOptions, CollectionInsertManyOptions, CollectionInsertOneOptions, FindOneAndReplaceOption, ObjectID, ReplaceOneOptions } from 'mongodb';
+import { Collection, CollectionAggregationOptions, CollectionInsertManyOptions, CollectionInsertOneOptions, CommonOptions, FindOneAndReplaceOption, ObjectID, ReplaceOneOptions } from 'mongodb';
 import * as db from '../';
 import { Document, FieldSpecs, Query, Schema, typeIsUpdate, Update } from '../types';
 import sanitizeDocument from '../utils/sanitizeDocument';
@@ -43,10 +43,10 @@ interface ModelValidateDocumentOptions {
 
   /**
    * Tells the validation process to account for unique indexes. That is, if
-   * this is `true` and one or more field values are not unique when it
+   * this is `false` and one or more field values are not unique when it
    * supposedly has a unique index, validation fails.
    */
-  checkUniqueIndex?: boolean;
+  ignoreUniqueIndex?: boolean;
 }
 
 /**
@@ -56,25 +56,7 @@ interface ModelFindOneOptions extends CollectionAggregationOptions {}
 
 interface ModelFindManyOptions extends CollectionAggregationOptions {}
 
-interface ModelInsertOneOptions extends ModelBeforeInsertOptions, CollectionInsertOneOptions {}
-
-interface ModelInsertManyOptions extends CollectionInsertManyOptions {}
-
-interface ModelUpdateOneOptions extends FindOneAndReplaceOption, ReplaceOneOptions {
-  /**
-   * Specifies whether upserting is enabled.
-   */
-  upsert?: boolean;
-
-  /**
-   * Specifies whether updated doc is returned when update completes.
-   */
-  returnDoc?: boolean;
-}
-
-interface ModelUpdateManyOptions extends ModelUpdateOneOptions {}
-
-interface ModelBeforeInsertOptions extends ModelValidateDocumentOptions {
+interface ModelInsertOneOptions extends ModelValidateDocumentOptions, CollectionInsertOneOptions {
   /**
    * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are
    * automatically generated before insertion.
@@ -82,7 +64,39 @@ interface ModelBeforeInsertOptions extends ModelValidateDocumentOptions {
   ignoreTimestamps?: boolean;
 }
 
-interface ModelBeforeUpdateOptions extends ModelUpdateOneOptions {}
+interface ModelInsertManyOptions extends ModelValidateDocumentOptions, CollectionInsertManyOptions {
+  /**
+   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are
+   * automatically generated before insertion.
+   */
+  ignoreTimestamps?: boolean;
+}
+
+interface ModelUpdateOneOptions extends ModelInsertOneOptions, FindOneAndReplaceOption, ReplaceOneOptions {
+  /**
+   * Specifies whether updated doc is returned when update completes.
+   */
+  returnDoc?: boolean;
+
+  /**
+   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are
+   * automatically generated before insertion.
+   */
+  ignoreTimestamps?: boolean;
+}
+
+interface ModelUpdateManyOptions extends CommonOptions, FindOneAndReplaceOption {
+  /**
+   * Specifies whether updated doc is returned when update completes.
+   */
+  returnDocs?: boolean;
+
+  /**
+   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are
+   * automatically generated before insertion.
+   */
+  ignoreTimestamps?: boolean;
+}
 
 abstract class Model {
   /**
@@ -266,7 +280,7 @@ abstract class Model {
     let t = doc ? sanitizeQuery(this.schema, doc) : this.randomFields();
 
     // Apply before insert handler.
-    t = await this.beforeInsert(t, options);
+    t = await this.beforeInsert(t, { strict: true, ...options });
 
     log(`${this.schema.model}.insertOne:`, JSON.stringify(t, null, 2));
 
@@ -302,13 +316,13 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#insertMany}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~insertWriteOpResult}
    */
-  static async insertMany<U extends Document = Document>(docs: Partial<U>[], options?: ModelBeforeInsertOptions & ModelInsertManyOptions): Promise<U[]> {
+  static async insertMany<U extends Document = Document>(docs: Partial<U>[], options: ModelInsertManyOptions = {}): Promise<U[]> {
     const n = docs.length;
     const t: typeof docs = new Array(n);
 
     // Apply before insert handler to each document.
     for (let i = 0; i < n; i++) {
-      t[i] = await this.beforeInsert<U>(sanitizeQuery<U>(this.schema, docs[i]), options);
+      t[i] = await this.beforeInsert<U>(sanitizeQuery<U>(this.schema, docs[i]), { strict: true, ...options });
     }
 
     log(`${this.schema.model}.insertMany:`, JSON.stringify(t, null, 2));
@@ -388,14 +402,14 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndUpdate}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
    */
-  static async updateOne<U extends Document = Document>(query: Query<U>, update: Partial<U> | Update<U>, { returnDoc = false, ...options }: ModelUpdateOneOptions = {}): Promise<null | boolean | Partial<U>> {
+  static async updateOne<U extends Document = Document>(query: Query<U>, update: Partial<U> | Update<U>, options: ModelUpdateOneOptions = {}): Promise<null | boolean | Partial<U>> {
     const collection = await this.getCollection();
-    const [q, u] = await this.beforeUpdate<U>(query, update, { returnDoc, ...options });
+    const [q, u] = await this.beforeUpdate<U>(query, update, options);
 
     log(`${this.schema.model}.updateOne:`, JSON.stringify(q), JSON.stringify(u));
 
-    if (returnDoc) {
-      const res = await collection.findOneAndUpdate(q, u, { ...options, returnOriginal: !returnDoc });
+    if (options.returnDoc === true) {
+      const res = await collection.findOneAndUpdate(q, u, { returnOriginal: false, ...options });
 
       log(`${this.schema.model}.updateOne results:`, JSON.stringify(res));
 
@@ -408,7 +422,7 @@ abstract class Model {
       return res.value as Partial<U>;
     }
     else {
-      const res = await collection.updateOne(q, u, { ...options });
+      const res = await collection.updateOne(q, u, options);
 
       log(`${this.schema.model}.updateOne results:`, JSON.stringify(res));
 
@@ -422,73 +436,81 @@ abstract class Model {
     }
   }
 
-  // /**
-  //  * Updates multiple documents matched by `query` with `update` object.
-  //  *
-  //  * @param {Object|string|ObjectID} query - @see module:mongodb.Collection#updateMany
-  //  * @param {Object} update - @see module:mongodb.Collection#updateMany
-  //  * @param {Object} [options] - Additional options, conditions apply based on
-  //  *                             the `options.returnDocs` flag.
-  //  * @param {boolean} [options.returnDocs] - If `true`, `options` will refer to
-  //  *                                         module:mongodb.Collection#findOneAndUpdate,
-  //  *                                         otherwise `options` refer to
-  //  *                                         module:mongodb.Collection#updateMany.
-  //  *
-  //  * @return {Promise<boolean|Object[]>} If `returnDocs` is `true`, the
-  //  *                                     fulfillment value will be an array of
-  //  *                                     updated docs. If not, then `true` if
-  //  *                                     updates were successful, `false`
-  //  *                                     otherwise.
-  //  *
-  //  * @see {@link https://docs.mongodb.com/manual/reference/operator/update-field/}
-  //  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#updateMany}
-  //  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndUpdate}
-  //  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
-  //  */
-  // static async updateMany(query, update, { returnDocs = false, upsert = false, ...options } = {}) {
-  //   assert.type(query, [Object, String, ObjectID]);
-  //   assert.type(update, Object);
-  //   assert.type(returnDocs, Boolean);
+  /**
+   * Updates multiple documents matched by `query` with `update` object.
+   *
+   * @param query - Query for document to update.
+   * @param update - Either an object whose key/value pair represent the fields
+   *                 belonging to this model to update to, or an update query.
+   * @param options - @see ModelUpdateManyOptions
+   *
+   * @return The updated doc if `returnDocs` is set to `true`, else `true` or
+   *         `false` depending if the operation was successful or not.
+   *
+   * @see {@link https://docs.mongodb.com/manual/reference/operator/update-field/}
+   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#updateMany}
+   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndUpdate}
+   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
+   */
+  static async updateMany<U extends Document = Document>(query: Query<U>, update: Partial<U> | Update<U>, options: ModelUpdateManyOptions = {}): Promise<Partial<U>[] | boolean> {
+    const [q, u] = await this.beforeUpdate<U>(query, update, options);
 
-  //   query = sanitizeQuery(this.schema, query);
-  //   update = sanitizeQuery(this.schema, update);
-  //   update = await this.beforeUpdate(query, update, { ...options });
+    log(`${this.schema.model}.updateMany:`, JSON.stringify(q), JSON.stringify(u));
 
-  //   log.debug(`${this.schema.model}.updateMany:`, JSON.stringify(query, null, 2), JSON.stringify(update, null, 2));
+    const collection = await this.getCollection();
 
-  //   const collection = await this.getCollection();
+    if (options.returnDocs === true) {
+      const docs = await this.findMany<U>(q);
+      const n = docs.length;
+      const results: Partial<U>[] = [];
 
-  //   if (returnDocs) {
-  //     const docs = await this.findMany(query);
-  //     const results = [];
+      if (n <= 0) {
+        if (options.upsert === true) {
+          const res = await this.updateOne(query, update, { ...options, returnDoc: true });
 
-  //     for (let i = 0; i < docs.length; i++) {
-  //       const doc = docs[i];
-  //       const result = await collection.findOneAndUpdate({ _id: doc._id }, update, { returnOriginal: !returnDocs, ...options });
-  //       assert(result.ok === 1);
-  //       assert(result.value);
-  //       results.push(result.value);
-  //     }
+          if (is.boolean(res) || is.null_(res)) {
+            throw new Error('Error upserting document during an updateMany operation');
+          }
 
-  //     log.debug(`${this.schema.model}.updateMany results:`, JSON.stringify(results, null, 2));
+          results.push(res);
+        }
 
-  //     for (let i = 0; i < results.length; i++) {
-  //       await this.afterUpdate(results[i], update, undefined);
-  //     }
+        return results;
+      }
+      else {
+        for (let i = 0; i < n; i++) {
+          const doc = docs[i];
+          const result = await collection.findOneAndUpdate({ _id: doc._id }, u, { returnOriginal: false, ...options });
 
-  //     return results;
-  //   }
-  //   else {
-  //     const results = await collection.updateMany(query, update, { ...options });
+          assert(result.ok === 1);
+          assert(result.value);
 
-  //     log.debug(`${this.schema.model}.updateMany results:`, JSON.stringify(results, null, 2));
+          results.push(result.value);
+        }
 
-  //     assert(results.result.ok === 1);
-  //     if (results.result.n <= 0) return false;
-  //     await this.afterUpdate(undefined, update, results);
-  //     return true;
-  //   }
-  // }
+        log(`${this.schema.model}.updateMany results:`, JSON.stringify(results));
+
+        for (let i = 0; i < n; i++) {
+          await this.afterUpdate<U>(q, u, results[i]);
+        }
+
+        return results;
+      }
+    }
+    else {
+      const results = await collection.updateMany(q, u, options);
+
+      log(`${this.schema.model}.updateMany results:`, JSON.stringify(results));
+
+      assert(results.result.ok === 1);
+
+      if (results.result.n <= 0) return false;
+
+      await this.afterUpdate(q, u);
+
+      return true;
+    }
+  }
 
   // /**
   //  * Deletes one document matched by `query`.
@@ -658,7 +680,7 @@ abstract class Model {
    * order:
    *   1. Each field is defined in the schema.
    *   2. Each field value conforms to the defined field specs.
-   *   3. Unique indexes are enforced (only if `checkUniqueIndex` is enabled).
+   *   3. Unique indexes are enforced (only if `ignoreUniqueIndex` is enabled).
    *   4. No required fields are missing (only if `strict` is enabled).
    *
    * @param doc - The doc to validate.
@@ -666,7 +688,7 @@ abstract class Model {
    *
    * @return `true` will be fulfilled if all tests have passed.
    */
-  static async validateDocument<U extends Document = Document>(doc: Partial<U>, { strict = false, checkUniqueIndex = true }: ModelValidateDocumentOptions = {}): Promise<boolean> {
+  static async validateDocument<U extends Document = Document>(doc: Partial<U>, options: ModelValidateDocumentOptions = {}): Promise<boolean> {
     for (const key in doc) {
       // Skip validation for fields `_id`, `updatedAt` and `createdAt` since
       // they are automatically generated.
@@ -689,8 +711,8 @@ abstract class Model {
       }
     }
 
-    // #3 Check for unique fields only if `checkUniqueIndex` is `true`.
-    if (checkUniqueIndex && this.schema.indexes) {
+    // #3 Check for unique fields only if `ignoreUniqueIndex` is not `true`.
+    if ((options.ignoreUniqueIndex !== true) && this.schema.indexes) {
       const n = this.schema.indexes.length;
 
       for (let i = 0; i < n; i++) {
@@ -707,7 +729,7 @@ abstract class Model {
     }
 
     // #4 Check for required fields if `strict` is `true`.
-    if (strict) {
+    if (options.strict) {
       for (const key in this.schema.fields) {
         if (!this.schema.fields.hasOwnProperty(key)) continue;
 
@@ -730,11 +752,11 @@ abstract class Model {
    *
    * @return Document to be inserted/upserted to the database.
    */
-  private static async beforeInsert<U extends Document = Document>(doc: Partial<U>, { ignoreTimestamps = false, strict = true, checkUniqueIndex = false }: ModelBeforeInsertOptions = {}): Promise<Partial<U>> {
+  private static async beforeInsert<U extends Document = Document>(doc: Partial<U>, options: ModelInsertOneOptions | ModelInsertManyOptions = {}): Promise<Partial<U>> {
     let o = _.cloneDeep(doc);
 
     // Unless specified, always renew the `createdAt` and `updatedAt` fields.
-    if (this.schema.timestamps && !ignoreTimestamps) {
+    if ((this.schema.timestamps === true) && (options.ignoreTimestamps !== true)) {
       o.createdAt = new Date();
       o.updatedAt = new Date();
     }
@@ -758,7 +780,7 @@ abstract class Model {
     o = await this.formatDocument<U>(o);
 
     // Finally, validate the document as a final sanity check.
-    await this.validateDocument<U>(o, { strict, checkUniqueIndex });
+    await this.validateDocument<U>(o, { ignoreUniqueIndex: true, ...options });
 
     return o;
   }
@@ -782,7 +804,7 @@ abstract class Model {
    *
    * @return The modified update to apply.
    */
-  private static async beforeUpdate<U extends Document = Document>(query: Query<U>, update: Partial<U> | Update<U>, { upsert = false, ignoreTimestamps = false, strict = false }: ModelBeforeUpdateOptions & ModelBeforeInsertOptions = {}): Promise<[Partial<U>, Update<U>]> {
+  private static async beforeUpdate<U extends Document = Document>(query: Query<U>, update: Partial<U> | Update<U>, options: ModelUpdateOneOptions | ModelUpdateManyOptions = {}): Promise<[Partial<U>, Update<U>]> {
     // First sanitize the inputs. We want to be able to make sure the query is
     // valid and that the update object is a proper update query.
     let q = sanitizeQuery<U>(this.schema, query);
@@ -808,8 +830,8 @@ abstract class Model {
     // an insertion. We also need to tell the database to save all fields in the
     // query to the database as well, unless they are already in the update
     // query.
-    if (upsert) {
-      q = await this.beforeInsert<U>(q, { strict });
+    if (options.upsert === true) {
+      q = await this.beforeInsert<U>(q, options);
 
       u.$setOnInsert = _.omit(q, [
         'updatedAt',
@@ -821,7 +843,7 @@ abstract class Model {
     if (!u.$set) u.$set = {};
 
     // Add updated timestamps if applicable.
-    if (this.schema.timestamps && !ignoreTimestamps) {
+    if ((this.schema.timestamps === true) && (options.ignoreTimestamps !== true)) {
       u.$set.updatedAt = new Date();
     }
 
@@ -829,7 +851,7 @@ abstract class Model {
     u.$set = await this.formatDocument<U>(u.$set as Partial<U>);
 
     // Validate all fields in the update query.
-    await this.validateDocument<U>(u.$set as Partial<U>, { checkUniqueIndex: false });
+    await this.validateDocument<U>(u.$set as Partial<U>, { ignoreUniqueIndex: true, ...options });
 
     return [q, u];
   }
@@ -840,7 +862,7 @@ abstract class Model {
    *
    * @param query - The original query for the document to update.
    * @param update - The update descriptor applied.
-   * @param doc - The updated doc if available..
+   * @param doc - The updated doc if available.
    */
   private static async afterUpdate<U extends Document = Document>(query: Query<U>, update: Update<U>, doc?: Partial<U>) {
 
