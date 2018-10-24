@@ -211,4 +211,56 @@ describe('core/Model', () => {
     assert(res === true);
     assert(!is.nullOrUndefined(await Baz.findOne<BazDocument>({ aString: s })));
   });
+
+  it('can delete a doc', async () => {
+    const s = Faker.random.alphaNumeric(10);
+    const doc = await Baz.insertOne<BazDocument>({ aString: s });
+
+    assert(!is.null_(await Baz.findOne<BazDocument>({ aString: s })));
+
+    const res = await Baz.deleteOne<BazDocument>({ aString: s });
+
+    assert(res === true);
+    assert(is.null_(await Baz.findOne<BazDocument>({ aString: s })));
+  });
+
+  it('can delete a doc and return the deleted doc', async () => {
+    const s = Faker.random.alphaNumeric(10);
+    const doc = await Baz.insertOne<BazDocument>({ aString: s });
+
+    assert(!is.null_(await Baz.findOne<BazDocument>({ aString: s })));
+
+    const objectId = doc!._id!;
+
+    const res = await Baz.deleteOne<BazDocument>({ aString: s }, { returnDoc: true });
+
+    assert(!is.null_(res));
+    assert((res as Partial<BazDocument>)._id!.equals(objectId));
+    assert(is.null_(await Baz.findOne<BazDocument>({ aString: s })));
+  });
+
+  it('can delete multiple docs', async () => {
+    const s = Faker.random.alphaNumeric(10);
+
+    await Baz.insertMany<BazDocument>([{ aString: s }, { aString: s }, { aString: s }]);
+
+    assert((await Baz.count<BazDocument>({ aString: s })) === 3);
+
+    await Baz.deleteMany<BazDocument>({ aString: s });
+
+    assert((await Baz.count<BazDocument>({ aString: s })) === 0);
+  });
+
+  it('can delete multiple docs and return the deleted docs', async () => {
+    const s = Faker.random.alphaNumeric(10);
+
+    await Baz.insertMany<BazDocument>([{ aString: s }, { aString: s }, { aString: s }]);
+
+    assert((await Baz.count<BazDocument>({ aString: s })) === 3);
+
+    const res = await Baz.deleteMany<BazDocument>({ aString: s }, { returnDocs: true });
+
+    assert(is.array(res));
+    assert((res as Partial<BazDocument>[]).length === 3);
+  });
 });

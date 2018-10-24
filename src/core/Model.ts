@@ -49,9 +49,6 @@ interface ModelValidateDocumentOptions {
   ignoreUniqueIndex?: boolean;
 }
 
-/**
- * Options for Model.findOne.
- */
 interface ModelFindOneOptions extends CollectionAggregationOptions {}
 
 interface ModelFindManyOptions extends CollectionAggregationOptions {}
@@ -111,6 +108,8 @@ interface ModelDeleteManyOptions extends CommonOptions {
    */
   returnDocs?: boolean;
 }
+
+interface ModelCountOptions extends ModelFindManyOptions {}
 
 abstract class Model {
   /**
@@ -644,7 +643,7 @@ abstract class Model {
    *
    * @return The total number of documents found.
    */
-  static async count(query: Query, options?: CollectionAggregationOptions): Promise<number> {
+  static async count<U extends Document = Document>(query: Query<U>, options: ModelCountOptions = {}): Promise<number> {
     const results = await this.findMany(query, options);
 
     return results.length;
