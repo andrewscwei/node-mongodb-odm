@@ -6,6 +6,7 @@ export interface BazDocument extends Document {
   aNumber: number;
   aBoolean: boolean;
   aFormattedString: string;
+  anEncryptedString: string;
 }
 
 export const BazSchema: Schema<BazDocument> = {
@@ -16,6 +17,7 @@ export const BazSchema: Schema<BazDocument> = {
     aNumber: { type: Number, default: () => Math.random() },
     aBoolean: { type: Boolean, default: true },
     aFormattedString: { type: String, format: (v: string) => v.toUpperCase() },
+    anEncryptedString: { type: String, encrypted: true },
   },
 };
 

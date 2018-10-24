@@ -1,4 +1,5 @@
 import assert from 'assert';
+import bcrypt from 'bcrypt';
 import { describe, it } from 'mocha';
 import { ObjectID } from 'mongodb';
 import * as db from '../..';
@@ -52,48 +53,50 @@ describe('core/Model', () => {
 
   it('can format documents according to the schema', async () => {
     const t: Partial<BazDocument> = { aFormattedString: 'foo' };
-    const f = await Baz.formatDocument(t);
+    const res = await Baz.formatDocument(t);
 
-    assert(Baz.schema.fields.aFormattedString.format!(t.aFormattedString) === f.aFormattedString);
+    assert(Baz.schema.fields.aFormattedString.format!(t.aFormattedString) === res.aFormattedString);
   });
 
-  // it('can encrypt document fields according to the schema', async () => {
+  it('can encrypt document fields according to the schema', async () => {
+    const t: Partial<BazDocument> = { anEncryptedString: 'foo' };
+    const res = await Baz.formatDocument(t);
+    assert(await bcrypt.compare('foo', res.anEncryptedString!));
+  });
 
-  // });
+  it('should automatically generate default values on insert', async () => {
+    const doc = await Baz.insertOne({ aString: 'foo' });
+    assert(doc!.aBoolean === Baz.schema.fields.aBoolean.default);
+  });
 
-  // it('should automatically generate default values on insert', async () => {
-  //   const doc = await ExampleModel.insertOne({ aString: 'foo' });
-  //   assert(doc!.aBoolean === ExampleSchema.fields.aBoolean.default);
-  // });
+  it('should automatically format values on insert according to the schema', async () => {
+  });
 
-  // it('should automatically format values on insert according to the schema', async () => {
-  // });
+  it('should automatically format values on update according to the schema', async () => {
 
-  // it('should automatically format values on update according to the schema', async () => {
+  });
 
-  // });
+  it('should automatically format values on upsert according to the schema', async () => {
 
-  // it('should automatically format values on upsert according to the schema', async () => {
+  });
 
-  // });
+  it('can find a document', async () => {
 
-  // it('can find a document', async () => {
+  });
 
-  // });
+  it('can find multiple documents', async () => {
 
-  // it('can find multiple documents', async () => {
+  });
 
-  // });
+  it('can find a random document', async () => {
 
-  // it('can find a random document', async () => {
+  });
 
-  // });
+  it('can count the total number of documents in the collection', async () => {
 
-  // it('can count the total number of documents in the collection', async () => {
+  });
 
-  // });
+  it('can generate random required fields', async () => {
 
-  // it('can generate random required fields', async () => {
-
-  // });
+  });
 });
