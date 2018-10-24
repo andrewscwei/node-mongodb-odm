@@ -87,7 +87,7 @@ interface ModelUpdateOneOptions extends ModelInsertOneOptions, FindOneAndReplace
 
 interface ModelUpdateManyOptions extends CommonOptions, FindOneAndReplaceOption {
   /**
-   * Specifies whether updated doc is returned when update completes.
+   * Specifies whether updated docs are returned when update completes.
    */
   returnDocs?: boolean;
 
@@ -96,6 +96,20 @@ interface ModelUpdateManyOptions extends CommonOptions, FindOneAndReplaceOption 
    * automatically generated before insertion.
    */
   ignoreTimestamps?: boolean;
+}
+
+interface ModelDeleteOneOptions extends CommonOptions {
+  /**
+   * Specifies whether deleted doc is returned when deletion completes.
+   */
+  returnDoc?: boolean;
+}
+
+interface ModelDeleteManyOptions extends CommonOptions {
+  /**
+   * Specifies whether deleted docs are returned when deletion completes.
+   */
+  returnDocs?: boolean;
 }
 
 abstract class Model {
@@ -277,10 +291,8 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~insertWriteOpResult}
    */
   static async insertOne<U extends Document = Document>(doc?: Partial<U>, options?: ModelInsertOneOptions): Promise<null | Partial<U>> {
-    let t = doc ? sanitizeQuery(this.schema, doc) : this.randomFields();
-
     // Apply before insert handler.
-    t = await this.beforeInsert(t, { strict: true, ...options });
+    const t = await this.beforeInsert<U>(doc || this.randomFields<U>(), { strict: true, ...options });
 
     log(`${this.schema.model}.insertOne:`, JSON.stringify(t, null, 2));
 
@@ -322,7 +334,7 @@ abstract class Model {
 
     // Apply before insert handler to each document.
     for (let i = 0; i < n; i++) {
-      t[i] = await this.beforeInsert<U>(sanitizeQuery<U>(this.schema, docs[i]), { strict: true, ...options });
+      t[i] = await this.beforeInsert<U>(docs[i]);
     }
 
     log(`${this.schema.model}.insertMany:`, JSON.stringify(t, null, 2));
@@ -344,46 +356,6 @@ abstract class Model {
     return o;
   }
 
-  // /**
-  //  * Replaces one document with another. If `replacement` is not specified,
-  //  * one with random info will be generated.
-  //  *
-  //  * @param query - @see module:mongodb.Collection#findOneAndReplace
-  //  * @param replacement - @see module:mongodb.Collection#findOneAndReplace
-  //  * @param {Object} [options] - @see module:mongodb.Collection#findOneAndReplace
-  //  *
-  //  * @return {Promise<Model>} The replaced document as the fulfillment value.
-  //  *                           `null` if no document was replaced.
-  //  *
-  //  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndReplace}
-  //  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~findAndModifyWriteOpResult}
-  //  */
-  // static async replaceOne(query: Query, replacement: Document = this.randomFields(), options?: FindOneAndReplaceOption) {
-  //   query = sanitizeQuery(this.schema, query);
-  //   replacement = await this.beforeInsert(sanitizeQuery(this.schema, replacement), options);
-
-  //   await this.beforeDelete(query, options);
-
-  //   if (!options) options = {};
-  //   options.returnOriginal = true;
-
-  //   log(`${this.schema.model}.replaceOne:`, JSON.stringify(query, null, 2), JSON.stringify(replacement, null, 2));
-
-  //   const collection = await this.getCollection();
-  //   const results = await collection.findOneAndReplace(query, replacement, options);
-
-  //   log(`${this.schema.model}.replaceOne results:`, JSON.stringify(results, null, 2));
-
-  //   assert(results.ok === 1);
-
-  //   if (!results.value) return null;
-
-  //   await this.afterDelete(results.value, undefined);
-  //   await this.afterInsert(await this.findOne(replacement));
-
-  //   return results.value;
-  // }
-
   /**
    * Updates one document matched by `query` with `update` object. Note that if
    * upserting, all *required* fields must be in the `query` param instead of
@@ -395,7 +367,7 @@ abstract class Model {
    * @param options - @see ModelUpdateOneOptions
    *
    * @return The updated doc if `returnDoc` is set to `true`, else `true` or
-   *         `false` depending if the operation was successful or not.
+   *         `false` depending on whether or not the operation was successful.
    *
    * @see {@link https://docs.mongodb.com/manual/reference/operator/update-field/}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#updateOne}
@@ -444,8 +416,8 @@ abstract class Model {
    *                 belonging to this model to update to, or an update query.
    * @param options - @see ModelUpdateManyOptions
    *
-   * @return The updated doc if `returnDocs` is set to `true`, else `true` or
-   *         `false` depending if the operation was successful or not.
+   * @return The updated docs if `returnDocs` is set to `true`, else `true` or
+   *         `false` depending on whether or not the operation was successful.
    *
    * @see {@link https://docs.mongodb.com/manual/reference/operator/update-field/}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#updateMany}
@@ -512,119 +484,157 @@ abstract class Model {
     }
   }
 
+  /**
+   * Deletes one document matched by `query`.
+   *
+   * @param query - Query for document to delete.
+   * @param options @see ModelDeleteOneOptions
+   *
+   * @return The deleted doc if `returnDoc` is set to `true`, else `true` or
+   *         `false` depending on whether or not the operation was successful.
+   *
+   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#deleteOne}
+   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndDelete}
+   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~deleteWriteOpResult}
+   */
+  static async deleteOne<U extends Document = Document>(query: Query<U>, options: ModelDeleteOneOptions = {}): Promise<Partial<U> | boolean | null> {
+    const q = await this.beforeDelete<U>(query, options);
+
+    log(`${this.schema.model}.deleteOne:`, JSON.stringify(query));
+
+    const collection = await this.getCollection();
+
+    if (options.returnDoc === true) {
+      const results = await collection.findOneAndDelete(q);
+
+      log(`${this.schema.model}.deleteOne results:`, JSON.stringify(results));
+
+      assert(results.ok === 1);
+
+      if (!results.value) {
+        return null;
+      }
+
+      await this.afterDelete<U>(results.value);
+
+      return results.value;
+    }
+    else {
+      const results = await collection.deleteOne(q, options);
+
+      log(`${this.schema.model}.deleteOne results:`, JSON.stringify(results));
+
+      assert(results.result.ok === 1);
+
+      if (!is.number(results.result.n) || (results.result.n <= 0)) {
+        return false;
+      }
+
+      await this.afterDelete<U>();
+
+      return true;
+    }
+  }
+
+  /**
+   * Deletes multiple documents matched by `query`.
+   *
+   * @param query - Query to match documents for deletion.
+   * @param options - @see ModelDeleteManyOptions
+   *
+   * @return The deleted docs if `returnDocs` is set to `true`, else `true` or
+   *         `false` depending on whether or not the operation was successful.
+   *
+   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#deleteMany}
+   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndDelete}
+   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~deleteWriteOpResult}
+   */
+  static async deleteMany<U extends Document = Document>(query: Query<U>, options: ModelDeleteManyOptions = {}): Promise<boolean | Partial<U>[]> {
+    const q = await this.beforeDelete(query, options);
+
+    log(`${this.schema.model}.deleteMany:`, JSON.stringify(q));
+
+    const collection = await this.getCollection();
+
+    if (options.returnDocs === true) {
+      const docs = await this.findMany(q);
+      const n = docs.length;
+      const results: Partial<U>[] = [];
+
+      for (let i = 0; i < n; i++) {
+        const doc = docs[i];
+        const result = await collection.findOneAndDelete({ _id: doc._id });
+
+        assert(result.ok === 1);
+
+        if (result.value) {
+          results.push(result.value);
+        }
+      }
+
+      log(`${this.schema.model}.deleteMany results:`, JSON.stringify(results));
+
+      const m = results.length;
+
+      for (let i = 0; i < m; i++) {
+        await this.afterDelete<U>(results[i]);
+      }
+
+      return results;
+    }
+    else {
+      const results = await collection.deleteMany(q, { ...options });
+
+      log(`${this.schema.model}.deleteMany results:`, JSON.stringify(results));
+
+      assert(results.result.ok === 1);
+
+      if (!is.number(results.result.n) || (results.result.n <= 0)) return false;
+
+      await this.afterDelete();
+
+      return true;
+    }
+  }
+
   // /**
-  //  * Deletes one document matched by `query`.
+  //  * Replaces one document with another. If `replacement` is not specified,
+  //  * one with random info will be generated.
   //  *
-  //  * @param {Object} query - @see module:mongodb.Collection#deleteMany
-  //  * @param {Object} [options] - @see module:mongodb.Collection#findOneAndDelete
-  //  *                             @see module:mongodb.Collection#deleteOne
-  //  * @param {boolean} [options.returnDocs] - If `true`, `options` will refer to
-  //  *                                         module:mongodb.Collection#findOneAndDelete,
-  //  *                                         otherwise `options` refer to
-  //  *                                         module:mongodb.Collection#deleteOne.
+  //  * @param query - @see module:mongodb.Collection#findOneAndReplace
+  //  * @param replacement - @see module:mongodb.Collection#findOneAndReplace
+  //  * @param {Object} [options] - @see module:mongodb.Collection#findOneAndReplace
   //  *
-  //  * @return {Promise<boolean|?Object>} If `returnDocs` is specified, the
-  //  *                                    deleted doc will be the fulfillment
-  //  *                                    value. If not, then `true` if delete was
-  //  *                                    successful, `false` otherwise.
+  //  * @return {Promise<Model>} The replaced document as the fulfillment value.
+  //  *                           `null` if no document was replaced.
   //  *
-  //  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#deleteOne}
-  //  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndDelete}
-  //  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~deleteWriteOpResult}
+  //  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndReplace}
+  //  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~findAndModifyWriteOpResult}
   //  */
-  // static async deleteOne(query, { returnDocs = false, ...options } = {}) {
-  //   assert.type(query, [Object, String, ObjectID]);
-  //   assert.type(returnDocs, Boolean);
-
+  // static async replaceOne(query: Query, replacement: Document = this.randomFields(), options?: FindOneAndReplaceOption) {
   //   query = sanitizeQuery(this.schema, query);
-  //   await this.beforeDelete(query, { ...options });
+  //   replacement = await this.beforeInsert(replacement, options);
 
-  //   log.debug(`${this.schema.model}.deleteOne:`, JSON.stringify(query, null, 2));
+  //   await this.beforeDelete(query, options);
+
+  //   if (!options) options = {};
+  //   options.returnOriginal = true;
+
+  //   log(`${this.schema.model}.replaceOne:`, JSON.stringify(query, null, 2), JSON.stringify(replacement, null, 2));
 
   //   const collection = await this.getCollection();
-  //   const results = returnDocs ? await collection.findOneAndDelete(query, { returnOriginal: !returnDocs, ...options }) : await collection.deleteOne(query, { ...options });
+  //   const results = await collection.findOneAndReplace(query, replacement, options);
 
-  //   log.debug(`${this.schema.model}.deleteOne results:`, JSON.stringify(results, null, 2));
+  //   log(`${this.schema.model}.replaceOne results:`, JSON.stringify(results, null, 2));
 
-  //   assert(returnDocs ? results.ok === 1 : results.result.ok === 1);
+  //   assert(results.ok === 1);
 
-  //   if (returnDocs && !results.value) {
-  //     return null;
-  //   }
-  //   else if (!returnDocs && results.result.n <= 0) {
-  //     return false;
-  //   }
+  //   if (!results.value) return null;
 
-  //   await this.afterDelete(returnDocs ? results.value : undefined, returnDocs ? undefined : results);
+  //   await this.afterDelete(results.value, undefined);
+  //   await this.afterInsert(await this.findOne(replacement));
 
-  //   return returnDocs ? results.value : true;
-  // }
-
-  // /**
-  //  * Deletes multiple documents matched by `query`.
-  //  *
-  //  * @param {Object} query - @see module:mongodb.Collection#deleteMany
-  //  * @param {Object} [options] - @see module:mongodb.Collection#findOneAndDelete
-  //  *                             @see module:mongodb.Collection#deleteOne
-  //  * @param {boolean} [options.returnDocs] - If `true`, `options` will refer to
-  //  *                                         module:mongodb.Collection#findOneAndDelete,
-  //  *                                         otherwise `options` refer to
-  //  *                                         module:mongodb.Collection#deleteMany.
-  //  *
-  //  * @return {Promise<boolean|Object[]>} If `returnDocs` is `true`, the
-  //  *                                     fulfillment value will be an array of
-  //  *                                     deleted docs. If not, then `true` if
-  //  *                                     deletions were successful, `false`
-  //  *                                     otherwise.
-  //  *
-  //  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#deleteMany}
-  //  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndDelete}
-  //  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~deleteWriteOpResult}
-  //  */
-  // static async deleteMany(query, { returnDocs = false, ...options } = {}) {
-  //   assert.type(query, [Object, String, ObjectID]);
-  //   assert.type(options, Object, true);
-  //   assert.key(options, 'returnDocs', Boolean, true);
-
-  //   query = sanitizeQuery(this.schema, query);
-  //   await this.beforeDelete(query, { ...options });
-
-  //   log.debug(`${this.schema.model}.deleteMany:`, JSON.stringify(query, null, 2));
-
-  //   const collection = await this.getCollection();
-
-  //   if (returnDocs) {
-  //     const docs = await this.findMany(query);
-  //     const results = [];
-
-  //     for (let i = 0; i < docs.length; i++) {
-  //       const doc = docs[i];
-  //       const result = await collection.findOneAndDelete({ _id: doc._id }, { returnOriginal: !returnDocs, ...options });
-  //       assert(result.ok === 1);
-
-  //       if (result.value) {
-  //         results.push(result.value);
-  //       }
-  //     }
-
-  //     log.debug(`${this.schema.model}.deleteMany results:`, JSON.stringify(results, null, 2));
-
-  //     for (let i = 0; i < results.length; i++) {
-  //       await this.afterDelete(results[i], undefined);
-  //     }
-
-  //     return results;
-  //   }
-  //   else {
-  //     const results = await collection.deleteMany(query, { ...options });
-
-  //     log.debug(`${this.schema.model}.deleteMany results:`, JSON.stringify(results, null, 2));
-
-  //     assert(results.result.ok === 1);
-  //     if (results.result.n <= 0) return false;
-  //     await this.afterDelete(undefined, results);
-  //     return true;
-  //   }
+  //   return results.value;
   // }
 
   /**
@@ -729,7 +739,7 @@ abstract class Model {
     }
 
     // #4 Check for required fields if `strict` is `true`.
-    if (options.strict) {
+    if (options.strict === true) {
       for (const key in this.schema.fields) {
         if (!this.schema.fields.hasOwnProperty(key)) continue;
 
@@ -753,7 +763,7 @@ abstract class Model {
    * @return Document to be inserted/upserted to the database.
    */
   private static async beforeInsert<U extends Document = Document>(doc: Partial<U>, options: ModelInsertOneOptions | ModelInsertManyOptions = {}): Promise<Partial<U>> {
-    let o = _.cloneDeep(doc);
+    let o = sanitizeDocument<U>(this.schema, doc);
 
     // Unless specified, always renew the `createdAt` and `updatedAt` fields.
     if ((this.schema.timestamps === true) && (options.ignoreTimestamps !== true)) {
@@ -800,7 +810,7 @@ abstract class Model {
    *
    * @param query - Query for document to update.
    * @param update - The update to apply.
-   * @param options - @see ModelUpdateOneOptions
+   * @param options - @see ModelUpdateOneOptions, @see ModelUpdateManyOptions
    *
    * @return The modified update to apply.
    */
@@ -868,49 +878,51 @@ abstract class Model {
 
   }
 
-  // /**
-  //  * Handler invoked right before a deletion.
-  //  *
-  //  * @param {Object|string|ObjectID} query - @see Model.delete
-  //  * @param {Object} [options] - @see Model.delete
-  //  */
-  // static async beforeDelete(query, options) {
+  /**
+   * Handler invoked right before a deletion.
+   *
+   * @param query - Query for document to delete.
+   * @param options - @see ModelDeleteOneOptions, @see ModelDeleteManyOptions
+   */
+  private static async beforeDelete<U extends Document = Document>(query: Query<U>, options: ModelDeleteOneOptions | ModelDeleteManyOptions): Promise<Partial<U>> {
+    const q = sanitizeQuery<U>(this.schema, query);
 
-  // }
+    return q;
+  }
 
-  // /**
-  //  * Handler invoked right after a deletion.
-  //  *
-  //  * @param {Object} doc - The deleted doc if Model.deleteOne was
-  //  *                       used. Otherwise it is `undefined`.
-  //  * @param {Object} results - The results of the delete operation if
-  //  *                           Model#deleteOne was used. Otherwise it is
-  //  *                           `undefined`.
-  //  */
-  // static async afterDelete(doc, results) {
-  //   // If `cascade` property is specified, iterate in the order of the array and
-  //   // remove documents where the foreign field equals the `_id` of this
-  //   // document.
-  //   // NOTE: This only works for first-level foreign keys.
-  //   if (doc && doc._id && this.schema.cascade) {
-  //     const n = this.schema.cascade.length;
+  /**
+   * Handler invoked right after a deletion.
+   *
+   * @param doc - The deleted doc, if available.
+   *
+   * @todo Cascade deletion only works for first-level foreign keys so far.
+   */
+  private static async afterDelete<U extends Document = Document>(doc?: Partial<U>) {
+    // If `cascade` property is specified, iterate in the order of the array and
+    // remove documents where the foreign field equals the `_id` of this doc.
+    if (doc && doc._id && this.schema.cascade) {
+      const n = this.schema.cascade.length;
 
-  //     for (let i = 0; i < n; i++) {
-  //       const cascadeRef = this.schema.cascade[i];
-  //       const cascadeModel = db.getModel(cascadeRef);
+      for (let i = 0; i < n; i++) {
+        const cascadeRef = this.schema.cascade[i];
+        const cascadeModel = db.getModel(cascadeRef);
 
-  //       assert.range(cascadeModel, `Trying to cascade delete from model ${cascadeRef} but model is not found`);
+        assert(cascadeModel, `Trying to cascade delete from model ${cascadeRef} but model is not found`);
 
-  //       for (const key in cascadeModel.schema.fields) {
-  //         const field = cascadeModel.schema.fields[key];
-  //         if (field.ref === this.schema.model) {
-  //           log.debug(`Cascade deleting all ${cascadeRef} documents whose "${key}" field is ${doc._id}`);
-  //           await cascadeModel.deleteMany({ [`${key}`]: ObjectID(doc._id) });
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
+        for (const key in cascadeModel.schema.fields) {
+          if (!cascadeModel.schema.fields.hasOwnProperty(key)) continue;
+
+          const field = cascadeModel.schema.fields[key];
+
+          if (field.ref === this.schema.model) {
+            log(`Cascade deleting all ${cascadeRef} documents whose "${key}" field is ${doc._id}`);
+
+            await cascadeModel.deleteMany({ [`${key}`]: new ObjectID(doc._id) });
+          }
+        }
+      }
+    }
+  }
 }
 
 export default Model;
