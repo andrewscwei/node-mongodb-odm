@@ -210,12 +210,12 @@ export default abstract class Aggregation {
    * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/match/}
    */
   static matchStageFactory(schema: Schema, specs: MatchStageFactorySpecs, { prefix = '' }: MatchStageFactoryOptions = {}): AggregationPipeline {
-    const querifiedSpecs = sanitizeQuery(schema, specs, { strict: false });
+    const sanitized = sanitizeQuery(schema, specs, { strict: false });
     const query: { [key: string]: any } = {};
 
-    for (const key in querifiedSpecs) {
-      if (!querifiedSpecs.hasOwnProperty(key)) continue;
-      query[`${prefix}${key}`] = querifiedSpecs[key];
+    for (const key in sanitized) {
+      if (!sanitized.hasOwnProperty(key)) continue;
+      query[`${prefix}${key}`] = sanitized[key];
     }
 
     return [{ $match: query }];

@@ -4,10 +4,10 @@ import { IndexOptions, ObjectID } from 'mongodb';
 /**
  * Query for finding documents in the MongoDB database.
  */
-export type Query = string | ObjectID | Document;
+export type Query<T extends Document = Document> = string | ObjectID | Partial<T>;
 
 /**
- * JavaScript representation of MongoDB document.
+ * MongoDB document structure.
  */
 export interface Document {
   _id?: ObjectID;
@@ -19,7 +19,7 @@ export interface Document {
 /**
  * Document update descriptor.
  */
-export interface DocumentUpdate {
+export interface Update {
   [updateOperator: string]: Document;
 }
 
@@ -27,14 +27,6 @@ export interface DocumentUpdate {
  * Data type for acceptable field types.
  */
 export type FieldType = typeof ObjectID | typeof String | typeof Number | typeof Boolean | typeof Date | typeof Array | (typeof Number)[] | { [key: string]: FieldSpecs };
-
-/**
- * Object of key-value pairs, where the key is the name of the field and the
- * value is the value of the field.
- */
-export interface FieldCollection {
-  [field: string]: FieldValue;
-}
 
 /**
  * Data type for acceptable field values.
@@ -124,7 +116,7 @@ export interface FieldSpecs {
   random?: FieldRandomValueFunction;
 }
 
-export interface Schema<M = { [key: string]: any }> {
+export interface Schema<T extends Document = Document> {
   /**
    * Name of the model. Should be in upper cammel-case, i.e. `Model`.
    */
@@ -158,7 +150,7 @@ export interface Schema<M = { [key: string]: any }> {
    * @see FieldSpecs
    */
   fields: {
-    readonly [K in keyof M]: FieldSpecs;
+    readonly [F in keyof T]: FieldSpecs;
   };
 
   /**
@@ -188,7 +180,7 @@ export interface SchemaIndex {
   options?: IndexOptions;
 }
 
-export function isDocumentUpdate(value: any): value is DocumentUpdate {
+export function typeIsUpdate(value: any): value is Update {
   if (!is.object(value)) return false;
   return Object.keys(value).some(val => val.startsWith('$'));
 }

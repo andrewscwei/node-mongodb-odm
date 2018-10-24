@@ -12,7 +12,7 @@ import debug from 'debug';
 import _ from 'lodash';
 import { Collection, CollectionAggregationOptions, CollectionInsertManyOptions, CollectionInsertOneOptions, FindOneAndReplaceOption, ObjectID, ReplaceOneOptions } from 'mongodb';
 import * as db from '../';
-import { Document, DocumentUpdate, FieldSpecs, isDocumentUpdate, Query, Schema } from '../types';
+import { Document, FieldSpecs, Query, Schema, typeIsUpdate, Update } from '../types';
 import sanitizeQuery from '../utils/sanitizeQuery';
 import validateFieldValue from '../utils/validateFieldValue';
 import Aggregation, { AggregationPipeline, PipelineFactoryOptions, PipelineFactorySpecs } from './Aggregation';
@@ -30,9 +30,9 @@ interface ModelRandomFieldsOptions {
 }
 
 /**
- * Options for Model.validateOne.
+ * Options for Model.validateDocument.
  */
-interface ModelValidateOneOptions {
+interface ModelValidateDocumentOptions {
   /**
    * Tells the validation process to account for required fields. That is, if
    * this is `true` and some required fields are missing in the document to be
@@ -53,37 +53,13 @@ interface ModelValidateOneOptions {
  */
 interface ModelFindOneOptions extends CollectionAggregationOptions {}
 
-/**
- * Options for Model.findMany.
- */
 interface ModelFindManyOptions extends CollectionAggregationOptions {}
 
-/**
- * Options for Model.insertOne.
- */
-interface ModelInsertOneOptions extends ModelValidateOneOptions, CollectionInsertOneOptions {
-  /**
-   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are
-   * automatically generated before insertion.
-   */
-  ignoreTimestamps?: boolean;
-}
+interface ModelInsertOneOptions extends ModelBeforeInsertOptions, CollectionInsertOneOptions {}
 
-/**
- * Options for Model.insertMany.
- */
-interface ModelInsertManyOptions extends ModelValidateOneOptions, CollectionInsertManyOptions {
-  /**
-   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are
-   * automatically generated before insertion.
-   */
-  ignoreTimestamps?: boolean;
-}
+interface ModelInsertManyOptions extends CollectionInsertManyOptions {}
 
-/**
- * Options for Model.updateOne.
- */
-interface ModelUpdateOneOptions extends ModelInsertOneOptions, FindOneAndReplaceOption, ReplaceOneOptions {
+interface ModelUpdateOneOptions extends FindOneAndReplaceOption, ReplaceOneOptions {
   /**
    * Specifies whether upserting is enabled.
    */
@@ -95,12 +71,22 @@ interface ModelUpdateOneOptions extends ModelInsertOneOptions, FindOneAndReplace
   returnDocs?: boolean;
 }
 
+interface ModelUpdateManyOptions extends ModelUpdateOneOptions {}
+
+interface ModelBeforeInsertOptions extends ModelValidateDocumentOptions {
+  /**
+   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are
+   * automatically generated before insertion.
+   */
+  ignoreTimestamps?: boolean;
+}
+
+interface ModelBeforeUpdateOptions extends ModelUpdateOneOptions {}
+
 abstract class Model {
   /**
    * Schema of this model. This property must be overridden in the derived
    * class.
-   *
-   * @see withSchema()
    */
   static schema: Schema;
 
@@ -115,7 +101,7 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html}
    */
   static async getCollection(): Promise<Collection> {
-    if (!this.schema) throw new Error('This model has no schema, see the `withSchema` decorator');
+    if (!this.schema) throw new Error('This model has no schema, you must define this static proerty in the derived class');
 
     const dbInstance = await db.getInstance();
     const collection = await dbInstance.collection(this.schema.collection);
@@ -182,7 +168,7 @@ abstract class Model {
    * @return Aggregation pipeline.
    */
   static pipeline(queryOrSpecs?: Query | PipelineFactorySpecs, options?: PipelineFactoryOptions): AggregationPipeline {
-    if (!this.schema) throw new Error('This model has no schema, see the `withSchema` decorator');
+    if (!this.schema) throw new Error('This model has no schema, you must define this static proerty in the derived class');
 
     // Check if the argument conforms to aggregation factory specs.
     if (queryOrSpecs && Object.keys(queryOrSpecs).some(val => val.startsWith('$'))) {
@@ -192,201 +178,6 @@ abstract class Model {
     else {
       return Aggregation.pipelineFactory(this.schema, { $match: queryOrSpecs as Query }, options);
     }
-  }
-
-  /**
-   * Returns a document whose values are formatted according to the format
-   * function sdefined in the schema. If the field is marked as encrypted in the
-   * schema, this process takes care of that too.
-   *
-   * @param doc - Document to format.
-   *
-   * @return The formatted document as the fulfillment value.
-   */
-  static async formatDocumentPerSchema(doc: Document): Promise<Document> {
-    const formattedDoc = _.cloneDeep(doc);
-
-    for (const key in this.schema.fields) {
-      if (!formattedDoc.hasOwnProperty(key)) continue;
-
-      const fieldSpecs = this.schema.fields[key];
-
-      assert(fieldSpecs, new Error(`Field ${key} not found in schema`));
-
-      // If the schema has a certain formatting function defined for this field,
-      // apply it.
-      if (is.function_(fieldSpecs.format)) {
-        const formattedValue = await fieldSpecs.format(formattedDoc[key]);
-        formattedDoc[key] = formattedValue;
-      }
-
-      // If the schema indicates that this field is encrypted, encrypt it.
-      if (fieldSpecs.encrypted === true) {
-        formattedDoc[key] = await bcrypt.hash(`${formattedDoc[key]}`, 10);
-      }
-    }
-
-    return formattedDoc;
-  }
-
-  /**
-   * Handler invoked right before a document is inserted or upserted. This is a
-   * good place to apply custom formatting to the document before it is saved to
-   * the database.
-   *
-   * @param doc - The document to be inserted.
-   * @param options - Combined options for both Model.insertOne and Model.insertMany.
-   *
-   * @return Document to be inserted/upserted to the database.
-   */
-  static async beforeInsert(doc: Document, { ignoreTimestamps = false, strict = true, checkUniqueIndex = false, ...insertOneOptions }: ModelInsertOneOptions | ModelInsertManyOptions = {}): Promise<Document> {
-    let o = _.cloneDeep(doc);
-
-    // Unless specified, always renew the `createdAt` and `updatedAt` fields.
-    if (this.schema.timestamps && !ignoreTimestamps) {
-      o.createdAt = new Date();
-      o.updatedAt = new Date();
-    }
-
-    // Before inserting this document, go through each field and make sure that
-    // it has default values and that they are formatted correctly.
-    for (const key in this.schema.fields) {
-      if (!this.schema.fields.hasOwnProperty(key)) continue;
-      if (o.hasOwnProperty(key)) continue;
-
-      const fieldSpecs = this.schema.fields[key];
-
-      // Check if the field has a default value defined in the schema. If so,
-      // apply it.
-      if (is.undefined(fieldSpecs.default)) continue;
-
-      o[key] = (is.function_(fieldSpecs.default)) ? fieldSpecs.default() : fieldSpecs.default;
-    }
-
-    // Apply format function defined in the schema if applicable.
-    o = await this.formatDocumentPerSchema(o);
-
-    // Finally, validate the document as a final sanity check.
-    await this.validateOne(o, { strict, checkUniqueIndex });
-
-    return o;
-  }
-
-  /**
-   * Handler invoked right after a document insertion.
-   *
-   * @param doc - The inserted document.
-   */
-  static async afterInsert(doc: Document, options?: ModelInsertOneOptions | ModelInsertManyOptions): Promise<void> {
-
-  }
-
-  /**
-   * Handler invoked right before an update. This is NOT invoked on an
-   * insertion.
-   *
-   * @param query - Query for document to update.
-   * @param update - The update to apply.
-   * @param options - @see ModelUpdateOneOptions
-   *
-   * @return The modified update to apply.
-   */
-  static async beforeUpdate(query: Query, update: Document | DocumentUpdate, { upsert = false, ignoreTimestamps = false, ...options }: ModelUpdateOneOptions = {}): Promise<DocumentUpdate> {
-    query = _.cloneDeep(query);
-    update = _.cloneDeep(update);
-
-    const out = isDocumentUpdate(update) ? update : { $set: update };
-
-    if (out.$set) {
-      await this.validateOne(out.$set, { checkUniqueIndex: false });
-      if (!upsert) out.$set = await this.formatDocumentPerSchema(out.$set);
-    }
-
-    if (upsert) {
-      const beforeInsert = await this.beforeInsert(query as Document, { strict: false, ...options });
-      const setOnInsert = _.omit(beforeInsert, Object.keys(update).concat(['updatedAt']));
-      if (Object.keys(setOnInsert).length > 0) out.$setOnInsert = setOnInsert;
-    }
-
-    if (this.schema.timestamps === true) {
-      if (!out.$set) out.$set = {};
-
-      if (!ignoreTimestamps) {
-        out.$set.updatedAt = new Date();
-      }
-    }
-
-    return out;
-  }
-
-  /**
-   * Handler invoked right after an update. This does not account for
-   * insertions.
-   *
-   * @param query - The original query for the document to update.
-   * @param update - The update applied.
-   * @param doc - The updated doc if `returnDocs` was used along with the update
-   *              operation.
-   */
-  static async afterUpdate(query: Query, update: Document | DocumentUpdate, doc?: Document) {
-
-  }
-
-  // /**
-  //  * Handler invoked right before a deletion.
-  //  *
-  //  * @param {Object|string|ObjectID} query - @see Model.delete
-  //  * @param {Object} [options] - @see Model.delete
-  //  */
-  // static async beforeDelete(query, options) {
-
-  // }
-
-  // /**
-  //  * Handler invoked right after a deletion.
-  //  *
-  //  * @param {Object} doc - The deleted doc if Model.deleteOne was
-  //  *                       used. Otherwise it is `undefined`.
-  //  * @param {Object} results - The results of the delete operation if
-  //  *                           Model#deleteOne was used. Otherwise it is
-  //  *                           `undefined`.
-  //  */
-  // static async afterDelete(doc, results) {
-  //   // If `cascade` property is specified, iterate in the order of the array and
-  //   // remove documents where the foreign field equals the `_id` of this
-  //   // document.
-  //   // NOTE: This only works for first-level foreign keys.
-  //   if (doc && doc._id && this.schema.cascade) {
-  //     const n = this.schema.cascade.length;
-
-  //     for (let i = 0; i < n; i++) {
-  //       const cascadeRef = this.schema.cascade[i];
-  //       const cascadeModel = db.getModel(cascadeRef);
-
-  //       assert.range(cascadeModel, `Trying to cascade delete from model ${cascadeRef} but model is not found`);
-
-  //       for (const key in cascadeModel.schema.fields) {
-  //         const field = cascadeModel.schema.fields[key];
-  //         if (field.ref === this.schema.model) {
-  //           log.debug(`Cascade deleting all ${cascadeRef} documents whose "${key}" field is ${doc._id}`);
-  //           await cascadeModel.deleteMany({ [`${key}`]: ObjectID(doc._id) });
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
-
-  /**
-   * Counts the documents that match the provided query.
-   *
-   * @param query - Query used for the $match stage of the aggregation pipeline.
-   *
-   * @return The total number of documents found.
-   */
-  static async count(query: Query, options?: CollectionAggregationOptions): Promise<number> {
-    const results = await this.findMany(query, options);
-
-    return results.length;
   }
 
   /**
@@ -409,74 +200,6 @@ abstract class Model {
     else {
       return result._id!;
     }
-  }
-
-  /**
-   * Validates a document for this collection. It checks for the following in
-   * order:
-   *   1. Each field is defined in the schema
-   *   2. Each field value conforms to the defined field specs
-   *   3. Unique indexes are enforced (only if `checkUniqueIndex` is enabled)
-   *   4. No required fields are missing (only if `strict` is enabled)
-   *
-   * @param doc - The doc to validate.
-   * @param options - @see ModelValidateOneOptions
-   *
-   * @return `true` will be fulfilled if all tests have passed.
-   */
-  static async validateOne(doc: Document, { strict = false, checkUniqueIndex = true }: ModelValidateOneOptions = {}): Promise<boolean> {
-    for (const key in doc) {
-      // Skip validation for fields `_id`, `updatedAt` and `createdAt` since
-      // they are automatically generated.
-      if (key === '_id') continue;
-      if (this.schema.timestamps && (key === 'updatedAt')) continue;
-      if (this.schema.timestamps && (key === 'createdAt')) continue;
-
-      const val = doc[key];
-
-      // #1 Check if field is defined in the schema.
-      if (!this.schema.fields.hasOwnProperty(key)) {
-        throw new Error(`The field '${key}' is not defined in the schema`);
-      }
-
-      // #2 Check if field value conforms to its defined specs.
-      const fieldSpecs = this.schema.fields[key];
-
-      if (!validateFieldValue(val, fieldSpecs)) {
-        throw new Error(`Error validating field '${key}' with value [${val}] of type [${typeof val}], constraints: ${JSON.stringify(fieldSpecs, undefined, 2)}, doc: ${JSON.stringify(doc, undefined, 2)}`);
-      }
-    }
-
-    // #3 Check for unique fields only if `checkUniqueIndex` is `true`.
-    if (checkUniqueIndex && this.schema.indexes) {
-      const n = this.schema.indexes.length;
-
-      for (let i = 0; i < n; i++) {
-        const index = this.schema.indexes[i];
-
-        if (!index.options) continue;
-        if (!index.options.unique) continue;
-        if (!index.spec) continue;
-        if (!Object.keys(index.spec).every(v => Object.keys(doc).indexOf(v) > -1)) continue;
-
-        const uniqueQuery = _.pick(doc, Object.keys(index.spec));
-        if (await this.findOne(uniqueQuery)) throw new Error(`Another document already exists with ${JSON.stringify(uniqueQuery)}`);
-      }
-    }
-
-    // #4 Check for required fields if `strict` is `true`.
-    if (strict) {
-      for (const key in this.schema.fields) {
-        if (!this.schema.fields.hasOwnProperty(key)) continue;
-
-        const field = this.schema.fields[key];
-
-        if (!field.required || field.default) continue;
-        if (!doc.hasOwnProperty(key)) throw new Error(`Missing required field '${key}'`);
-      }
-    }
-
-    return true;
   }
 
   /**
@@ -533,16 +256,16 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#insertOne}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~insertWriteOpResult}
    */
-  static async insertOne(doc?: Document, options?: ModelInsertOneOptions): Promise<null | Document> {
+  static async insertOne<U extends Document = Document>(doc?: Partial<U>, options?: ModelInsertOneOptions): Promise<null | U> {
     let t = doc ? sanitizeQuery(this.schema, doc) : this.randomFields();
 
     // Apply before insert handler.
     t = await this.beforeInsert(t, options);
 
-    log(`${this.schema.model}.insertOne:`, JSON.stringify(doc, null, 2));
+    log(`${this.schema.model}.insertOne:`, JSON.stringify(t, null, 2));
 
     const collection = await this.getCollection();
-    const results = await collection.insertOne(doc, options).catch(error => { throw error; });
+    const results = await collection.insertOne(t, options).catch(error => { throw error; });
 
     log(`${this.schema.model}.insertOne results:`, JSON.stringify(results, null, 2));
 
@@ -554,7 +277,7 @@ abstract class Model {
     const o = results.ops[0];
 
     // Apply after insert handler.
-    await this.afterInsert(o, options);
+    await this.afterInsert(o);
 
     return o;
   }
@@ -563,7 +286,7 @@ abstract class Model {
    * Inserts multiple documents into this model's collection.
    *
    * @param docs - Array of documents to insert. @see module:mongodb.Collection#insertMany
-   * @param options - @see ModelInsertManyOptions
+   * @param options - @see module:mongodb.Collection#insertMany
    *
    * @return The inserted documents.
    *
@@ -573,13 +296,13 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#insertMany}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~insertWriteOpResult}
    */
-  static async insertMany(docs: Document[], options?: ModelInsertManyOptions): Promise<Document[]> {
+  static async insertMany<U extends Document = Document>(docs: Partial<U>[], options?: ModelBeforeInsertOptions & ModelInsertManyOptions): Promise<U[]> {
     const n = docs.length;
     const t: typeof docs = new Array(n);
 
     // Apply before insert handler to each document.
     for (let i = 0; i < n; i++) {
-      t[i] = await this.beforeInsert(sanitizeQuery(this.schema, docs[i]), options);
+      t[i] = await this.beforeInsert<U>(sanitizeQuery<U>(this.schema, docs[i]), options);
     }
 
     log(`${this.schema.model}.insertMany:`, JSON.stringify(t, null, 2));
@@ -591,11 +314,11 @@ abstract class Model {
 
     assert(results.result.ok === 1);
 
-    const o = results.ops as Document[];
+    const o = results.ops as U[];
     const m = o.length;
 
     for (let i = 0; i < m; i++) {
-      await this.afterInsert(o[i], options);
+      await this.afterInsert<U>(o[i]);
     }
 
     return o;
@@ -665,14 +388,14 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndUpdate}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
    */
-  static async updateOne(query: Query, update: Document | DocumentUpdate, { returnDocs = false, ...options }: ModelUpdateOneOptions = {}): Promise<null | boolean | Document> {
+  static async updateOne(query: Query, update: Document | Update, { returnDocs = false, ...options }: ModelUpdateOneOptions = {}): Promise<null | boolean | Document> {
     const q = sanitizeQuery(this.schema, query);
 
     let u = _.cloneDeep(update);
 
     // Check if the update object has special MongoDB update operators before
     // sanitizing the query.
-    if (isDocumentUpdate(u)) {
+    if (typeIsUpdate(u)) {
       for (const key in u) {
         if (!u.hasOwnProperty(key)) continue;
         u[key] = sanitizeQuery(this.schema, u[key]);
@@ -898,6 +621,267 @@ abstract class Model {
   //     if (results.result.n <= 0) return false;
   //     await this.afterDelete(undefined, results);
   //     return true;
+  //   }
+  // }
+
+  /**
+   * Counts the documents that match the provided query.
+   *
+   * @param query - Query used for the $match stage of the aggregation pipeline.
+   *
+   * @return The total number of documents found.
+   */
+  static async count(query: Query, options?: CollectionAggregationOptions): Promise<number> {
+    const results = await this.findMany(query, options);
+
+    return results.length;
+  }
+
+  /**
+   * Returns a document whose values are formatted according to the format
+   * function sdefined in the schema. If the field is marked as encrypted in the
+   * schema, this process takes care of that too.
+   *
+   * @param doc - Document to format.
+   *
+   * @return The formatted document as the fulfillment value.
+   */
+  static async formatDocument<U extends Document = Document>(doc: Partial<U>): Promise<Partial<U>> {
+    const formattedDoc = _.cloneDeep(doc);
+
+    for (const key in this.schema.fields) {
+      if (!formattedDoc.hasOwnProperty(key)) continue;
+
+      const fieldSpecs = this.schema.fields[key];
+
+      assert(fieldSpecs, new Error(`Field ${key} not found in schema`));
+
+      // If the schema has a certain formatting function defined for this field,
+      // apply it.
+      if (is.function_(fieldSpecs.format)) {
+        const formattedValue = await fieldSpecs.format(formattedDoc[key]);
+        formattedDoc[key] = formattedValue;
+      }
+
+      // If the schema indicates that this field is encrypted, encrypt it.
+      if (fieldSpecs.encrypted === true) {
+        formattedDoc[key] = await bcrypt.hash(`${formattedDoc[key]}`, 10);
+      }
+    }
+
+    return formattedDoc;
+  }
+
+  /**
+   * Validates a document for this collection. It checks for the following in
+   * order:
+   *   1. Each field is defined in the schema.
+   *   2. Each field value conforms to the defined field specs.
+   *   3. Unique indexes are enforced (only if `checkUniqueIndex` is enabled).
+   *   4. No required fields are missing (only if `strict` is enabled).
+   *
+   * @param doc - The doc to validate.
+   * @param options - @see ModelValidateDocumentOptions
+   *
+   * @return `true` will be fulfilled if all tests have passed.
+   */
+  static async validateDocument<U extends Document = Document>(doc: Partial<U>, { strict = false, checkUniqueIndex = true }: ModelValidateDocumentOptions = {}): Promise<boolean> {
+    for (const key in doc) {
+      // Skip validation for fields `_id`, `updatedAt` and `createdAt` since
+      // they are automatically generated.
+      if (key === '_id') continue;
+      if (this.schema.timestamps && (key === 'updatedAt')) continue;
+      if (this.schema.timestamps && (key === 'createdAt')) continue;
+
+      const val = doc[key];
+
+      // #1 Check if field is defined in the schema.
+      if (!this.schema.fields.hasOwnProperty(key)) {
+        throw new Error(`The field '${key}' is not defined in the schema`);
+      }
+
+      // #2 Check if field value conforms to its defined specs.
+      const fieldSpecs = this.schema.fields[key];
+
+      if (!validateFieldValue(val, fieldSpecs)) {
+        throw new Error(`Error validating field '${key}' with value [${val}] of type [${typeof val}], constraints: ${JSON.stringify(fieldSpecs, undefined, 2)}, doc: ${JSON.stringify(doc, undefined, 2)}`);
+      }
+    }
+
+    // #3 Check for unique fields only if `checkUniqueIndex` is `true`.
+    if (checkUniqueIndex && this.schema.indexes) {
+      const n = this.schema.indexes.length;
+
+      for (let i = 0; i < n; i++) {
+        const index = this.schema.indexes[i];
+
+        if (!index.options) continue;
+        if (!index.options.unique) continue;
+        if (!index.spec) continue;
+        if (!Object.keys(index.spec).every(v => Object.keys(doc).indexOf(v) > -1)) continue;
+
+        const uniqueQuery = _.pick(doc, Object.keys(index.spec));
+        if (await this.findOne(uniqueQuery)) throw new Error(`Another document already exists with ${JSON.stringify(uniqueQuery)}`);
+      }
+    }
+
+    // #4 Check for required fields if `strict` is `true`.
+    if (strict) {
+      for (const key in this.schema.fields) {
+        if (!this.schema.fields.hasOwnProperty(key)) continue;
+
+        const field = this.schema.fields[key];
+
+        if (!field.required || field.default) continue;
+        if (!doc.hasOwnProperty(key)) throw new Error(`Missing required field '${key}'`);
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Processes a document before it is inserted. This is also used during an
+   * upsert operation.
+   *
+   * @param doc - The document to be inserted/upserted.
+   * @param options - @see ModelBeforeInsertOptions
+   *
+   * @return Document to be inserted/upserted to the database.
+   */
+  private static async beforeInsert<U extends Document = Document>(doc: Partial<U>, { ignoreTimestamps = false, strict = true, checkUniqueIndex = false }: ModelBeforeInsertOptions = {}): Promise<Partial<U>> {
+    let o = _.cloneDeep(doc);
+
+    // Unless specified, always renew the `createdAt` and `updatedAt` fields.
+    if (this.schema.timestamps && !ignoreTimestamps) {
+      o.createdAt = new Date();
+      o.updatedAt = new Date();
+    }
+
+    // Before inserting this document, go through each field and make sure that
+    // it has default values and that they are formatted correctly.
+    for (const key in this.schema.fields) {
+      if (!this.schema.fields.hasOwnProperty(key)) continue;
+      if (o.hasOwnProperty(key)) continue;
+
+      const fieldSpecs = this.schema.fields[key];
+
+      // Check if the field has a default value defined in the schema. If so,
+      // apply it.
+      if (is.undefined(fieldSpecs.default)) continue;
+
+      o[key] = (is.function_(fieldSpecs.default)) ? fieldSpecs.default() : fieldSpecs.default;
+    }
+    // Apply format function defined in the schema if applicable.
+    o = await this.formatDocument<U>(o);
+
+    // Finally, validate the document as a final sanity check.
+    await this.validateDocument<U>(o, { strict, checkUniqueIndex });
+
+    return o;
+  }
+
+  /**
+   * Handler invoked right after a document insertion.
+   *
+   * @param doc - The inserted document.
+   */
+  private static async afterInsert<U extends Document = Document>(doc: U): Promise<void> {
+
+  }
+
+  /**
+   * Handler invoked right before an update. This is NOT invoked on an
+   * insertion.
+   *
+   * @param query - Query for document to update.
+   * @param update - The update to apply.
+   * @param options - @see ModelUpdateOneOptions
+   *
+   * @return The modified update to apply.
+   */
+  private static async beforeUpdate(query: Query, update: Document | Update, { upsert = false, ignoreTimestamps = false, strict = false }: ModelBeforeUpdateOptions & ModelBeforeInsertOptions = {}): Promise<Update> {
+    query = _.cloneDeep(query);
+    update = _.cloneDeep(update);
+
+    const out = typeIsUpdate(update) ? update : { $set: update };
+
+    if (out.$set) {
+      await this.validateDocument(out.$set, { checkUniqueIndex: false });
+      if (!upsert) out.$set = await this.formatDocument(out.$set);
+    }
+
+    if (upsert) {
+      const beforeInsert = await this.beforeInsert(query as Document, { strict });
+      const setOnInsert = _.omit(beforeInsert, Object.keys(update).concat(['updatedAt']));
+      if (Object.keys(setOnInsert).length > 0) out.$setOnInsert = setOnInsert;
+    }
+
+    if (this.schema.timestamps === true) {
+      if (!out.$set) out.$set = {};
+
+      if (!ignoreTimestamps) {
+        out.$set.updatedAt = new Date();
+      }
+    }
+
+    return out;
+  }
+
+  /**
+   * Handler invoked right after an update. This does not account for
+   * insertions.
+   *
+   * @param query - The original query for the document to update.
+   * @param update - The update applied.
+   * @param doc - The updated doc if `returnDocs` was used along with the update
+   *              operation.
+   */
+  private static async afterUpdate(query: Query, update: Document | Update, doc?: Document) {
+
+  }
+
+  // /**
+  //  * Handler invoked right before a deletion.
+  //  *
+  //  * @param {Object|string|ObjectID} query - @see Model.delete
+  //  * @param {Object} [options] - @see Model.delete
+  //  */
+  // static async beforeDelete(query, options) {
+
+  // }
+
+  // /**
+  //  * Handler invoked right after a deletion.
+  //  *
+  //  * @param {Object} doc - The deleted doc if Model.deleteOne was
+  //  *                       used. Otherwise it is `undefined`.
+  //  * @param {Object} results - The results of the delete operation if
+  //  *                           Model#deleteOne was used. Otherwise it is
+  //  *                           `undefined`.
+  //  */
+  // static async afterDelete(doc, results) {
+  //   // If `cascade` property is specified, iterate in the order of the array and
+  //   // remove documents where the foreign field equals the `_id` of this
+  //   // document.
+  //   // NOTE: This only works for first-level foreign keys.
+  //   if (doc && doc._id && this.schema.cascade) {
+  //     const n = this.schema.cascade.length;
+
+  //     for (let i = 0; i < n; i++) {
+  //       const cascadeRef = this.schema.cascade[i];
+  //       const cascadeModel = db.getModel(cascadeRef);
+
+  //       assert.range(cascadeModel, `Trying to cascade delete from model ${cascadeRef} but model is not found`);
+
+  //       for (const key in cascadeModel.schema.fields) {
+  //         const field = cascadeModel.schema.fields[key];
+  //         if (field.ref === this.schema.model) {
+  //           log.debug(`Cascade deleting all ${cascadeRef} documents whose "${key}" field is ${doc._id}`);
+  //           await cascadeModel.deleteMany({ [`${key}`]: ObjectID(doc._id) });
+  //         }
+  //       }
+  //     }
   //   }
   // }
 }

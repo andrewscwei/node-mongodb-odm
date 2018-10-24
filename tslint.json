@@ -21,7 +21,7 @@
     "no-conditional-assignment": true,
     "no-console": true,
     "no-duplicate-imports": true,
-    "no-empty": [true, "allow-empty-functions"],
+    "no-empty": false,
     "no-empty-interface": false,
     "no-implicit-dependencies": false,
     "no-namespace": true,
