@@ -95,7 +95,6 @@ dump.rdb
 
 # Generated static files
 public
-package
 dist
 build
 upload
