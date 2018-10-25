@@ -7,6 +7,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+function __export(m) {
+    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
+}
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -143,6 +146,9 @@ function getCollection(modelOrCollectionName) {
     });
 }
 exports.getCollection = getCollection;
+var Aggregation_1 = require("./core/Aggregation");
+exports.Aggregation = Aggregation_1.default;
+__export(require("./types"));
 var sanitizeDocument_1 = require("./utils/sanitizeDocument");
 exports.sanitizeDocument = sanitizeDocument_1.default;
 var sanitizeQuery_1 = require("./utils/sanitizeQuery");

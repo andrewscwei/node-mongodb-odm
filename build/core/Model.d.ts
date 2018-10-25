@@ -1,6 +1,5 @@
 import { Collection, CollectionAggregationOptions, CollectionInsertManyOptions, CollectionInsertOneOptions, CommonOptions, FindOneAndReplaceOption, ObjectID, ReplaceOneOptions } from 'mongodb';
-import { Document, Query, Schema, Update } from '../types';
-import { AggregationPipeline, PipelineFactoryOptions, PipelineFactorySpecs } from './Aggregation';
+import { AggregationPipeline, Document, PipelineFactoryOptions, PipelineFactorySpecs, Query, Schema, Update } from '../types';
 interface ModelRandomFieldsOptions {
     includeOptionals?: boolean;
 }

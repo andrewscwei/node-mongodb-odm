@@ -12,11 +12,11 @@ import debug from 'debug';
 import _ from 'lodash';
 import { Collection, CollectionAggregationOptions, CollectionInsertManyOptions, CollectionInsertOneOptions, CommonOptions, FindOneAndReplaceOption, ObjectID, ReplaceOneOptions } from 'mongodb';
 import { getCollection, getModel } from '..';
-import { Document, FieldSpecs, Query, Schema, typeIsUpdate, Update } from '../types';
+import { AggregationPipeline, Document, FieldSpecs, PipelineFactoryOptions, PipelineFactorySpecs, Query, Schema, typeIsUpdate, Update } from '../types';
 import sanitizeDocument from '../utils/sanitizeDocument';
 import sanitizeQuery from '../utils/sanitizeQuery';
 import validateFieldValue from '../utils/validateFieldValue';
-import Aggregation, { AggregationPipeline, PipelineFactoryOptions, PipelineFactorySpecs } from './Aggregation';
+import Aggregation from './Aggregation';
 
 const log = debug('mongodb-odm:model');
 

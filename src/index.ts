@@ -220,6 +220,8 @@ export async function getCollection(modelOrCollectionName: string): Promise<Coll
   return collection;
 }
 
+export { default as Aggregation } from './core/Aggregation';
+export * from './types';
 export { default as sanitizeDocument } from './utils/sanitizeDocument';
 export { default as sanitizeQuery } from './utils/sanitizeQuery';
 export { default as validateFieldValue } from './utils/validateFieldValue';
