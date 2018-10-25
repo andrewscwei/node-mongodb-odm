@@ -11,7 +11,7 @@ import bcrypt from 'bcrypt';
 import debug from 'debug';
 import _ from 'lodash';
 import { Collection, CollectionAggregationOptions, CollectionInsertManyOptions, CollectionInsertOneOptions, CommonOptions, FindOneAndReplaceOption, ObjectID, ReplaceOneOptions } from 'mongodb';
-import * as db from '../';
+import { getInstance, getModel } from '..';
 import { Document, FieldSpecs, Query, Schema, typeIsUpdate, Update } from '../types';
 import sanitizeDocument from '../utils/sanitizeDocument';
 import sanitizeQuery from '../utils/sanitizeQuery';
@@ -133,7 +133,7 @@ abstract class Model {
   static async getCollection(): Promise<Collection> {
     if (!this.schema) throw new Error('This model has no schema, you must define this static proerty in the derived class');
 
-    const dbInstance = await db.getInstance();
+    const dbInstance = await getInstance();
     const collection = await dbInstance.collection(this.schema.collection);
 
     if (this.schema.indexes) {
@@ -915,7 +915,7 @@ abstract class Model {
 
       for (let i = 0; i < n; i++) {
         const cascadeRef = this.schema.cascade[i];
-        const ModelClass = db.getModel(cascadeRef);
+        const ModelClass = getModel(cascadeRef);
         const fields: { [fieldName: string]: FieldSpecs } = ModelClass.schema.fields;
 
         assert(ModelClass, `Trying to cascade delete from model ${cascadeRef} but model is not found`);

@@ -6,7 +6,7 @@
 import is from '@sindresorhus/is';
 import assert from 'assert';
 import { isNullOrUndefined } from 'util';
-import * as db from '../';
+import { getModel } from '..';
 import { FieldSpecs, Query, Schema } from '../types';
 import sanitizeQuery from '../utils/sanitizeQuery';
 
@@ -266,7 +266,7 @@ export default abstract class Aggregation {
       const ref = fields[key] && fields[key].ref;
       assert(ref, new Error(`[lookup(${schema}, ${specs}, ${{ fromPrefix, toPrefix }})] The field to populate does not have a reference model specified in the schema.`));
 
-      const schemaRef = db.getModel(ref!).schema;
+      const schemaRef = getModel(ref!).schema;
       assert(schemaRef, new Error(`[lookup(${schema}, ${specs}, ${{ fromPrefix, toPrefix }})] Unable to find the model schema corresponding to the field to populate.`));
 
       pipe.push({
@@ -387,7 +387,7 @@ export default abstract class Aggregation {
       if (populateOpts === false) continue;
 
       const populateRef = fields[key].ref;
-      const populateSchema = (!is.nullOrUndefined(populateOpts) && !isNullOrUndefined(populateRef)) ? db.getModel(populateRef).schema : undefined;
+      const populateSchema = (!is.nullOrUndefined(populateOpts) && !isNullOrUndefined(populateRef)) ? getModel(populateRef).schema : undefined;
 
       out[`${toPrefix}${key}`] = is.nullOrUndefined(populateSchema) ? `$${fromPrefix}${key}` : (Aggregation.projectStageFactory(populateSchema, populateOpts === true ? undefined : populateOpts) as ProjectStageDescriptor[])[0]['$project'];
     }
