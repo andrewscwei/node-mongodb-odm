@@ -58,11 +58,14 @@ declare abstract class Model {
     static didInsertDocument<U = {}>(doc: Document<U>): Promise<void>;
     static willUpdateDocument<U = {}>(query: Query<U>, update: Document<U> | Update<U>): Promise<[Query<U>, Document<U> | Update<U>]>;
     static didUpdateDocument<U = {}>(prevDoc?: Document<U>, newDocs?: Document<U> | Document<U>[]): Promise<void>;
+    static willDeleteDocument<U = {}>(query: Query<U>): Promise<Query<U>>;
+    static didDeleteDocument<U = {}>(docs?: Document<U> | Document<U>[]): Promise<void>;
     private static beforeInsert;
     private static afterInsert;
     private static beforeUpdate;
     private static afterUpdate;
     private static beforeDelete;
     private static afterDelete;
+    private static cascadeDelete;
 }
 export default Model;

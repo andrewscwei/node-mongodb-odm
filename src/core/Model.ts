@@ -587,9 +587,7 @@ abstract class Model {
 
       const m = results.length;
 
-      for (let i = 0; i < m; i++) {
-        await this.afterDelete<U>(results[i]);
-      }
+      await this.afterDelete<U>(results);
 
       return results;
     }
@@ -771,10 +769,10 @@ abstract class Model {
   }
 
   /**
-   * Handler called before a document is inserted into the database. This is a
-   * good place to apply any custom pre-processing to the document before it is
-   * inserted into the document. This method must return the document to be
-   * inserted.
+   * Handler called before an attempt to insert document into the database. This
+   * is a good place to apply any custom pre-processing to the document before
+   * it is inserted into the document. This method must return the document to
+   * be inserted.
    *
    * @param doc - The document to be inserted.
    * @param options - Additional options.
@@ -786,15 +784,15 @@ abstract class Model {
   }
 
   /**
-   * Handler called right after the document is inserted.
+   * Handler called after the document is successfully inserted.
    *
    * @param doc - The inserted document.
    */
   static async didInsertDocument<U = {}>(doc: Document<U>): Promise<void> {}
 
   /**
-   * Handler called before an update operation. This method must return the
-   * query and update descriptor for the update operation.
+   * Handler called before an attempted update operation. This method must
+   * return the query and update descriptor for the update operation.
    *
    * @param query - The query for document(s) to update.
    * @param update - The update descriptor.
@@ -806,12 +804,36 @@ abstract class Model {
   }
 
   /**
-   * Handler called after a document has been updated.
+   * Handler called after a document or a set of documents have been
+   * successfully updated.
    *
-   * @param prevDoc - The document before it is updated.
-   * @param newDoc - The updated document.
+   * @param prevDoc - The document before it is updated. This is only available
+   *                  if `returnDoc` was enabled, and only for updateOne().
+   * @param newDocs - The updated document(s). This is only available if
+   *                  `returnDoc` or `returnDocs` was enabled.
    */
   static async didUpdateDocument<U = {}>(prevDoc?: Document<U>, newDocs?: Document<U> | Document<U>[]): Promise<void> {
+
+  }
+
+  /**
+   * Handler called before an attempt to delete a document.
+   *
+   * @param query - The query for the document to be deleted.
+   *
+   * @return The document to be deleted.
+   */
+  static async willDeleteDocument<U = {}>(query: Query<U>): Promise<Query<U>> {
+    return query;
+  }
+
+  /**
+   * Handler called after a document or a set of documents are successfully
+   * deleted.
+   *
+   * @param docs - The deleted document(s) if available.
+   */
+  static async didDeleteDocument<U = {}>(docs?: Document<U> | Document<U>[]): Promise<void> {
 
   }
 
@@ -953,9 +975,9 @@ abstract class Model {
    * @param options - @see ModelDeleteOneOptions, @see ModelDeleteManyOptions
    */
   private static async beforeDelete<U = {}>(query: Query<U>, options: ModelDeleteOneOptions | ModelDeleteManyOptions): Promise<Document<U>> {
-    const q = sanitizeQuery<U>(this.schema, query);
+    const q = await this.willDeleteDocument(query);
 
-    return q;
+    return sanitizeQuery<U>(this.schema, q);
   }
 
   /**
@@ -965,29 +987,49 @@ abstract class Model {
    *
    * @todo Cascade deletion only works for first-level foreign keys so far.
    */
-  private static async afterDelete<U = {}>(doc?: Document<U>) {
-    // If `cascade` property is specified, iterate in the order of the array and
-    // remove documents where the foreign field equals the `_id` of this doc.
-    if (doc && doc._id && this.schema.cascade) {
-      const n = this.schema.cascade.length;
+  private static async afterDelete<U = {}>(docs?: Document<U> | Document<U>[]) {
+    if (is.array(docs)) {
+      for (const doc of docs) {
+        if (!is.directInstanceOf(doc._id, ObjectID)) continue;
+        await this.cascadeDelete<U>(doc._id);
+      }
+    }
+    else if (!is.nullOrUndefined(docs) && is.directInstanceOf(docs._id, ObjectID)) {
+      await this.cascadeDelete<U>(docs._id);
+    }
 
-      for (let i = 0; i < n; i++) {
-        const cascadeRef = this.schema.cascade[i];
-        const ModelClass = getModel(cascadeRef);
-        const fields: { [fieldName: string]: FieldSpecs } = ModelClass.schema.fields;
+    await this.didDeleteDocument(docs);
+  }
 
-        assert(ModelClass, `Trying to cascade delete from model ${cascadeRef} but model is not found`);
+  /**
+   * Deletes documents from other collections that have a foreign key to this
+   * collection, as specified in the schema.
+   *
+   * @param docId - The ID of the document in this collection in which other
+   *                collections are pointing to.
+   */
+  private static async cascadeDelete<U = {}>(docId: ObjectID) {
+    const cascadeModelNames = this.schema.cascade;
 
-        for (const key in ModelClass.schema.fields) {
-          if (!ModelClass.schema.fields.hasOwnProperty(key)) continue;
+    if (is.nullOrUndefined(cascadeModelNames)) return;
 
-          const field = fields[key];
+    if (!is.array(cascadeModelNames)) throw new Error('Invalid definition of cascade in schema');
 
-          if (field.ref === this.schema.model) {
-            log(`Cascade deleting all ${cascadeRef} documents whose "${key}" field is ${doc._id}`);
+    for (const modelName of cascadeModelNames) {
+      const ModelClass = getModel(modelName);
+      const fields: { [fieldName: string]: FieldSpecs } = ModelClass.schema.fields;
 
-            await ModelClass.deleteMany({ [`${key}`]: new ObjectID(doc._id) });
-          }
+      assert(ModelClass, `Trying to cascade delete from model ${modelName} but model is not found`);
+
+      for (const key in ModelClass.schema.fields) {
+        if (!ModelClass.schema.fields.hasOwnProperty(key)) continue;
+
+        const field = fields[key];
+
+        if (field.ref === this.schema.model) {
+          log(`Cascade deleting all ${modelName} documents whose "${key}" field is ${docId}`);
+
+          await ModelClass.deleteMany({ [`${key}`]: docId });
         }
       }
     }

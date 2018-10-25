@@ -271,9 +271,7 @@ class Model {
                 }
                 log(`${this.schema.model}.deleteMany results:`, JSON.stringify(results, null, 0));
                 const m = results.length;
-                for (let i = 0; i < m; i++) {
-                    yield this.afterDelete(results[i]);
-                }
+                yield this.afterDelete(results);
                 return results;
             }
             else {
@@ -401,6 +399,15 @@ class Model {
         return __awaiter(this, void 0, void 0, function* () {
         });
     }
+    static willDeleteDocument(query) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return query;
+        });
+    }
+    static didDeleteDocument(docs) {
+        return __awaiter(this, void 0, void 0, function* () {
+        });
+    }
     static beforeInsert(doc, options = {}) {
         return __awaiter(this, void 0, void 0, function* () {
             const fields = this.schema.fields;
@@ -475,27 +482,43 @@ class Model {
     }
     static beforeDelete(query, options) {
         return __awaiter(this, void 0, void 0, function* () {
-            const q = sanitizeQuery_1.default(this.schema, query);
-            return q;
+            const q = yield this.willDeleteDocument(query);
+            return sanitizeQuery_1.default(this.schema, q);
         });
     }
-    static afterDelete(doc) {
+    static afterDelete(docs) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (doc && doc._id && this.schema.cascade) {
-                const n = this.schema.cascade.length;
-                for (let i = 0; i < n; i++) {
-                    const cascadeRef = this.schema.cascade[i];
-                    const ModelClass = __1.getModel(cascadeRef);
-                    const fields = ModelClass.schema.fields;
-                    assert_1.default(ModelClass, `Trying to cascade delete from model ${cascadeRef} but model is not found`);
-                    for (const key in ModelClass.schema.fields) {
-                        if (!ModelClass.schema.fields.hasOwnProperty(key))
-                            continue;
-                        const field = fields[key];
-                        if (field.ref === this.schema.model) {
-                            log(`Cascade deleting all ${cascadeRef} documents whose "${key}" field is ${doc._id}`);
-                            yield ModelClass.deleteMany({ [`${key}`]: new mongodb_1.ObjectID(doc._id) });
-                        }
+            if (is_1.default.array(docs)) {
+                for (const doc of docs) {
+                    if (!is_1.default.directInstanceOf(doc._id, mongodb_1.ObjectID))
+                        continue;
+                    yield this.cascadeDelete(doc._id);
+                }
+            }
+            else if (!is_1.default.nullOrUndefined(docs) && is_1.default.directInstanceOf(docs._id, mongodb_1.ObjectID)) {
+                yield this.cascadeDelete(docs._id);
+            }
+            yield this.didDeleteDocument(docs);
+        });
+    }
+    static cascadeDelete(docId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const cascadeModelNames = this.schema.cascade;
+            if (is_1.default.nullOrUndefined(cascadeModelNames))
+                return;
+            if (!is_1.default.array(cascadeModelNames))
+                throw new Error('Invalid definition of cascade in schema');
+            for (const modelName of cascadeModelNames) {
+                const ModelClass = __1.getModel(modelName);
+                const fields = ModelClass.schema.fields;
+                assert_1.default(ModelClass, `Trying to cascade delete from model ${modelName} but model is not found`);
+                for (const key in ModelClass.schema.fields) {
+                    if (!ModelClass.schema.fields.hasOwnProperty(key))
+                        continue;
+                    const field = fields[key];
+                    if (field.ref === this.schema.model) {
+                        log(`Cascade deleting all ${modelName} documents whose "${key}" field is ${docId}`);
+                        yield ModelClass.deleteMany({ [`${key}`]: docId });
                     }
                 }
             }
