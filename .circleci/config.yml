@@ -56,10 +56,12 @@ jobs:
       - image: golang:1.11.1
     steps:
       - attach_workspace:
-          at: .
+          at: ./package
       - deploy:
           name: Deploy to GitHub releases
-          command: .circleci/deploy_to_ghr.sh
+          command: |
+            go get github.com/tcnksm/ghr
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${CIRCLE_TAG} ./package/
 
 workflows:
   version: 2
