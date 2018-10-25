@@ -48,7 +48,7 @@ process.on('SIGINT', async () => {
  * Establishes a new connection to the database based on the initialized
  * configuration. If there already exists one, this method does nothing.
  */
-async function connectToDb(): Promise<void> {
+export async function connectToDb(): Promise<void> {
   if (isDbConnected()) return;
 
   if (!options) throw new Error('You must configure connection options by calling #configureDb()');
@@ -99,7 +99,7 @@ async function connectToDb(): Promise<void> {
 /**
  * Disconnects the existing database client.
  */
-async function disconnectFromDb(): Promise<void> {
+export async function disconnectFromDb(): Promise<void> {
   if (!client) return;
   await client.close();
 }
@@ -109,9 +109,9 @@ async function disconnectFromDb(): Promise<void> {
  *
  * @return `true` if connected, `false` otherwise.
  */
-function isDbConnected(): boolean {
+export function isDbConnected(): boolean {
   if (!client) return false;
-  if (!client.isConnected) return false;
+  if (!client.isConnected()) return false;
   return true;
 }
 

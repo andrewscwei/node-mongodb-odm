@@ -67,6 +67,7 @@ function connectToDb() {
         });
     });
 }
+exports.connectToDb = connectToDb;
 function disconnectFromDb() {
     return __awaiter(this, void 0, void 0, function* () {
         if (!client)
@@ -74,13 +75,15 @@ function disconnectFromDb() {
         yield client.close();
     });
 }
+exports.disconnectFromDb = disconnectFromDb;
 function isDbConnected() {
     if (!client)
         return false;
-    if (!client.isConnected)
+    if (!client.isConnected())
         return false;
     return true;
 }
+exports.isDbConnected = isDbConnected;
 function configureDb(descriptor) {
     options = descriptor;
 }
