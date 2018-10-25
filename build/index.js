@@ -15,6 +15,8 @@ const is_1 = __importDefault(require("@sindresorhus/is"));
 const assert_1 = __importDefault(require("assert"));
 const debug_1 = __importDefault(require("debug"));
 const mongodb_1 = require("mongodb");
+const Model_1 = __importDefault(require("./core/Model"));
+exports.Model = Model_1.default;
 const log = debug_1.default('mongodb-odm');
 let client;
 let options;
@@ -141,4 +143,10 @@ function getCollection(modelOrCollectionName) {
     });
 }
 exports.getCollection = getCollection;
+var sanitizeDocument_1 = require("./utils/sanitizeDocument");
+exports.sanitizeDocument = sanitizeDocument_1.default;
+var sanitizeQuery_1 = require("./utils/sanitizeQuery");
+exports.sanitizeQuery = sanitizeQuery_1.default;
+var validateFieldValue_1 = require("./utils/validateFieldValue");
+exports.validateFieldValue = validateFieldValue_1.default;
 //# sourceMappingURL=index.js.map
