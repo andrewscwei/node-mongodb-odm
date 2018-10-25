@@ -68,6 +68,9 @@ workflows:
       - test:
           requires:
             - build
+          filters:
+            tags:
+              only: /^v.*/
       - deploy:
           context: ghr
           requires:
