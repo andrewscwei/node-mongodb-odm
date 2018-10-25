@@ -49,16 +49,6 @@ jobs:
       - run:
           name: Test
           command: npm test
-  deploy:
-    working_directory: ~/repo
-    docker:
-      - image: cibuilds/github:0.12
-    steps:
-      - attach_workspace:
-          at: .
-      - deploy:
-          name: Deploy to GitHub releases
-          command: ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${CIRCLE_TAG} package/
 
 workflows:
   version: 2
@@ -72,14 +62,5 @@ workflows:
           requires:
             - build
           filters:
-            tags:
-              only: /^v.*/
-      - deploy:
-          context: ghr
-          requires:
-            - test
-          filters:
-            branches:
-              ignore: /.*/
             tags:
               only: /^v.*/
