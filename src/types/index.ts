@@ -2,26 +2,19 @@ import is from '@sindresorhus/is';
 import { IndexOptions, ObjectID, UpdateQuery } from 'mongodb';
 
 /**
- * Query for finding documents in the MongoDB database.
- */
-export type Query<T extends Document = Document> = string | ObjectID | Partial<T> | { [key: string]: any };
-
-/**
  * MongoDB document structure.
  */
-export interface Document {
-  _id?: ObjectID;
-  createdAt?: Date;
-  updatedAt?: Date;
-  [field: string]: FieldValue;
-}
+export type Document<T = {}> = Partial<T> & { _id?: ObjectID; createdAt?: Date; updatedAt?: Date; [field: string]: FieldValue; };
+
+/**
+ * Query for finding documents in the MongoDB database.
+ */
+export type Query<T = {}> = string | ObjectID | Document<T> | { [key: string]: any };
 
 /**
  * Document update descriptor.
  */
-export interface Update<T extends Document = Document> extends UpdateQuery<T> {
-
-}
+export type Update<T = {}> = UpdateQuery<Document<T>>;
 
 /**
  * Data type for acceptable field types.
@@ -116,7 +109,7 @@ export interface FieldSpecs {
   random?: FieldRandomValueFunction;
 }
 
-export interface Schema<T extends Document = Document> {
+export interface Schema<T = {}> {
   /**
    * Name of the model. Should be in upper cammel-case, i.e. `Model`.
    */
@@ -150,7 +143,7 @@ export interface Schema<T extends Document = Document> {
    * @see FieldSpecs
    */
   fields: {
-    [F in keyof T]: FieldSpecs;
+    [K in keyof T]: FieldSpecs;
   };
 
   /**
@@ -180,7 +173,7 @@ export interface SchemaIndex {
   options?: IndexOptions;
 }
 
-export function typeIsUpdate<T extends Document = Document>(value: any): value is Update<T> {
+export function typeIsUpdate<T = {}>(value: any): value is Update<T> {
   if (!is.object(value)) return false;
   return Object.keys(value).some(val => val.startsWith('$'));
 }

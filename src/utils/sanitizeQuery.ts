@@ -44,17 +44,17 @@ interface SanitizeQueryOptions {
  * sanitizeQuery(schema, { a: 'b', b: 'c', garbage: 'garbage' })
  * sanitizeQuery(schema, { a: 'b', b: 'c', garbage: 'garbage' }, { strict: true })
  */
-export default function sanitizeQuery<T extends Document = Document>(schema: Schema, query: Query<T>, { strict = true }: SanitizeQueryOptions = {}): Partial<T> {
+export default function sanitizeQuery<T = {}>(schema: Schema, query: Query<T>, { strict = true }: SanitizeQueryOptions = {}): Document<T> {
   if (is.directInstanceOf(query, ObjectID)) {
-    return { _id: query } as Partial<T>;
+    return { _id: query } as Document<T>;
   }
   else if (is.string(query)) {
-    return { _id: new ObjectID(query) } as Partial<T>;
+    return { _id: new ObjectID(query) } as Document<T>;
   }
   else if (strict) {
     return sanitizeDocument<T>(schema, query);
   }
   else {
-    return query as Partial<T>;
+    return query as Document<T>;
   }
 }

@@ -1,8 +1,8 @@
 import Faker from 'faker';
 import Model from '../../core/Model';
-import { Document, Schema } from '../../types';
+import { Schema } from '../../types';
 
-export interface BazDocument extends Document {
+export interface BazProps {
   aString: string;
   aNumber: number;
   aBoolean: boolean;
@@ -10,7 +10,7 @@ export interface BazDocument extends Document {
   anEncryptedString: string;
 }
 
-export const BazSchema: Schema<BazDocument> = {
+export const BazSchema: Schema<BazProps> = {
   model: 'Baz',
   collection: 'bazs',
   fields: {

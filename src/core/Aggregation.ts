@@ -7,7 +7,7 @@ import is from '@sindresorhus/is';
 import assert from 'assert';
 import { isNullOrUndefined } from 'util';
 import * as db from '../';
-import { Query, Schema } from '../types';
+import { FieldSpecs, Query, Schema } from '../types';
 import sanitizeQuery from '../utils/sanitizeQuery';
 
 export type AggregationPipeline = (MatchStageDescriptor | LookupStageDescriptor | UnwindStageDescriptor | GroupStageDescriptor | SortStageDescriptor | ProjectStageDescriptor | SampleStageDescriptor)[];
@@ -253,6 +253,8 @@ export default abstract class Aggregation {
    * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/lookup/}
    */
   static lookupStageFactory(schema: Schema, specs: LookupStageFactorySpecs, { fromPrefix = '', toPrefix = '' }: LookupStageFactoryOptions = {}): AggregationPipeline {
+    const fields: { [fieldName: string]: FieldSpecs} = schema.fields;
+
     let pipe: AggregationPipeline = [];
 
     for (const key in specs) {
@@ -261,7 +263,7 @@ export default abstract class Aggregation {
       const val = specs[key];
       assert((val === true) || (typeof val === 'object'), new Error(`[lookup(${schema}, ${specs}, ${{ fromPrefix, toPrefix }})] Invalid populate properties.`));
 
-      const ref = schema.fields[key] && schema.fields[key].ref;
+      const ref = fields[key] && fields[key].ref;
       assert(ref, new Error(`[lookup(${schema}, ${specs}, ${{ fromPrefix, toPrefix }})] The field to populate does not have a reference model specified in the schema.`));
 
       const schemaRef = db.getModel(ref!).schema;
@@ -373,9 +375,10 @@ export default abstract class Aggregation {
    * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/project/}
    */
   static projectStageFactory(schema: Schema, { toPrefix = '', fromPrefix = '', populate = {}, exclude = [] }: ProjectStageFactoryOptions = {}): AggregationPipeline {
+    const fields: { [fieldName: string]: FieldSpecs} = schema.fields;
     const out: { [key: string]: any } = { [`${toPrefix}_id`]: `$${fromPrefix}_id` };
 
-    for (const key in schema.fields) {
+    for (const key in fields) {
       if (!schema.fields.hasOwnProperty(key)) continue;
       if (exclude.indexOf(key) > -1) continue;
 
@@ -383,7 +386,7 @@ export default abstract class Aggregation {
 
       if (populateOpts === false) continue;
 
-      const populateRef = schema.fields[key].ref;
+      const populateRef = fields[key].ref;
       const populateSchema = (!is.nullOrUndefined(populateOpts) && !isNullOrUndefined(populateRef)) ? db.getModel(populateRef).schema : undefined;
 
       out[`${toPrefix}${key}`] = is.nullOrUndefined(populateSchema) ? `$${fromPrefix}${key}` : (Aggregation.projectStageFactory(populateSchema, populateOpts === true ? undefined : populateOpts) as ProjectStageDescriptor[])[0]['$project'];

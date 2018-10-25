@@ -1,8 +1,8 @@
 import { ObjectID } from 'mongodb';
 import Model from '../../core/Model';
-import { Document, Schema } from '../../types';
+import { Schema } from '../../types';
 
-export interface BarDocument extends Document {
+export interface BarProps {
   aBar: ObjectID;
   aString: string;
   aDate: Date;
@@ -15,7 +15,7 @@ export interface BarDocument extends Document {
   aBoolean: boolean;
 }
 
-export const BarSchema: Schema<BarDocument> = {
+export const BarSchema: Schema<BarProps> = {
   model: 'Bar',
   collection: 'bars',
   cascade: ['Foo'],

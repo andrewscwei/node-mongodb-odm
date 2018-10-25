@@ -1,14 +1,15 @@
 import assert from 'assert';
 import { describe, it } from 'mocha';
 import { ObjectID } from 'mongodb';
+import { Document } from '../../types';
 import sanitizeQuery from '../../utils/sanitizeQuery';
-import Baz, { BazDocument } from '../models/Baz';
+import Baz, { BazProps } from '../models/Baz';
 
 describe('utils/sanitizeQuery', () => {
   it('can generate valid queries based on an Object ID string', () => {
     const objectId = new ObjectID();
 
-    const actual = sanitizeQuery<BazDocument>(Baz.schema, objectId.toHexString());
+    const actual = sanitizeQuery<BazProps>(Baz.schema, objectId.toHexString());
     const expected = { _id: objectId };
 
     assert.deepStrictEqual(Object.keys(actual), Object.keys(expected));
@@ -18,7 +19,7 @@ describe('utils/sanitizeQuery', () => {
   it('can generate valid queries based on an Object ID', () => {
     const objectId = new ObjectID();
 
-    const actual = sanitizeQuery<BazDocument>(Baz.schema, objectId);
+    const actual = sanitizeQuery<BazProps>(Baz.schema, objectId);
     const expected = { _id: objectId };
 
     assert.deepStrictEqual(Object.keys(actual), Object.keys(expected));
@@ -28,12 +29,12 @@ describe('utils/sanitizeQuery', () => {
   it('can generate valid queries removing extraneous fields', () => {
     const objectId = new ObjectID();
 
-    const expected: Partial<BazDocument> = {
+    const expected: Document<BazProps> = {
       _id: objectId,
       aString: 'baz',
     };
 
-    const actual = sanitizeQuery<BazDocument>(Baz.schema, {
+    const actual = sanitizeQuery<BazProps>(Baz.schema, {
       ...expected,
       anExtraneousField: 'baz',
     });
@@ -44,12 +45,12 @@ describe('utils/sanitizeQuery', () => {
   it('can generate valid queries while keeping extraneous fields', () => {
     const objectId = new ObjectID();
 
-    const expected: Partial<BazDocument> = {
+    const expected: Document<BazProps> = {
       _id: objectId,
       aString: 'baz',
     };
 
-    const actual = sanitizeQuery<BazDocument>(Baz.schema, {
+    const actual = sanitizeQuery<BazProps>(Baz.schema, {
       ...expected,
       anExtraneousField: 'baz',
     }, {

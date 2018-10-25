@@ -12,8 +12,8 @@ import { Document, Schema } from '../types';
  * // Returns { a: 'b', b: 'c' }
  * sanitizeDocument(schema, { a: 'b', b: 'c', garbage: 'garbage' })
  */
-export default function sanitizeDocument<T extends Document = Document>(schema: Schema, doc: Partial<T> | { [key: string]: any }): Partial<T> {
-  const o: Partial<T> = {};
+export default function sanitizeDocument<T = {}>(schema: Schema, doc: Document<T> | { [key: string]: any }): Document<T> {
+  const o: Document<T> = {};
 
   for (const key in doc) {
     if (!schema.timestamps && (key === 'createdAt')) continue;

@@ -1,15 +1,15 @@
 import { ObjectID } from 'mongodb';
 import Model from '../../core/Model';
-import { Document, Schema } from '../../types';
+import { Schema } from '../../types';
 
-export interface FooDocument extends Document {
+export interface FooProps {
   aString: string;
   aNumber: number;
   aBar: ObjectID;
   aFoo: ObjectID;
 }
 
-export const FooSchema: Schema<FooDocument> = {
+export const FooSchema: Schema<FooProps> = {
   model: 'Foo',
   collection: 'foos',
   timestamps: true,
