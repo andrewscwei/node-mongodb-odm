@@ -219,3 +219,5 @@ export async function getCollection(modelOrCollectionName: string): Promise<Coll
 
   return collection;
 }
+
+export { default as Model } from './core/Model';
