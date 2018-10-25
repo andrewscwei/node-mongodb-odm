@@ -4,12 +4,12 @@ jobs:
   build:
     working_directory: ~/repo
     docker:
-      - image: node:10.12.0
+      - image: node:10.12.0-alpine
     steps:
       - checkout
       - run:
-          name: Install APT packages
-          command: apt-get update -y && apt-get install jq -y
+          name: Install APK packages
+          command: apk add jq
       - restore_cache:
           keys:
             - dependency-cache-{{ checksum "yarn.lock" }}
@@ -40,7 +40,7 @@ jobs:
   test:
     working_directory: ~/repo
     docker:
-      - image: node:10.12.0
+      - image: node:10.12.0-alpine
       - image: mongo:4.0.1
     environment:
       - MONGO_URL: "mongodb://localhost:27017"
@@ -53,46 +53,28 @@ jobs:
   deploy:
     working_directory: ~/repo
     docker:
-      - image: golang:1.11.1
+      - image: cibuilds/github:0.12
     steps:
       - attach_workspace:
-          at: ./package
+          at: .
       - deploy:
           name: Deploy to GitHub releases
-          command: |
-            go get github.com/tcnksm/ghr
-            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${CIRCLE_TAG} ./package/
+          command: ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${CIRCLE_TAG} ./package
 
 workflows:
   version: 2
-  build_test:
+  main:
     jobs:
       - build
       - test:
           requires:
             - build
-  build_test_deploy:
-    jobs:
-      - build:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^v.*/
-      - test:
-          requires:
-            - build
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^v.*/
       - deploy:
           context: ghr
           requires:
             - test
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^v.*/
+          # filters:
+          #   branches:
+          #     ignore: /.*/
+          #   tags:
+          #     only: /^v.*/
