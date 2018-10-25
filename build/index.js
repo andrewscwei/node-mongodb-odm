@@ -18,6 +18,7 @@ const mongodb_1 = require("mongodb");
 const log = debug_1.default('mongodb-odm');
 let client;
 let options;
+const collections = {};
 process.on('SIGINT', () => __awaiter(this, void 0, void 0, function* () {
     if (client) {
         yield disconnectFromDb();
@@ -101,13 +102,16 @@ function getModel(modelOrCollectionName) {
         if (ModelClass.schema.collection === modelOrCollectionName)
             return ModelClass;
     }
-    throw new Error(`No model found for model/collection name ${modelOrCollectionName}`);
+    throw new Error('No model found for given model/collection name');
 }
 exports.getModel = getModel;
 function getCollection(modelOrCollectionName) {
     return __awaiter(this, void 0, void 0, function* () {
         const models = options.models;
         assert_1.default(!is_1.default.nullOrUndefined(models), new Error('You must register models using the configureDb() function'));
+        if (!is_1.default.nullOrUndefined(collections[modelOrCollectionName])) {
+            return collections[modelOrCollectionName];
+        }
         let ModelClass;
         for (const key in models) {
             if (!models.hasOwnProperty(key))
@@ -131,6 +135,8 @@ function getCollection(modelOrCollectionName) {
                 yield collection.createIndex(spec, options);
             }
         }
+        collections[schema.model] = collection;
+        collections[schema.collection] = collection;
         return collection;
     });
 }

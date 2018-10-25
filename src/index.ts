@@ -29,6 +29,11 @@ let client: MongoClient;
  */
 let options: Configuration;
 
+/**
+ * Collection lookup dictionary.
+ */
+const collections: { [collectionName: string]: Collection } = {};
+
 // Be sure to disconnect the database if the app terminates.
 process.on('SIGINT', async () => {
   if (client) {
@@ -156,7 +161,7 @@ export function getModel(modelOrCollectionName: string): typeof Model {
     if (ModelClass.schema.collection === modelOrCollectionName) return ModelClass;
   }
 
-  throw new Error(`No model found for model/collection name ${modelOrCollectionName}`);
+  throw new Error('No model found for given model/collection name');
 }
 
 /**
@@ -173,6 +178,10 @@ export async function getCollection(modelOrCollectionName: string): Promise<Coll
   const models = options.models!;
 
   assert(!is.nullOrUndefined(models), new Error('You must register models using the configureDb() function'));
+
+  if (!is.nullOrUndefined(collections[modelOrCollectionName])) {
+    return collections[modelOrCollectionName];
+  }
 
   let ModelClass: typeof Model | undefined;
 
@@ -204,6 +213,9 @@ export async function getCollection(modelOrCollectionName: string): Promise<Coll
       await collection.createIndex(spec, options);
     }
   }
+
+  collections[schema.model] = collection;
+  collections[schema.collection] = collection;
 
   return collection;
 }

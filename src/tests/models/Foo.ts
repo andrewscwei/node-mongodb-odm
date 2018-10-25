@@ -37,7 +37,7 @@ export const FooSchema: Schema<FooProps> = {
     },
   },
   indexes: [{
-    spec: { label: 1 }, options: { unique: true },
+    spec: { aString: 1 }, options: { unique: true },
   }],
 };
 

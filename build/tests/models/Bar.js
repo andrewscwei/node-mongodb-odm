@@ -44,7 +44,6 @@ exports.BarSchema = {
             default: false,
         },
     },
-    indexes: [{ spec: { source: 1 } }, { spec: { geo: '2dsphere' } }],
 };
 class Bar extends Model_1.default {
 }

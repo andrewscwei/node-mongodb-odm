@@ -33,7 +33,7 @@ exports.FooSchema = {
         },
     },
     indexes: [{
-            spec: { label: 1 }, options: { unique: true },
+            spec: { aString: 1 }, options: { unique: true },
         }],
 };
 class Foo extends Model_1.default {

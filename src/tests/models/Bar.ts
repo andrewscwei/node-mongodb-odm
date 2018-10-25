@@ -54,7 +54,6 @@ export const BarSchema: Schema<BarProps> = {
       default: false,
     },
   },
-  indexes: [{ spec: { source: 1 } }, { spec: { geo: '2dsphere' } }],
 };
 
 export default class Bar extends Model {

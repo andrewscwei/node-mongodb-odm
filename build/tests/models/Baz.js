@@ -15,6 +15,9 @@ exports.BazSchema = {
         aFormattedString: { type: String, format: (v) => v.toUpperCase() },
         anEncryptedString: { type: String, encrypted: true },
     },
+    indexes: [{
+            spec: { aString: 1 },
+        }],
 };
 class Baz extends Model_1.default {
 }

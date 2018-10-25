@@ -20,6 +20,9 @@ export const BazSchema: Schema<BazProps> = {
     aFormattedString: { type: String, format: (v: string) => v.toUpperCase() },
     anEncryptedString: { type: String, encrypted: true },
   },
+  indexes: [{
+    spec: { aString: 1 },
+  }],
 };
 
 export default class Baz extends Model {
