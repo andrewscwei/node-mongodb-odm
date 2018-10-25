@@ -2,7 +2,7 @@
   "name": "mongodb-odm",
   "version": "0.2.0",
   "description": "ODM for MongoDB",
-  "main": "dist/index.js",
+  "main": "build/index.js",
   "scripts": {
     "clean": "rimraf build",
     "build": "npm run clean && tsc",
