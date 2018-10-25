@@ -2,5 +2,6 @@
 
 source .circleci/get_opts.sh
 
+mkdir package
 npm pack
-tar -xvzf $PACKAGE_FILE.tgz
+mv $PACKAGE_FILE.tgz package/
