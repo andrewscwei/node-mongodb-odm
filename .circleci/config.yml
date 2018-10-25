@@ -86,7 +86,7 @@ workflows:
             tags:
               only: /^v.*/
       - deploy:
-          context: npm_deployment
+          context: ghr
           requires:
             - test
           filters:
