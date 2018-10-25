@@ -11,6 +11,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const is_1 = __importDefault(require("@sindresorhus/is"));
+const assert_1 = __importDefault(require("assert"));
 const debug_1 = __importDefault(require("debug"));
 const mongodb_1 = require("mongodb");
 const log = debug_1.default('mongodb-odm');
@@ -18,21 +20,17 @@ let client;
 let options;
 process.on('SIGINT', () => __awaiter(this, void 0, void 0, function* () {
     if (client) {
-        yield disconnect();
+        yield disconnectFromDb();
         log('MongoDB client disconnected due to app termination');
     }
     process.exit(0);
 }));
-function configure(descriptor) {
-    options = descriptor;
-}
-exports.configure = configure;
-function connect() {
+function connectToDb() {
     return __awaiter(this, void 0, void 0, function* () {
-        if (client && client.isConnected)
+        if (isDbConnected())
             return;
         if (!options)
-            throw new Error('You must configure connection options by calling #configure()');
+            throw new Error('You must configure connection options by calling #configureDb()');
         const authentication = (options.username && options.password) ? `${options.username}:${options.password}` : undefined;
         const url = `mongodb://${authentication ? `${authentication}@` : ''}${options.host}/${options.name}`;
         client = yield mongodb_1.MongoClient.connect(url, {
@@ -63,47 +61,78 @@ function connect() {
         });
     });
 }
-exports.connect = connect;
-function disconnect() {
+function disconnectFromDb() {
     return __awaiter(this, void 0, void 0, function* () {
         if (!client)
             return;
         yield client.close();
     });
 }
-exports.disconnect = disconnect;
-function isConnected() {
+function isDbConnected() {
     if (!client)
         return false;
     if (!client.isConnected)
         return false;
     return true;
 }
-exports.isConnected = isConnected;
-function getInstance() {
+function configureDb(descriptor) {
+    options = descriptor;
+}
+exports.configureDb = configureDb;
+function getDbInstance() {
     return __awaiter(this, void 0, void 0, function* () {
         if (client)
             return client.db(options.name);
         log('There is no MongoDB client, establishing one now...');
-        yield connect();
-        return getInstance();
+        yield connectToDb();
+        return getDbInstance();
     });
 }
-exports.getInstance = getInstance;
+exports.getDbInstance = getDbInstance;
 function getModel(modelOrCollectionName) {
     const models = options.models;
-    if (models) {
-        if (models.hasOwnProperty(modelOrCollectionName))
-            return models[modelOrCollectionName];
-        for (const key in models) {
-            if (!models.hasOwnProperty(key))
-                continue;
-            const ModelClass = models[key];
-            if (ModelClass.schema.collection === modelOrCollectionName)
-                return ModelClass;
-        }
+    assert_1.default(!is_1.default.nullOrUndefined(models), new Error('You must register models using the configureDb() function'));
+    if (models.hasOwnProperty(modelOrCollectionName))
+        return models[modelOrCollectionName];
+    for (const key in models) {
+        if (!models.hasOwnProperty(key))
+            continue;
+        const ModelClass = models[key];
+        if (ModelClass.schema.collection === modelOrCollectionName)
+            return ModelClass;
     }
     throw new Error(`No model found for model/collection name ${modelOrCollectionName}`);
 }
 exports.getModel = getModel;
+function getCollection(modelOrCollectionName) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const models = options.models;
+        assert_1.default(!is_1.default.nullOrUndefined(models), new Error('You must register models using the configureDb() function'));
+        let ModelClass;
+        for (const key in models) {
+            if (!models.hasOwnProperty(key))
+                continue;
+            if ((models[key].schema.model === modelOrCollectionName) || (models[key].schema.collection === modelOrCollectionName)) {
+                ModelClass = models[key];
+                break;
+            }
+        }
+        assert_1.default(!is_1.default.nullOrUndefined(ModelClass), 'Unable to find collection with given model or collection name, is the model registered?');
+        const dbInstance = yield getDbInstance();
+        const schema = ModelClass.schema;
+        const collection = yield dbInstance.collection(schema.collection);
+        if (schema.indexes) {
+            for (const index of schema.indexes) {
+                const spec = index.spec || {};
+                const options = index.options || {};
+                if (!options.hasOwnProperty('background')) {
+                    options.background = true;
+                }
+                yield collection.createIndex(spec, options);
+            }
+        }
+        return collection;
+    });
+}
+exports.getCollection = getCollection;
 //# sourceMappingURL=index.js.map

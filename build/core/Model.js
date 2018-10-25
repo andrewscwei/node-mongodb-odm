@@ -29,19 +29,7 @@ class Model {
         return __awaiter(this, void 0, void 0, function* () {
             if (!this.schema)
                 throw new Error('This model has no schema, you must define this static proerty in the derived class');
-            const dbInstance = yield __1.getInstance();
-            const collection = yield dbInstance.collection(this.schema.collection);
-            if (this.schema.indexes) {
-                for (const index of this.schema.indexes) {
-                    const spec = index.spec || {};
-                    const options = index.options || {};
-                    if (!options.hasOwnProperty('background')) {
-                        options.background = true;
-                    }
-                    yield collection.createIndex(spec, options);
-                }
-            }
-            return collection;
+            return __1.getCollection(this.schema.collection);
         });
     }
     static randomFields(fixedFields = {}, { includeOptionals = false } = {}) {

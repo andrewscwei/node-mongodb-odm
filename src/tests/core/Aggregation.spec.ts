@@ -8,14 +8,15 @@ import { ObjectID } from 'mongodb';
 import * as db from '../../';
 import Aggregation, { MatchStageDescriptor } from '../../core/Aggregation';
 import Bar, { BarSchema } from '../models/Bar';
+import Baz from '../models/Baz';
 import Foo, { FooSchema } from '../models/Foo';
 
 describe('core/Aggregation', () => {
   before(async () => {
-    db.configure({
+    db.configureDb({
       host: 'localhost:27017',
       name: 'mongodb_odm_test',
-      models: { Foo, Bar },
+      models: { Foo, Bar, Baz },
     });
   });
 

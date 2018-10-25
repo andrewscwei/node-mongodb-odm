@@ -3,8 +3,10 @@
  *       the MongoClient instance.
  */
 
+import is from '@sindresorhus/is';
+import assert from 'assert';
 import debug from 'debug';
-import { Db, MongoClient, MongoError } from 'mongodb';
+import { Collection, Db, MongoClient, MongoError } from 'mongodb';
 import Model from './core/Model';
 
 const log = debug('mongodb-odm');
@@ -17,14 +19,20 @@ export interface Configuration {
   models?: { [modelName: string]: typeof Model};
 }
 
+/**
+ * Global MongoDB client instance.
+ */
 let client: MongoClient;
 
+/**
+ * Global db configuration options.
+ */
 let options: Configuration;
 
 // Be sure to disconnect the database if the app terminates.
 process.on('SIGINT', async () => {
   if (client) {
-    await disconnect();
+    await disconnectFromDb();
     log('MongoDB client disconnected due to app termination');
   }
 
@@ -32,24 +40,13 @@ process.on('SIGINT', async () => {
 });
 
 /**
- * Configures the ODM.
- *
- * @param descriptor - Configuration descriptor.
- */
-export function configure(descriptor: Configuration) {
-  options = descriptor;
-}
-
-/**
  * Establishes a new connection to the database based on the initialized
  * configuration. If there already exists one, this method does nothing.
- *
- * @return No fulfillment value.
  */
-export async function connect(): Promise<void> {
-  if (client && client.isConnected) return;
+async function connectToDb(): Promise<void> {
+  if (isDbConnected()) return;
 
-  if (!options) throw new Error('You must configure connection options by calling #configure()');
+  if (!options) throw new Error('You must configure connection options by calling #configureDb()');
 
   // Resolve the authentication string.
   const authentication = (options.username && options.password) ? `${options.username}:${options.password}` : undefined;
@@ -96,10 +93,8 @@ export async function connect(): Promise<void> {
 
 /**
  * Disconnects the existing database client.
- *
- * @return No fulfillment value.
  */
-export async function disconnect(): Promise<void> {
+async function disconnectFromDb(): Promise<void> {
   if (!client) return;
   await client.close();
 }
@@ -109,25 +104,34 @@ export async function disconnect(): Promise<void> {
  *
  * @return `true` if connected, `false` otherwise.
  */
-export function isConnected(): boolean {
+function isDbConnected(): boolean {
   if (!client) return false;
   if (!client.isConnected) return false;
   return true;
 }
 
 /**
+ * Configures the ODM.
+ *
+ * @param descriptor - Configuration descriptor.
+ */
+export function configureDb(descriptor: Configuration) {
+  options = descriptor;
+}
+
+/**
  * Gets the database instance from the client.
  *
- * @return The database instance as the fulfillment value.
+ * @return The database instance.
  */
-export async function getInstance(): Promise<Db> {
+export async function getDbInstance(): Promise<Db> {
   if (client) return client.db(options.name);
 
   log('There is no MongoDB client, establishing one now...');
 
-  await connect();
+  await connectToDb();
 
-  return getInstance();
+  return getDbInstance();
 }
 
 /**
@@ -138,19 +142,68 @@ export async function getInstance(): Promise<Db> {
  * @return The model class.
  */
 export function getModel(modelOrCollectionName: string): typeof Model {
-  const models = options.models;
+  const models = options.models!;
 
-  if (models) {
-    if (models.hasOwnProperty(modelOrCollectionName)) return models[modelOrCollectionName];
+  assert(!is.nullOrUndefined(models), new Error('You must register models using the configureDb() function'));
 
-    for (const key in models) {
-      if (!models.hasOwnProperty(key)) continue;
+  if (models.hasOwnProperty(modelOrCollectionName)) return models[modelOrCollectionName];
 
-      const ModelClass = models[key];
+  for (const key in models) {
+    if (!models.hasOwnProperty(key)) continue;
 
-      if (ModelClass.schema.collection === modelOrCollectionName) return ModelClass;
-    }
+    const ModelClass = models[key];
+
+    if (ModelClass.schema.collection === modelOrCollectionName) return ModelClass;
   }
 
   throw new Error(`No model found for model/collection name ${modelOrCollectionName}`);
+}
+
+/**
+ * Gets the MongoDB collection associated with a model or collection name and
+ * ensures the indexes defined in its schema.
+ *
+ * @param modelOrCollectionName - The model or collection name.
+ *
+ * @return The MongoDB collection.
+ *
+ * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html}
+ */
+export async function getCollection(modelOrCollectionName: string): Promise<Collection> {
+  const models = options.models!;
+
+  assert(!is.nullOrUndefined(models), new Error('You must register models using the configureDb() function'));
+
+  let ModelClass: typeof Model | undefined;
+
+  for (const key in models) {
+    if (!models.hasOwnProperty(key)) continue;
+
+    if ((models[key].schema.model === modelOrCollectionName) || (models[key].schema.collection === modelOrCollectionName)) {
+      ModelClass = models[key];
+      break;
+    }
+  }
+
+  assert(!is.nullOrUndefined(ModelClass), 'Unable to find collection with given model or collection name, is the model registered?');
+
+  const dbInstance = await getDbInstance();
+  const schema = ModelClass!.schema;
+  const collection = await dbInstance.collection(schema.collection);
+
+  // Ensure schema indexes.
+  if (schema.indexes) {
+    for (const index of schema.indexes) {
+      const spec = index.spec || {};
+      const options = index.options || {};
+
+      if (!options.hasOwnProperty('background')) {
+        options.background = true;
+      }
+
+      await collection.createIndex(spec, options);
+    }
+  }
+
+  return collection;
 }

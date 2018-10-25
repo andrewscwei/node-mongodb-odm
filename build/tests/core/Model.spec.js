@@ -25,15 +25,17 @@ const faker_1 = __importDefault(require("faker"));
 const mocha_1 = require("mocha");
 const mongodb_1 = require("mongodb");
 const db = __importStar(require("../.."));
+const Bar_1 = __importDefault(require("../models/Bar"));
 const Baz_1 = __importDefault(require("../models/Baz"));
 const Foo_1 = __importDefault(require("../models/Foo"));
-db.configure({
+db.configureDb({
     host: 'localhost:27017',
     name: 'mongodb_odm_test',
+    models: { Foo: Foo_1.default, Bar: Bar_1.default, Baz: Baz_1.default },
 });
 mocha_1.describe('core/Model', () => {
     before(() => __awaiter(this, void 0, void 0, function* () {
-        yield (yield db.getInstance()).dropDatabase();
+        yield (yield db.getDbInstance()).dropDatabase();
     }));
     mocha_1.it('throws an error if the model has no schema defined', () => __awaiter(this, void 0, void 0, function* () {
         assert_1.default(Foo_1.default.schema);

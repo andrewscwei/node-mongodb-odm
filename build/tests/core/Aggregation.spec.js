@@ -26,13 +26,14 @@ const mongodb_1 = require("mongodb");
 const db = __importStar(require("../../"));
 const Aggregation_1 = __importDefault(require("../../core/Aggregation"));
 const Bar_1 = __importStar(require("../models/Bar"));
+const Baz_1 = __importDefault(require("../models/Baz"));
 const Foo_1 = __importStar(require("../models/Foo"));
 mocha_1.describe('core/Aggregation', () => {
     before(() => __awaiter(this, void 0, void 0, function* () {
-        db.configure({
+        db.configureDb({
             host: 'localhost:27017',
             name: 'mongodb_odm_test',
-            models: { Foo: Foo_1.default, Bar: Bar_1.default },
+            models: { Foo: Foo_1.default, Bar: Bar_1.default, Baz: Baz_1.default },
         });
     }));
     it('can generate $match stage', () => {

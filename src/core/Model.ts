@@ -11,7 +11,7 @@ import bcrypt from 'bcrypt';
 import debug from 'debug';
 import _ from 'lodash';
 import { Collection, CollectionAggregationOptions, CollectionInsertManyOptions, CollectionInsertOneOptions, CommonOptions, FindOneAndReplaceOption, ObjectID, ReplaceOneOptions } from 'mongodb';
-import { getInstance, getModel } from '..';
+import { getCollection, getModel } from '..';
 import { Document, FieldSpecs, Query, Schema, typeIsUpdate, Update } from '../types';
 import sanitizeDocument from '../utils/sanitizeDocument';
 import sanitizeQuery from '../utils/sanitizeQuery';
@@ -121,35 +121,16 @@ abstract class Model {
   static schema: Schema;
 
   /**
-   * Gets the MongoDB collection associated with this model and ensures the
-   * indexes defined in its schema.
+   * Gets the MongoDB collection associated with this model.
    *
    * @return The MongoDB collection.
    *
-   * @todo Move this to root.
-   *
-   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html}
+   * @see getCollection()
    */
   static async getCollection(): Promise<Collection> {
     if (!this.schema) throw new Error('This model has no schema, you must define this static proerty in the derived class');
 
-    const dbInstance = await getInstance();
-    const collection = await dbInstance.collection(this.schema.collection);
-
-    if (this.schema.indexes) {
-      for (const index of this.schema.indexes) {
-        const spec = index.spec || {};
-        const options = index.options || {};
-
-        if (!options.hasOwnProperty('background')) {
-          options.background = true;
-        }
-
-        await collection.createIndex(spec, options);
-      }
-    }
-
-    return collection;
+    return getCollection(this.schema.collection);
   }
 
   /**

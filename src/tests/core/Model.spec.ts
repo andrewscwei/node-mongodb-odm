@@ -6,17 +6,19 @@ import { describe, it } from 'mocha';
 import { ObjectID } from 'mongodb';
 import * as db from '../..';
 import { Document } from '../../types';
+import Bar from '../models/Bar';
 import Baz, { BazProps } from '../models/Baz';
 import Foo from '../models/Foo';
 
-db.configure({
+db.configureDb({
   host: 'localhost:27017',
   name: 'mongodb_odm_test',
+  models: { Foo, Bar, Baz },
 });
 
 describe('core/Model', () => {
   before(async () => {
-    await (await db.getInstance()).dropDatabase();
+    await (await db.getDbInstance()).dropDatabase();
   });
 
   it('throws an error if the model has no schema defined', async () => {
