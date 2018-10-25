@@ -12,7 +12,7 @@ import { FieldSpecs, FieldType } from '../types';
  * @return `true` if validation passes, `false` otherwise.
  */
 export default function validateFieldValue(value: any, specs: FieldSpecs): boolean {
-  const errorPrefix = `[validate(${value}, ${JSON.stringify(specs)}]`;
+  const errorPrefix = `[validate(${value}, ${JSON.stringify(specs, null, 0)}]`;
 
   try {
     // Check if value is undefined or null, then respond accordingly depending on
@@ -150,7 +150,7 @@ export default function validateFieldValue(value: any, specs: FieldSpecs): boole
     }
 
     if (is.function_(specs.validate)) {
-      assert(specs.validate(value), new TypeError(`${errorPrefix} Failed to pass custom validation function: the value ${value} must conform to the field specs ${JSON.stringify(specs)}`));
+      assert(specs.validate(value), new TypeError(`${errorPrefix} Failed to pass custom validation function: the value ${value} must conform to the field specs ${JSON.stringify(specs, null, 0)}`));
     }
 
     return true;

@@ -67,10 +67,10 @@ class Model {
         return __awaiter(this, void 0, void 0, function* () {
             const result = yield this.findOne(query);
             if (is_1.default.nullOrUndefined(result)) {
-                throw new Error(`No results found while identifying this ${this.schema.model} using the query ${JSON.stringify(query)}`);
+                throw new Error(`No results found while identifying this ${this.schema.model} using the query ${JSON.stringify(query, null, 0)}`);
             }
             else if (is_1.default.nullOrUndefined(result._id)) {
-                throw new Error(`Cannot identify this ${this.schema.model} using the query ${JSON.stringify(query)}`);
+                throw new Error(`Cannot identify this ${this.schema.model} using the query ${JSON.stringify(query, null, 0)}`);
             }
             else {
                 return result._id;
@@ -105,10 +105,10 @@ class Model {
     static insertOne(doc, options) {
         return __awaiter(this, void 0, void 0, function* () {
             const t = yield this.beforeInsert(doc || this.randomFields(), Object.assign({ strict: true }, options));
-            log(`${this.schema.model}.insertOne:`, JSON.stringify(t, null, 2));
+            log(`${this.schema.model}.insertOne:`, JSON.stringify(t, null, 0));
             const collection = yield this.getCollection();
             const results = yield collection.insertOne(t, options).catch(error => { throw error; });
-            log(`${this.schema.model}.insertOne results:`, JSON.stringify(results, null, 2));
+            log(`${this.schema.model}.insertOne results:`, JSON.stringify(results, null, 0));
             assert_1.default(results.result.ok === 1);
             assert_1.default(results.ops.length <= 1, new Error('Somehow insertOne() op inserted more than 1 document'));
             if (results.ops.length < 1)
@@ -125,10 +125,10 @@ class Model {
             for (let i = 0; i < n; i++) {
                 t[i] = yield this.beforeInsert(docs[i]);
             }
-            log(`${this.schema.model}.insertMany:`, JSON.stringify(t, null, 2));
+            log(`${this.schema.model}.insertMany:`, JSON.stringify(t, null, 0));
             const collection = yield this.getCollection();
             const results = yield collection.insertMany(t, options);
-            log(`${this.schema.model}.insertMany results:`, JSON.stringify(results, null, 2));
+            log(`${this.schema.model}.insertMany results:`, JSON.stringify(results, null, 0));
             assert_1.default(results.result.ok === 1);
             const o = results.ops;
             const m = o.length;
@@ -141,24 +141,46 @@ class Model {
     static updateOne(query, update, options = {}) {
         return __awaiter(this, void 0, void 0, function* () {
             const collection = yield this.getCollection();
-            const [q, u] = yield this.beforeUpdate(query, update, options);
-            log(`${this.schema.model}.updateOne:`, JSON.stringify(q), JSON.stringify(u));
+            const [q, u] = (options.skipHooks === true) ? [query, update] : yield this.beforeUpdate(query, update, options);
+            log(`${this.schema.model}.updateOne:`, JSON.stringify(q, null, 0), JSON.stringify(u, null, 0));
             if (options.returnDoc === true) {
-                const res = yield collection.findOneAndUpdate(q, u, Object.assign({ returnOriginal: false }, options));
-                log(`${this.schema.model}.updateOne results:`, JSON.stringify(res));
-                assert_1.default(res.ok === 1);
-                if (!res.value)
-                    return null;
-                yield this.afterUpdate(query, u, res.value);
-                return res.value;
+                if (!is_1.default.object(q)) {
+                    throw new Error('Invalid query, maybe it is not sanitized? This could happen if you enabled skipHooks in the options, in which case you will need to sanitize the query yourself');
+                }
+                const res = yield collection.findOneAndUpdate(q, u, Object.assign({}, options, { returnOriginal: true }));
+                log(`${this.schema.model}.updateOne results:`, JSON.stringify(res, null, 0));
+                assert_1.default(res.ok === 1, new Error('Update failed'));
+                let oldDoc;
+                let newDoc;
+                if (is_1.default.nullOrUndefined(res.lastErrorObject.upserted)) {
+                    oldDoc = res.value;
+                    if (is_1.default.nullOrUndefined(oldDoc))
+                        return null;
+                    newDoc = yield this.findOne(oldDoc._id);
+                }
+                else {
+                    newDoc = yield this.findOne(res.lastErrorObject.upserted);
+                }
+                if (is_1.default.nullOrUndefined(newDoc)) {
+                    throw new Error('Unable to find the updated doc');
+                }
+                if (options.skipHooks !== true) {
+                    yield this.afterUpdate(oldDoc, newDoc);
+                }
+                return newDoc;
             }
             else {
+                if (!is_1.default.object(q)) {
+                    throw new Error('Invalid query, maybe it is not sanitized? This could happen if you enabled skipHooks in the options, in which case you will need to sanitize the query yourself');
+                }
                 const res = yield collection.updateOne(q, u, options);
-                log(`${this.schema.model}.updateOne results:`, JSON.stringify(res));
+                log(`${this.schema.model}.updateOne results:`, JSON.stringify(res, null, 0));
                 assert_1.default(res.result.ok === 1);
                 if (res.result.n <= 0)
                     return false;
-                yield this.afterUpdate(query, u);
+                if (options.skipHooks !== true) {
+                    yield this.afterUpdate();
+                }
                 return true;
             }
         });
@@ -166,21 +188,18 @@ class Model {
     static updateMany(query, update, options = {}) {
         return __awaiter(this, void 0, void 0, function* () {
             const [q, u] = yield this.beforeUpdate(query, update, options);
-            log(`${this.schema.model}.updateMany:`, JSON.stringify(q), JSON.stringify(u));
             const collection = yield this.getCollection();
+            log(`${this.schema.model}.updateMany:`, JSON.stringify(q, null, 0), JSON.stringify(u, null, 0), JSON.stringify(options, null, 0));
             if (options.returnDocs === true) {
                 const docs = yield this.findMany(q);
                 const n = docs.length;
                 const results = [];
-                if (n <= 0) {
-                    if (options.upsert === true) {
-                        const res = yield this.updateOne(query, update, Object.assign({}, options, { returnDoc: true }));
-                        if (is_1.default.boolean(res) || is_1.default.null_(res)) {
-                            throw new Error('Error upserting document during an updateMany operation');
-                        }
-                        results.push(res);
+                if ((n <= 0) && (options.upsert === true)) {
+                    const res = yield this.updateOne(q, u, Object.assign({}, options, { returnDoc: true, skipHooks: true }));
+                    if (is_1.default.boolean(res) || is_1.default.null_(res)) {
+                        throw new Error('Error upserting document during an updateMany operation');
                     }
-                    return results;
+                    results.push(res);
                 }
                 else {
                     for (let i = 0; i < n; i++) {
@@ -190,20 +209,18 @@ class Model {
                         assert_1.default(result.value);
                         results.push(result.value);
                     }
-                    log(`${this.schema.model}.updateMany results:`, JSON.stringify(results));
-                    for (let i = 0; i < n; i++) {
-                        yield this.afterUpdate(q, u, results[i]);
-                    }
-                    return results;
+                    log(`${this.schema.model}.updateMany results:`, JSON.stringify(results, null, 0));
                 }
+                yield this.afterUpdate(undefined, results);
+                return results;
             }
             else {
                 const results = yield collection.updateMany(q, u, options);
-                log(`${this.schema.model}.updateMany results:`, JSON.stringify(results));
+                log(`${this.schema.model}.updateMany results:`, JSON.stringify(results, null, 0));
                 assert_1.default(results.result.ok === 1);
                 if (results.result.n <= 0)
                     return false;
-                yield this.afterUpdate(q, u);
+                yield this.afterUpdate();
                 return true;
             }
         });
@@ -211,11 +228,11 @@ class Model {
     static deleteOne(query, options = {}) {
         return __awaiter(this, void 0, void 0, function* () {
             const q = yield this.beforeDelete(query, options);
-            log(`${this.schema.model}.deleteOne:`, JSON.stringify(query));
+            log(`${this.schema.model}.deleteOne:`, JSON.stringify(query, null, 0));
             const collection = yield this.getCollection();
             if (options.returnDoc === true) {
                 const results = yield collection.findOneAndDelete(q);
-                log(`${this.schema.model}.deleteOne results:`, JSON.stringify(results));
+                log(`${this.schema.model}.deleteOne results:`, JSON.stringify(results, null, 0));
                 assert_1.default(results.ok === 1);
                 if (!results.value) {
                     return null;
@@ -225,7 +242,7 @@ class Model {
             }
             else {
                 const results = yield collection.deleteOne(q, options);
-                log(`${this.schema.model}.deleteOne results:`, JSON.stringify(results));
+                log(`${this.schema.model}.deleteOne results:`, JSON.stringify(results, null, 0));
                 assert_1.default(results.result.ok === 1);
                 if (!is_1.default.number(results.result.n) || (results.result.n <= 0)) {
                     return false;
@@ -238,7 +255,7 @@ class Model {
     static deleteMany(query, options = {}) {
         return __awaiter(this, void 0, void 0, function* () {
             const q = yield this.beforeDelete(query, options);
-            log(`${this.schema.model}.deleteMany:`, JSON.stringify(q));
+            log(`${this.schema.model}.deleteMany:`, JSON.stringify(q, null, 0));
             const collection = yield this.getCollection();
             if (options.returnDocs === true) {
                 const docs = yield this.findMany(q);
@@ -252,7 +269,7 @@ class Model {
                         results.push(result.value);
                     }
                 }
-                log(`${this.schema.model}.deleteMany results:`, JSON.stringify(results));
+                log(`${this.schema.model}.deleteMany results:`, JSON.stringify(results, null, 0));
                 const m = results.length;
                 for (let i = 0; i < m; i++) {
                     yield this.afterDelete(results[i]);
@@ -261,7 +278,7 @@ class Model {
             }
             else {
                 const results = yield collection.deleteMany(q, Object.assign({}, options));
-                log(`${this.schema.model}.deleteMany results:`, JSON.stringify(results));
+                log(`${this.schema.model}.deleteMany results:`, JSON.stringify(results, null, 0));
                 assert_1.default(results.result.ok === 1);
                 if (!is_1.default.number(results.result.n) || (results.result.n <= 0))
                     return false;
@@ -274,10 +291,10 @@ class Model {
         return __awaiter(this, void 0, void 0, function* () {
             const q = yield this.beforeDelete(query, options);
             const r = yield this.beforeInsert(replacement, options);
-            log(`${this.schema.model}.replaceOne:`, JSON.stringify(q), JSON.stringify(r));
+            log(`${this.schema.model}.replaceOne:`, JSON.stringify(q, null, 0), JSON.stringify(r, null, 0));
             const collection = yield this.getCollection();
             const results = yield collection.findOneAndReplace(q, r, Object.assign({}, options, { returnOriginal: true }));
-            log(`${this.schema.model}.replaceOne results:`, JSON.stringify(results));
+            log(`${this.schema.model}.replaceOne results:`, JSON.stringify(results, null, 0));
             assert_1.default(results.ok === 1);
             const oldDoc = results.value;
             if (is_1.default.nullOrUndefined(oldDoc))
@@ -333,7 +350,7 @@ class Model {
                 }
                 const fieldSpecs = fields[key];
                 if (!validateFieldValue_1.default(val, fieldSpecs)) {
-                    throw new Error(`Error validating field '${key}' with value [${val}] of type [${typeof val}], constraints: ${JSON.stringify(fieldSpecs, undefined, 2)}, doc: ${JSON.stringify(doc, undefined, 2)}`);
+                    throw new Error(`Error validating field '${key}' with value [${val}] of type [${typeof val}], constraints: ${JSON.stringify(fieldSpecs, null, 0)}, doc: ${JSON.stringify(doc, null, 0)}`);
                 }
             }
             if ((options.ignoreUniqueIndex !== true) && this.schema.indexes) {
@@ -350,7 +367,7 @@ class Model {
                         continue;
                     const uniqueQuery = lodash_1.default.pick(doc, Object.keys(index.spec));
                     if (yield this.findOne(uniqueQuery))
-                        throw new Error(`Another document already exists with ${JSON.stringify(uniqueQuery)}`);
+                        throw new Error(`Another document already exists with ${JSON.stringify(uniqueQuery, null, 0)}`);
                 }
             }
             if (options.strict === true) {
@@ -367,9 +384,27 @@ class Model {
             return true;
         });
     }
+    static willInsertDocument(doc) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return doc;
+        });
+    }
+    static didInsertDocument(doc) {
+        return __awaiter(this, void 0, void 0, function* () { });
+    }
+    static willUpdateDocument(query, update) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return [query, update];
+        });
+    }
+    static didUpdateDocument(prevDoc, newDocs) {
+        return __awaiter(this, void 0, void 0, function* () {
+        });
+    }
     static beforeInsert(doc, options = {}) {
         return __awaiter(this, void 0, void 0, function* () {
             const fields = this.schema.fields;
+            const d = yield this.willInsertDocument(doc);
             let o = sanitizeDocument_1.default(this.schema, doc);
             if ((this.schema.timestamps === true) && (options.ignoreTimestamps !== true)) {
                 o.createdAt = new Date();
@@ -392,47 +427,50 @@ class Model {
     }
     static afterInsert(doc) {
         return __awaiter(this, void 0, void 0, function* () {
+            yield this.didInsertDocument(doc);
         });
     }
     static beforeUpdate(query, update, options = {}) {
         return __awaiter(this, void 0, void 0, function* () {
-            let q = sanitizeQuery_1.default(this.schema, query);
-            let u;
-            if (types_1.typeIsUpdate(update)) {
-                u = Object.assign({}, update);
-                if (u.$set)
-                    u.$set = sanitizeDocument_1.default(this.schema, u.$set);
-                if (u.$setOnInsert)
-                    u.$setOnInsert = sanitizeDocument_1.default(this.schema, u.$setOnInsert);
-                if (u.$addToSet)
-                    u.$addToSet = sanitizeDocument_1.default(this.schema, u.$addToSet);
-                if (u.$push)
-                    u.$push = sanitizeDocument_1.default(this.schema, u.$push);
+            const [q, u] = yield this.willUpdateDocument(query, update);
+            let qq = sanitizeQuery_1.default(this.schema, query);
+            let uu;
+            if (types_1.typeIsUpdate(u)) {
+                uu = Object.assign({}, u);
+                if (uu.$set)
+                    uu.$set = sanitizeDocument_1.default(this.schema, uu.$set);
+                if (uu.$setOnInsert)
+                    uu.$setOnInsert = sanitizeDocument_1.default(this.schema, uu.$setOnInsert);
+                if (uu.$addToSet)
+                    uu.$addToSet = sanitizeDocument_1.default(this.schema, uu.$addToSet);
+                if (uu.$push)
+                    uu.$push = sanitizeDocument_1.default(this.schema, uu.$push);
             }
             else {
-                u = {
-                    $set: sanitizeDocument_1.default(this.schema, update),
+                uu = {
+                    $set: sanitizeDocument_1.default(this.schema, u),
                 };
             }
             if (options.upsert === true) {
-                q = yield this.beforeInsert(q, options);
-                u.$setOnInsert = lodash_1.default.omit(q, [
+                qq = yield this.beforeInsert(qq, options);
+                uu.$setOnInsert = lodash_1.default.omit(qq, [
                     'updatedAt',
-                    ...Object.keys(u),
+                    ...Object.keys(uu),
                 ]);
             }
-            if (!u.$set)
-                u.$set = {};
+            if (!uu.$set)
+                uu.$set = {};
             if ((this.schema.timestamps === true) && (options.ignoreTimestamps !== true)) {
-                u.$set.updatedAt = new Date();
+                uu.$set.updatedAt = new Date();
             }
-            u.$set = yield this.formatDocument(u.$set);
-            yield this.validateDocument(u.$set, Object.assign({ ignoreUniqueIndex: true }, options));
-            return [q, u];
+            uu.$set = yield this.formatDocument(uu.$set);
+            yield this.validateDocument(uu.$set, Object.assign({ ignoreUniqueIndex: true }, options));
+            return [qq, uu];
         });
     }
-    static afterUpdate(query, update, doc) {
+    static afterUpdate(oldDoc, newDocs) {
         return __awaiter(this, void 0, void 0, function* () {
+            yield this.didUpdateDocument(oldDoc, newDocs);
         });
     }
     static beforeDelete(query, options) {

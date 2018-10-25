@@ -80,6 +80,11 @@ interface ModelUpdateOneOptions extends ModelInsertOneOptions, FindOneAndReplace
    * automatically generated before insertion.
    */
   ignoreTimestamps?: boolean;
+
+  /**
+   * Specifies whether beforeUpdate() and afterUpdate() hooks are skipped.
+   */
+  skipHooks?: boolean;
 }
 
 interface ModelUpdateManyOptions extends CommonOptions, FindOneAndReplaceOption {
@@ -207,10 +212,10 @@ abstract class Model {
     const result = await this.findOne<U>(query);
 
     if (is.nullOrUndefined(result)) {
-      throw new Error(`No results found while identifying this ${this.schema.model} using the query ${JSON.stringify(query)}`);
+      throw new Error(`No results found while identifying this ${this.schema.model} using the query ${JSON.stringify(query, null, 0)}`);
     }
     else if (is.nullOrUndefined(result._id)) {
-      throw new Error(`Cannot identify this ${this.schema.model} using the query ${JSON.stringify(query)}`);
+      throw new Error(`Cannot identify this ${this.schema.model} using the query ${JSON.stringify(query, null, 0)}`);
     }
     else {
       return result._id!;
@@ -277,12 +282,12 @@ abstract class Model {
     // Apply before insert handler.
     const t = await this.beforeInsert<U>(doc || this.randomFields<U>(), { strict: true, ...options });
 
-    log(`${this.schema.model}.insertOne:`, JSON.stringify(t, null, 2));
+    log(`${this.schema.model}.insertOne:`, JSON.stringify(t, null, 0));
 
     const collection = await this.getCollection();
     const results = await collection.insertOne(t, options).catch(error => { throw error; });
 
-    log(`${this.schema.model}.insertOne results:`, JSON.stringify(results, null, 2));
+    log(`${this.schema.model}.insertOne results:`, JSON.stringify(results, null, 0));
 
     assert(results.result.ok === 1);
     assert(results.ops.length <= 1, new Error('Somehow insertOne() op inserted more than 1 document'));
@@ -320,12 +325,12 @@ abstract class Model {
       t[i] = await this.beforeInsert<U>(docs[i]);
     }
 
-    log(`${this.schema.model}.insertMany:`, JSON.stringify(t, null, 2));
+    log(`${this.schema.model}.insertMany:`, JSON.stringify(t, null, 0));
 
     const collection = await this.getCollection();
     const results = await collection.insertMany(t, options);
 
-    log(`${this.schema.model}.insertMany results:`, JSON.stringify(results, null, 2));
+    log(`${this.schema.model}.insertMany results:`, JSON.stringify(results, null, 0));
 
     assert(results.result.ok === 1);
 
@@ -359,33 +364,63 @@ abstract class Model {
    */
   static async updateOne<U = {}>(query: Query<U>, update: Document<U> | Update<U>, options: ModelUpdateOneOptions = {}): Promise<null | boolean | Document<U>> {
     const collection = await this.getCollection();
-    const [q, u] = await this.beforeUpdate<U>(query, update, options);
+    const [q, u] = (options.skipHooks === true) ? [query, update] : await this.beforeUpdate<U>(query, update, options);
 
-    log(`${this.schema.model}.updateOne:`, JSON.stringify(q), JSON.stringify(u));
+    log(`${this.schema.model}.updateOne:`, JSON.stringify(q, null, 0), JSON.stringify(u, null, 0));
 
     if (options.returnDoc === true) {
-      const res = await collection.findOneAndUpdate(q, u, { returnOriginal: false, ...options });
+      if (!is.object(q)) {
+        throw new Error('Invalid query, maybe it is not sanitized? This could happen if you enabled skipHooks in the options, in which case you will need to sanitize the query yourself');
+      }
 
-      log(`${this.schema.model}.updateOne results:`, JSON.stringify(res));
+      // Need to keep the original doc for the didUpdateDocument() hook.
+      const res = await collection.findOneAndUpdate(q, u, { ...options, returnOriginal: true });
 
-      assert(res.ok === 1);
+      log(`${this.schema.model}.updateOne results:`, JSON.stringify(res, null, 0));
 
-      if (!res.value) return null;
+      assert(res.ok === 1, new Error('Update failed'));
 
-      await this.afterUpdate<U>(query, u, res.value);
+      let oldDoc: Document<U> | undefined;
+      let newDoc: Document<U> | null;
 
-      return res.value as Document<U>;
+      // Handle upserts properly.
+      if (is.nullOrUndefined(res.lastErrorObject.upserted)) {
+        oldDoc = res.value;
+
+        if (is.nullOrUndefined(oldDoc)) return null;
+
+        newDoc = await this.findOne(oldDoc._id);
+      }
+      else {
+        newDoc = await this.findOne(res.lastErrorObject.upserted);
+      }
+
+      if (is.nullOrUndefined(newDoc)) {
+        throw new Error('Unable to find the updated doc');
+      }
+
+      if (options.skipHooks !== true) {
+        await this.afterUpdate<U>(oldDoc, newDoc);
+      }
+
+      return newDoc;
     }
     else {
+      if (!is.object(q)) {
+        throw new Error('Invalid query, maybe it is not sanitized? This could happen if you enabled skipHooks in the options, in which case you will need to sanitize the query yourself');
+      }
+
       const res = await collection.updateOne(q, u, options);
 
-      log(`${this.schema.model}.updateOne results:`, JSON.stringify(res));
+      log(`${this.schema.model}.updateOne results:`, JSON.stringify(res, null, 0));
 
       assert(res.result.ok === 1);
 
       if (res.result.n <= 0) return false;
 
-      await this.afterUpdate<U>(query, u);
+      if (options.skipHooks !== true) {
+        await this.afterUpdate<U>();
+      }
 
       return true;
     }
@@ -409,28 +444,23 @@ abstract class Model {
    */
   static async updateMany<U = {}>(query: Query<U>, update: Document<U> | Update<U>, options: ModelUpdateManyOptions = {}): Promise<Document<U>[] | boolean> {
     const [q, u] = await this.beforeUpdate<U>(query, update, options);
-
-    log(`${this.schema.model}.updateMany:`, JSON.stringify(q), JSON.stringify(u));
-
     const collection = await this.getCollection();
+
+    log(`${this.schema.model}.updateMany:`, JSON.stringify(q, null, 0), JSON.stringify(u, null, 0), JSON.stringify(options, null, 0));
 
     if (options.returnDocs === true) {
       const docs = await this.findMany<U>(q);
       const n = docs.length;
       const results: Document<U>[] = [];
 
-      if (n <= 0) {
-        if (options.upsert === true) {
-          const res = await this.updateOne(query, update, { ...options, returnDoc: true });
+      if ((n <= 0) && (options.upsert === true)) {
+        const res = await this.updateOne(q, u, { ...options, returnDoc: true, skipHooks: true });
 
-          if (is.boolean(res) || is.null_(res)) {
-            throw new Error('Error upserting document during an updateMany operation');
-          }
-
-          results.push(res);
+        if (is.boolean(res) || is.null_(res)) {
+          throw new Error('Error upserting document during an updateMany operation');
         }
 
-        return results;
+        results.push(res);
       }
       else {
         for (let i = 0; i < n; i++) {
@@ -443,25 +473,23 @@ abstract class Model {
           results.push(result.value);
         }
 
-        log(`${this.schema.model}.updateMany results:`, JSON.stringify(results));
-
-        for (let i = 0; i < n; i++) {
-          await this.afterUpdate<U>(q, u, results[i]);
-        }
-
-        return results;
+        log(`${this.schema.model}.updateMany results:`, JSON.stringify(results, null, 0));
       }
+
+      await this.afterUpdate<U>(undefined, results);
+
+      return results;
     }
     else {
       const results = await collection.updateMany(q, u, options);
 
-      log(`${this.schema.model}.updateMany results:`, JSON.stringify(results));
+      log(`${this.schema.model}.updateMany results:`, JSON.stringify(results, null, 0));
 
       assert(results.result.ok === 1);
 
       if (results.result.n <= 0) return false;
 
-      await this.afterUpdate(q, u);
+      await this.afterUpdate<U>();
 
       return true;
     }
@@ -483,14 +511,14 @@ abstract class Model {
   static async deleteOne<U = {}>(query: Query<U>, options: ModelDeleteOneOptions = {}): Promise<Document<U> | boolean | null> {
     const q = await this.beforeDelete<U>(query, options);
 
-    log(`${this.schema.model}.deleteOne:`, JSON.stringify(query));
+    log(`${this.schema.model}.deleteOne:`, JSON.stringify(query, null, 0));
 
     const collection = await this.getCollection();
 
     if (options.returnDoc === true) {
       const results = await collection.findOneAndDelete(q);
 
-      log(`${this.schema.model}.deleteOne results:`, JSON.stringify(results));
+      log(`${this.schema.model}.deleteOne results:`, JSON.stringify(results, null, 0));
 
       assert(results.ok === 1);
 
@@ -505,7 +533,7 @@ abstract class Model {
     else {
       const results = await collection.deleteOne(q, options);
 
-      log(`${this.schema.model}.deleteOne results:`, JSON.stringify(results));
+      log(`${this.schema.model}.deleteOne results:`, JSON.stringify(results, null, 0));
 
       assert(results.result.ok === 1);
 
@@ -535,7 +563,7 @@ abstract class Model {
   static async deleteMany<U = {}>(query: Query<U>, options: ModelDeleteManyOptions = {}): Promise<boolean | Document<U>[]> {
     const q = await this.beforeDelete(query, options);
 
-    log(`${this.schema.model}.deleteMany:`, JSON.stringify(q));
+    log(`${this.schema.model}.deleteMany:`, JSON.stringify(q, null, 0));
 
     const collection = await this.getCollection();
 
@@ -555,7 +583,7 @@ abstract class Model {
         }
       }
 
-      log(`${this.schema.model}.deleteMany results:`, JSON.stringify(results));
+      log(`${this.schema.model}.deleteMany results:`, JSON.stringify(results, null, 0));
 
       const m = results.length;
 
@@ -568,7 +596,7 @@ abstract class Model {
     else {
       const results = await collection.deleteMany(q, { ...options });
 
-      log(`${this.schema.model}.deleteMany results:`, JSON.stringify(results));
+      log(`${this.schema.model}.deleteMany results:`, JSON.stringify(results, null, 0));
 
       assert(results.result.ok === 1);
 
@@ -598,12 +626,12 @@ abstract class Model {
     const q = await this.beforeDelete<U>(query, options);
     const r = await this.beforeInsert<U>(replacement, options);
 
-    log(`${this.schema.model}.replaceOne:`, JSON.stringify(q), JSON.stringify(r));
+    log(`${this.schema.model}.replaceOne:`, JSON.stringify(q, null, 0), JSON.stringify(r, null, 0));
 
     const collection = await this.getCollection();
     const results = await collection.findOneAndReplace(q, r, { ...options, returnOriginal: true });
 
-    log(`${this.schema.model}.replaceOne results:`, JSON.stringify(results));
+    log(`${this.schema.model}.replaceOne results:`, JSON.stringify(results, null, 0));
 
     assert(results.ok === 1);
 
@@ -706,7 +734,7 @@ abstract class Model {
       const fieldSpecs = fields[key];
 
       if (!validateFieldValue(val, fieldSpecs)) {
-        throw new Error(`Error validating field '${key}' with value [${val}] of type [${typeof val}], constraints: ${JSON.stringify(fieldSpecs, undefined, 2)}, doc: ${JSON.stringify(doc, undefined, 2)}`);
+        throw new Error(`Error validating field '${key}' with value [${val}] of type [${typeof val}], constraints: ${JSON.stringify(fieldSpecs, null, 0)}, doc: ${JSON.stringify(doc, null, 0)}`);
       }
     }
 
@@ -723,7 +751,7 @@ abstract class Model {
         if (!Object.keys(index.spec).every(v => Object.keys(doc).indexOf(v) > -1)) continue;
 
         const uniqueQuery = _.pick(doc, Object.keys(index.spec));
-        if (await this.findOne(uniqueQuery)) throw new Error(`Another document already exists with ${JSON.stringify(uniqueQuery)}`);
+        if (await this.findOne(uniqueQuery)) throw new Error(`Another document already exists with ${JSON.stringify(uniqueQuery, null, 0)}`);
       }
     }
 
@@ -743,6 +771,51 @@ abstract class Model {
   }
 
   /**
+   * Handler called before a document is inserted into the database. This is a
+   * good place to apply any custom pre-processing to the document before it is
+   * inserted into the document. This method must return the document to be
+   * inserted.
+   *
+   * @param doc - The document to be inserted.
+   * @param options - Additional options.
+   *
+   * @return The document to be inserted.
+   */
+  static async willInsertDocument<U = {}>(doc: Document<U>): Promise<Document<U>> {
+    return doc;
+  }
+
+  /**
+   * Handler called right after the document is inserted.
+   *
+   * @param doc - The inserted document.
+   */
+  static async didInsertDocument<U = {}>(doc: Document<U>): Promise<void> {}
+
+  /**
+   * Handler called before an update operation. This method must return the
+   * query and update descriptor for the update operation.
+   *
+   * @param query - The query for document(s) to update.
+   * @param update - The update descriptor.
+   *
+   * @return A tuple of the query and the update descriptor.
+   */
+  static async willUpdateDocument<U = {}>(query: Query<U>, update: Document<U> | Update<U>): Promise<[Query<U>, Document<U> | Update<U>]> {
+    return [query, update];
+  }
+
+  /**
+   * Handler called after a document has been updated.
+   *
+   * @param prevDoc - The document before it is updated.
+   * @param newDoc - The updated document.
+   */
+  static async didUpdateDocument<U = {}>(prevDoc?: Document<U>, newDocs?: Document<U> | Document<U>[]): Promise<void> {
+
+  }
+
+  /**
    * Processes a document before it is inserted. This is also used during an
    * upsert operation.
    *
@@ -753,6 +826,9 @@ abstract class Model {
    */
   private static async beforeInsert<U = {}>(doc: Document<U>, options: ModelInsertOneOptions | ModelInsertManyOptions = {}): Promise<Document<U>> {
     const fields: { [fieldName: string]: FieldSpecs } = this.schema.fields;
+
+    // Call event hook first.
+    const d = await this.willInsertDocument<U>(doc);
 
     let o = sanitizeDocument<U>(this.schema, doc);
 
@@ -792,7 +868,7 @@ abstract class Model {
    * @param doc - The inserted document.
    */
   private static async afterInsert<U = {}>(doc: Document<U>): Promise<void> {
-
+    await this.didInsertDocument<U>(doc);
   }
 
   /**
@@ -806,24 +882,26 @@ abstract class Model {
    * @return The modified update to apply.
    */
   private static async beforeUpdate<U = {}>(query: Query<U>, update: Document<U> | Update<U>, options: ModelUpdateOneOptions | ModelUpdateManyOptions = {}): Promise<[Document<U>, Update<U>]> {
+    const [q, u] = await this.willUpdateDocument<U>(query, update);
+
     // First sanitize the inputs. We want to be able to make sure the query is
     // valid and that the update object is a proper update query.
-    let q = sanitizeQuery<U>(this.schema, query);
-    let u: Update<U>;
+    let qq: Document<U> = sanitizeQuery<U>(this.schema, query);
+    let uu: Update<U>;
 
-    if (typeIsUpdate<U>(update)) {
-      u = {
-        ...update,
+    if (typeIsUpdate<U>(u)) {
+      uu = {
+        ...u,
       };
 
-      if (u.$set) u.$set = sanitizeDocument<U>(this.schema, u.$set);
-      if (u.$setOnInsert) u.$setOnInsert = sanitizeDocument<U>(this.schema, u.$setOnInsert);
-      if (u.$addToSet) u.$addToSet = sanitizeDocument<U>(this.schema, u.$addToSet);
-      if (u.$push) u.$push = sanitizeDocument<U>(this.schema, u.$push);
+      if (uu.$set) uu.$set = sanitizeDocument<U>(this.schema, uu.$set);
+      if (uu.$setOnInsert) uu.$setOnInsert = sanitizeDocument<U>(this.schema, uu.$setOnInsert);
+      if (uu.$addToSet) uu.$addToSet = sanitizeDocument<U>(this.schema, uu.$addToSet);
+      if (uu.$push) uu.$push = sanitizeDocument<U>(this.schema, uu.$push);
     }
     else {
-      u = {
-        $set: sanitizeDocument<U>(this.schema, update),
+      uu = {
+        $set: sanitizeDocument<U>(this.schema, u),
       };
     }
 
@@ -832,41 +910,40 @@ abstract class Model {
     // query to the database as well, unless they are already in the update
     // query.
     if (options.upsert === true) {
-      q = await this.beforeInsert<U>(q, options);
+      qq = await this.beforeInsert<U>(qq, options);
 
-      u.$setOnInsert = _.omit(q, [
+      uu.$setOnInsert = _.omit(qq, [
         'updatedAt',
-        ...Object.keys(u),
+        ...Object.keys(uu),
       ]);
     }
 
     // Create $set operator if it doesn't exist.
-    if (!u.$set) u.$set = {};
+    if (!uu.$set) uu.$set = {};
 
     // Add updated timestamps if applicable.
     if ((this.schema.timestamps === true) && (options.ignoreTimestamps !== true)) {
-      u.$set.updatedAt = new Date();
+      uu.$set.updatedAt = new Date();
     }
 
     // Format all fields in the update query.
-    u.$set = await this.formatDocument<U>(u.$set as Document<U>);
+    uu.$set = await this.formatDocument<U>(uu.$set as Document<U>);
 
     // Validate all fields in the update query.
-    await this.validateDocument<U>(u.$set as Document<U>, { ignoreUniqueIndex: true, ...options });
+    await this.validateDocument<U>(uu.$set as Document<U>, { ignoreUniqueIndex: true, ...options });
 
-    return [q, u];
+    return [qq, uu];
   }
 
   /**
    * Handler invoked right after an update. This does not account for
    * insertions.
    *
-   * @param query - The original query for the document to update.
-   * @param update - The update descriptor applied.
-   * @param doc - The updated doc if available.
+   * @param oldDoc - The original document.
+   * @param newDoc - The updated document.
    */
-  private static async afterUpdate<U = {}>(query: Query<U>, update: Update<U>, doc?: Document<U>) {
-
+  private static async afterUpdate<U = {}>(oldDoc?: Document<U>, newDocs?: Document<U> | Document<U>[]) {
+    await this.didUpdateDocument<U>(oldDoc, newDocs);
   }
 
   /**

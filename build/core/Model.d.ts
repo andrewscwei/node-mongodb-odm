@@ -20,6 +20,7 @@ interface ModelInsertManyOptions extends ModelValidateDocumentOptions, Collectio
 interface ModelUpdateOneOptions extends ModelInsertOneOptions, FindOneAndReplaceOption, ReplaceOneOptions {
     returnDoc?: boolean;
     ignoreTimestamps?: boolean;
+    skipHooks?: boolean;
 }
 interface ModelUpdateManyOptions extends CommonOptions, FindOneAndReplaceOption {
     returnDocs?: boolean;
@@ -53,6 +54,10 @@ declare abstract class Model {
     static count<U = {}>(query: Query<U>, options?: ModelCountOptions): Promise<number>;
     static formatDocument<U = {}>(doc: Document<U>): Promise<Document<U>>;
     static validateDocument<U = {}>(doc: Document<U>, options?: ModelValidateDocumentOptions): Promise<boolean>;
+    static willInsertDocument<U = {}>(doc: Document<U>): Promise<Document<U>>;
+    static didInsertDocument<U = {}>(doc: Document<U>): Promise<void>;
+    static willUpdateDocument<U = {}>(query: Query<U>, update: Document<U> | Update<U>): Promise<[Query<U>, Document<U> | Update<U>]>;
+    static didUpdateDocument<U = {}>(prevDoc?: Document<U>, newDocs?: Document<U> | Document<U>[]): Promise<void>;
     private static beforeInsert;
     private static afterInsert;
     private static beforeUpdate;

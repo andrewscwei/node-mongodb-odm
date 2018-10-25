@@ -7,7 +7,7 @@ const is_1 = __importDefault(require("@sindresorhus/is"));
 const assert_1 = __importDefault(require("assert"));
 const mongodb_1 = require("mongodb");
 function validateFieldValue(value, specs) {
-    const errorPrefix = `[validate(${value}, ${JSON.stringify(specs)}]`;
+    const errorPrefix = `[validate(${value}, ${JSON.stringify(specs, null, 0)}]`;
     try {
         if (is_1.default.nullOrUndefined(value)) {
             if (specs.required) {
@@ -118,7 +118,7 @@ function validateFieldValue(value, specs) {
                 }
         }
         if (is_1.default.function_(specs.validate)) {
-            assert_1.default(specs.validate(value), new TypeError(`${errorPrefix} Failed to pass custom validation function: the value ${value} must conform to the field specs ${JSON.stringify(specs)}`));
+            assert_1.default(specs.validate(value), new TypeError(`${errorPrefix} Failed to pass custom validation function: the value ${value} must conform to the field specs ${JSON.stringify(specs, null, 0)}`));
         }
         return true;
     }
