@@ -109,6 +109,8 @@ interface ModelDeleteManyOptions extends CommonOptions {
   returnDocs?: boolean;
 }
 
+interface ModelReplaceOneOptions extends FindOneAndReplaceOption, ModelDeleteOneOptions, ModelInsertOneOptions {}
+
 interface ModelCountOptions extends ModelFindManyOptions {}
 
 abstract class Model {
@@ -596,45 +598,48 @@ abstract class Model {
     }
   }
 
-  // /**
-  //  * Replaces one document with another. If `replacement` is not specified,
-  //  * one with random info will be generated.
-  //  *
-  //  * @param query - @see module:mongodb.Collection#findOneAndReplace
-  //  * @param replacement - @see module:mongodb.Collection#findOneAndReplace
-  //  * @param {Object} [options] - @see module:mongodb.Collection#findOneAndReplace
-  //  *
-  //  * @return {Promise<Model>} The replaced document as the fulfillment value.
-  //  *                           `null` if no document was replaced.
-  //  *
-  //  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndReplace}
-  //  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~findAndModifyWriteOpResult}
-  //  */
-  // static async replaceOne(query: Query, replacement: Document = this.randomFields(), options?: FindOneAndReplaceOption) {
-  //   query = sanitizeQuery(this.schema, query);
-  //   replacement = await this.beforeInsert(replacement, options);
+  /**
+   * Replaces one document with another. If `replacement` is not specified,
+   * one with random info will be generated.
+   *
+   * @param query - Query for document to replace.
+   * @param replacement - The replacement document.
+   * @param options - @see ModelReplaceOneOptions
+   *
+   * @return The replaced document (by default) or the new document (depending
+   *         on the `returnOriginal` option) if available, `null` otherwise.
+   *
+   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndReplace}
+   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~findAndModifyWriteOpResult}
+   */
+  static async findAndReplaceOne<U extends Document = Document>(query: Query<U>, replacement: Partial<U> = this.randomFields<U>(), options: ModelReplaceOneOptions = {}): Promise<null | Partial<U>> {
+    const q = await this.beforeDelete<U>(query, options);
+    const r = await this.beforeInsert<U>(replacement, options);
 
-  //   await this.beforeDelete(query, options);
+    log(`${this.schema.model}.replaceOne:`, JSON.stringify(q), JSON.stringify(r));
 
-  //   if (!options) options = {};
-  //   options.returnOriginal = true;
+    const collection = await this.getCollection();
+    const results = await collection.findOneAndReplace(q, r, { ...options, returnOriginal: true });
 
-  //   log(`${this.schema.model}.replaceOne:`, JSON.stringify(query, null, 2), JSON.stringify(replacement, null, 2));
+    log(`${this.schema.model}.replaceOne results:`, JSON.stringify(results));
 
-  //   const collection = await this.getCollection();
-  //   const results = await collection.findOneAndReplace(query, replacement, options);
+    assert(results.ok === 1);
 
-  //   log(`${this.schema.model}.replaceOne results:`, JSON.stringify(results, null, 2));
+    const oldDoc = results.value;
 
-  //   assert(results.ok === 1);
+    if (is.nullOrUndefined(oldDoc)) return null;
 
-  //   if (!results.value) return null;
+    const newDoc = await this.findOne<U>(r);
 
-  //   await this.afterDelete(results.value, undefined);
-  //   await this.afterInsert(await this.findOne(replacement));
+    if (is.null_(newDoc)) {
+      throw new Error('Document is replaced but unable to find the new document in the database');
+    }
 
-  //   return results.value;
-  // }
+    await this.afterDelete<U>(results.value);
+    await this.afterInsert<U>(newDoc);
+
+    return (options.returnOriginal === true) ? oldDoc : newDoc;
+  }
 
   /**
    * Counts the documents that match the provided query.
@@ -799,7 +804,7 @@ abstract class Model {
    *
    * @param doc - The inserted document.
    */
-  private static async afterInsert<U extends Document = Document>(doc: U): Promise<void> {
+  private static async afterInsert<U extends Document = Document>(doc: Partial<U>): Promise<void> {
 
   }
 

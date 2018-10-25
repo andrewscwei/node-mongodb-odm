@@ -263,4 +263,28 @@ describe('core/Model', () => {
     assert(is.array(res));
     assert((res as Partial<BazDocument>[]).length === 3);
   });
+
+  it('can replace an existing doc and return the old doc', async () => {
+    const s = Faker.random.alphaNumeric(10);
+    const t = Faker.random.alphaNumeric(10);
+
+    await Baz.insertOne<BazDocument>({ aString: s });
+
+    const doc = await Baz.findAndReplaceOne<BazDocument>({ aString: s }, { aString: t }, { returnOriginal: true });
+
+    assert(!is.nullOrUndefined(doc));
+    assert(doc!.aString === s);
+  });
+
+  it('can replace an existing doc and return the new doc', async () => {
+    const s = Faker.random.alphaNumeric(10);
+    const t = Faker.random.alphaNumeric(10);
+
+    await Baz.insertOne<BazDocument>({ aString: s });
+
+    const doc = await Baz.findAndReplaceOne<BazDocument>({ aString: s }, { aString: t }, { returnOriginal: false });
+
+    assert(!is.nullOrUndefined(doc));
+    assert(doc!.aString === t);
+  });
 });
