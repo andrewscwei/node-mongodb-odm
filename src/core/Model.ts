@@ -927,19 +927,6 @@ abstract class Model {
       };
     }
 
-    // In the case of an upsert, we need to preprocess the query as if this was
-    // an insertion. We also need to tell the database to save all fields in the
-    // query to the database as well, unless they are already in the update
-    // query.
-    if (options.upsert === true) {
-      qq = await this.beforeInsert<U>(qq, options);
-
-      uu.$setOnInsert = _.omit(qq, [
-        'updatedAt',
-        ...Object.keys(uu),
-      ]);
-    }
-
     // Create $set operator if it doesn't exist.
     if (!uu.$set) uu.$set = {};
 
@@ -950,6 +937,19 @@ abstract class Model {
 
     // Format all fields in the update query.
     uu.$set = await this.formatDocument<U>(uu.$set as Document<U>);
+
+    // In the case of an upsert, we need to preprocess the query as if this was
+    // an insertion. We also need to tell the database to save all fields in the
+    // query to the database as well, unless they are already in the update
+    // query.
+    if (options.upsert === true) {
+      qq = await this.beforeInsert<U>(qq, options);
+
+      uu.$setOnInsert = _.omit(qq, [
+        'updatedAt',
+        ...Object.keys(uu.$set),
+      ]);
+    }
 
     // Validate all fields in the update query.
     await this.validateDocument<U>(uu.$set as Document<U>, { ignoreUniqueIndex: true, ...options });
