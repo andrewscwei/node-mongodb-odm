@@ -22,7 +22,7 @@ const Model_1 = __importDefault(require("./core/Model"));
 exports.Model = Model_1.default;
 const log = debug_1.default('mongodb-odm');
 let client;
-let options;
+let config;
 const collections = {};
 process.on('SIGINT', () => __awaiter(this, void 0, void 0, function* () {
     if (client) {
@@ -35,14 +35,14 @@ function connectToDb() {
     return __awaiter(this, void 0, void 0, function* () {
         if (isDbConnected())
             return;
-        if (!options)
+        if (!config)
             throw new Error('You must configure connection options by calling #configureDb()');
-        const authentication = (options.username && options.password) ? `${options.username}:${options.password}` : undefined;
-        const url = `mongodb://${authentication ? `${authentication}@` : ''}${options.host}/${options.name}`;
+        const authentication = (config.username && config.password) ? `${config.username}:${config.password}` : undefined;
+        const url = `mongodb://${authentication ? `${authentication}@` : ''}${config.host}/${config.name}`;
         client = yield mongodb_1.MongoClient.connect(url, {
             useNewUrlParser: true,
         });
-        const connection = client.db(options.name);
+        const connection = client.db(config.name);
         log('MongoDB client is open:', url);
         connection.on('authenticated', () => {
             log('MongoDB servers authenticated');
@@ -84,14 +84,14 @@ function isDbConnected() {
     return true;
 }
 exports.isDbConnected = isDbConnected;
-function configureDb(descriptor) {
-    options = descriptor;
+function configureDb(options) {
+    config = options;
 }
 exports.configureDb = configureDb;
 function getDbInstance() {
     return __awaiter(this, void 0, void 0, function* () {
         if (client)
-            return client.db(options.name);
+            return client.db(config.name);
         log('There is no MongoDB client, establishing one now...');
         yield connectToDb();
         return getDbInstance();
@@ -99,7 +99,7 @@ function getDbInstance() {
 }
 exports.getDbInstance = getDbInstance;
 function getModel(modelOrCollectionName) {
-    const models = options.models;
+    const models = config.models;
     assert_1.default(!is_1.default.nullOrUndefined(models), new Error('You must register models using the configureDb() function'));
     if (models.hasOwnProperty(modelOrCollectionName))
         return models[modelOrCollectionName];
@@ -115,7 +115,7 @@ function getModel(modelOrCollectionName) {
 exports.getModel = getModel;
 function getCollection(modelOrCollectionName) {
     return __awaiter(this, void 0, void 0, function* () {
-        const models = options.models;
+        const models = config.models;
         assert_1.default(!is_1.default.nullOrUndefined(models), new Error('You must register models using the configureDb() function'));
         if (!is_1.default.nullOrUndefined(collections[modelOrCollectionName])) {
             return collections[modelOrCollectionName];

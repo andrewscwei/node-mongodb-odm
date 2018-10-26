@@ -440,7 +440,7 @@ class Model {
     static beforeUpdate(query, update, options = {}) {
         return __awaiter(this, void 0, void 0, function* () {
             const [q, u] = yield this.willUpdateDocument(query, update);
-            let qq = sanitizeQuery_1.default(this.schema, query);
+            let qq = sanitizeQuery_1.default(this.schema, q);
             let uu;
             if (types_1.typeIsUpdate(u)) {
                 uu = Object.assign({}, u);
@@ -458,19 +458,16 @@ class Model {
                     $set: sanitizeDocument_1.default(this.schema, u),
                 };
             }
-            if (options.upsert === true) {
-                qq = yield this.beforeInsert(qq, options);
-                uu.$setOnInsert = lodash_1.default.omit(qq, [
-                    'updatedAt',
-                    ...Object.keys(uu),
-                ]);
-            }
             if (!uu.$set)
                 uu.$set = {};
             if ((this.schema.timestamps === true) && (options.ignoreTimestamps !== true)) {
                 uu.$set.updatedAt = new Date();
             }
             uu.$set = yield this.formatDocument(uu.$set);
+            if (options.upsert === true) {
+                qq = yield this.beforeInsert(qq, options);
+                uu.$setOnInsert = lodash_1.default.omit(qq, Object.keys(uu.$set));
+            }
             yield this.validateDocument(uu.$set, Object.assign({ ignoreUniqueIndex: true }, options));
             return [qq, uu];
         });

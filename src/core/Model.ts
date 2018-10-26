@@ -945,8 +945,6 @@ abstract class Model {
     if (options.upsert === true) {
       qq = await this.beforeInsert<U>(qq, options);
       uu.$setOnInsert = _.omit(qq, Object.keys(uu.$set));
-
-      console.log('fooooo');
     }
 
     // Validate all fields in the update query.

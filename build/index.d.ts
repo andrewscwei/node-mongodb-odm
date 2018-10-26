@@ -12,7 +12,7 @@ export interface Configuration {
 export declare function connectToDb(): Promise<void>;
 export declare function disconnectFromDb(): Promise<void>;
 export declare function isDbConnected(): boolean;
-export declare function configureDb(descriptor: Configuration): void;
+export declare function configureDb(options: Configuration): void;
 export declare function getDbInstance(): Promise<Db>;
 export declare function getModel(modelOrCollectionName: string): typeof Model;
 export declare function getCollection(modelOrCollectionName: string): Promise<Collection>;
