@@ -37,6 +37,7 @@ export const BarSchema: Schema<BarProps> = {
     },
     anObject: {
       type: {
+        anObjectIdArray: { type: [ObjectID] },
         aString: { type: String },
         aNumber: { type: Number },
         aBoolean: { type: Boolean },

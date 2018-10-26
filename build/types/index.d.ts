@@ -1,4 +1,5 @@
 import { IndexOptions, ObjectID, UpdateQuery } from 'mongodb';
+declare type FieldBaseType = typeof String | typeof Number | typeof Boolean | typeof Date | typeof ObjectID | typeof Array;
 export declare type Document<T = {}> = Partial<T> & {
     _id?: ObjectID;
     createdAt?: Date;
@@ -9,17 +10,9 @@ export declare type Query<T = {}> = string | ObjectID | Document<T> | {
     [key: string]: any;
 };
 export declare type Update<T = {}> = UpdateQuery<Document<T>>;
-export declare type FieldType = typeof ObjectID | typeof String | typeof Number | typeof Boolean | typeof Date | typeof Array | (typeof Number)[] | {
+export declare type FieldType = FieldBaseType | FieldBaseType[] | {
     [key: string]: FieldSpecs;
 };
-export declare type FieldValue = undefined | ObjectID | string | number | boolean | Date | any[] | {
-    [key: string]: FieldValue;
-};
-export declare type FieldFormatFunction = (value: any) => FieldValue;
-export declare type FieldValidationStrategy = RegExp | number | any[] | FieldValidationFunction;
-export declare type FieldValidationFunction = (value: any) => boolean;
-export declare type FieldRandomValueFunction = () => FieldValue;
-export declare type FieldDefaultValueFunction = () => FieldValue;
 export interface FieldSpecs {
     type: FieldType;
     ref?: string;
@@ -39,12 +32,6 @@ export interface Schema<T = {}> {
         [K in keyof T]: FieldSpecs;
     };
     indexes?: SchemaIndex[];
-}
-export interface SchemaIndex {
-    spec: {
-        [key: string]: any;
-    };
-    options?: IndexOptions;
 }
 export declare function typeIsUpdate<T = {}>(value: any): value is Update<T>;
 export declare type AggregationPipeline = (MatchStageDescriptor | LookupStageDescriptor | UnwindStageDescriptor | GroupStageDescriptor | SortStageDescriptor | ProjectStageDescriptor | SampleStageDescriptor)[];
@@ -120,3 +107,18 @@ export interface ProjectStageDescriptor {
         [key: string]: any;
     };
 }
+declare type FieldValue = undefined | ObjectID | string | number | boolean | Date | any[] | {
+    [key: string]: FieldValue;
+};
+declare type FieldFormatFunction = (value: any) => FieldValue;
+declare type FieldValidationStrategy = RegExp | number | any[] | FieldValidationFunction;
+declare type FieldValidationFunction = (value: any) => boolean;
+declare type FieldRandomValueFunction = () => FieldValue;
+declare type FieldDefaultValueFunction = () => FieldValue;
+interface SchemaIndex {
+    spec: {
+        [key: string]: any;
+    };
+    options?: IndexOptions;
+}
+export {};

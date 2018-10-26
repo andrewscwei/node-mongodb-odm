@@ -2,6 +2,11 @@ import is from '@sindresorhus/is';
 import { IndexOptions, ObjectID, UpdateQuery } from 'mongodb';
 
 /**
+ * Data type for basic field types.
+ */
+type FieldBaseType = typeof String | typeof Number | typeof Boolean | typeof Date | typeof ObjectID | typeof Array;
+
+/**
  * MongoDB document structure.
  */
 export type Document<T = {}> = Partial<T> & { _id?: ObjectID; createdAt?: Date; updatedAt?: Date; [field: string]: FieldValue; };
@@ -17,49 +22,9 @@ export type Query<T = {}> = string | ObjectID | Document<T> | { [key: string]: a
 export type Update<T = {}> = UpdateQuery<Document<T>>;
 
 /**
- * Data type for acceptable field types.
+ * Data type for all field types.
  */
-export type FieldType = typeof ObjectID | typeof String | typeof Number | typeof Boolean | typeof Date | typeof Array | (typeof Number)[] | { [key: string]: FieldSpecs };
-
-/**
- * Data type for acceptable field values.
- */
-export type FieldValue = undefined | ObjectID | string | number | boolean | Date | any[] | { [key: string]: FieldValue };
-
-/**
- * Function for formatting field values, in which the value to be formatted will
- * be passed into this function as its only paramenter.
- */
-export type FieldFormatFunction = (value: any) => FieldValue;
-
-/**
- * The validation strategy can be one of several types. The behavior per type is
- * as follows:
- *   1. RegExp: The value to be validated must pass for RegExp.test().
- *   2. number: The value to be validated must be <= this number. If the value
- *              is a string, its length must be <= this number.
- *   3. any[]: The value to be validated must be one of the elements of this
- *             array.
- *   4. Function: The value to be validated will be passed into this function
- *                and it must return `true`.
- */
-export type FieldValidationStrategy = RegExp | number | any[] | FieldValidationFunction;
-
-/**
- * Function for validating field values, in which the value to be validated
- * is passed into the function as its only argument.
- */
-export type FieldValidationFunction = (value: any) => boolean;
-
-/**
- * Function for generating a random value for the associated field.
- */
-export type FieldRandomValueFunction = () => FieldValue;
-
-/**
- * Function for generating a default value for the associated field.
- */
-export type FieldDefaultValueFunction = () => FieldValue;
+export type FieldType = FieldBaseType | FieldBaseType[] | { [key: string]: FieldSpecs };
 
 /**
  * Specification for defining a field in the MongoDB collection.
@@ -152,25 +117,6 @@ export interface Schema<T = {}> {
    * @see SchemaIndex
    */
   indexes?: SchemaIndex[];
-}
-
-/**
- * Describes the indexes to be created in the associated collection.
- */
-export interface SchemaIndex {
-  /**
-   * Spec to be passed to Collection#createIndex.
-   *
-   * @see {@link https://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#createIndex}
-   */
-  spec: { [key: string]: any };
-
-  /**
-   * Options to be passed to Collection#createIndex.
-   *
-   * @see {@link https://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#createIndex}
-   */
-  options?: IndexOptions;
 }
 
 export function typeIsUpdate<T = {}>(value: any): value is Update<T> {
@@ -313,4 +259,63 @@ export interface ProjectStageFactoryOptionsPopulate {
 
 export interface ProjectStageDescriptor {
   $project: { [key: string]: any };
+}
+
+/**
+ * Data type for acceptable field values.
+ */
+type FieldValue = undefined | ObjectID | string | number | boolean | Date | any[] | { [key: string]: FieldValue };
+
+/**
+ * Function for formatting field values, in which the value to be formatted will
+ * be passed into this function as its only paramenter.
+ */
+type FieldFormatFunction = (value: any) => FieldValue;
+
+/**
+ * The validation strategy can be one of several types. The behavior per type is
+ * as follows:
+ *   1. RegExp: The value to be validated must pass for RegExp.test().
+ *   2. number: The value to be validated must be <= this number. If the value
+ *              is a string, its length must be <= this number.
+ *   3. any[]: The value to be validated must be one of the elements of this
+ *             array.
+ *   4. Function: The value to be validated will be passed into this function
+ *                and it must return `true`.
+ */
+type FieldValidationStrategy = RegExp | number | any[] | FieldValidationFunction;
+
+/**
+ * Function for validating field values, in which the value to be validated
+ * is passed into the function as its only argument.
+ */
+type FieldValidationFunction = (value: any) => boolean;
+
+/**
+ * Function for generating a random value for the associated field.
+ */
+type FieldRandomValueFunction = () => FieldValue;
+
+/**
+ * Function for generating a default value for the associated field.
+ */
+type FieldDefaultValueFunction = () => FieldValue;
+
+/**
+ * Describes the indexes to be created in the associated collection.
+ */
+interface SchemaIndex {
+  /**
+   * Spec to be passed to Collection#createIndex.
+   *
+   * @see {@link https://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#createIndex}
+   */
+  spec: { [key: string]: any };
+
+  /**
+   * Options to be passed to Collection#createIndex.
+   *
+   * @see {@link https://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#createIndex}
+   */
+  options?: IndexOptions;
 }

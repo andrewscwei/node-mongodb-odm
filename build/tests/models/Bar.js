@@ -27,6 +27,7 @@ exports.BarSchema = {
         },
         anObject: {
             type: {
+                anObjectIdArray: { type: [mongodb_1.ObjectID] },
                 aString: { type: String },
                 aNumber: { type: Number },
                 aBoolean: { type: Boolean },
