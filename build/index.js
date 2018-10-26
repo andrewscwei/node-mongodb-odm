@@ -23,7 +23,7 @@ exports.Model = Model_1.default;
 const log = debug_1.default('mongodb-odm');
 let client;
 let config;
-const collections = {};
+let collections = {};
 process.on('SIGINT', () => __awaiter(this, void 0, void 0, function* () {
     if (client) {
         yield disconnectFromDb();
@@ -86,6 +86,7 @@ function isDbConnected() {
 exports.isDbConnected = isDbConnected;
 function configureDb(options) {
     config = options;
+    collections = {};
 }
 exports.configureDb = configureDb;
 function getDbInstance() {

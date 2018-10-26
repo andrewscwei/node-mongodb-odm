@@ -32,7 +32,7 @@ let config: Configuration;
 /**
  * Collection lookup dictionary.
  */
-const collections: { [collectionName: string]: Collection } = {};
+let collections: { [collectionName: string]: Collection } = {};
 
 // Be sure to disconnect the database if the app terminates.
 process.on('SIGINT', async () => {
@@ -122,6 +122,7 @@ export function isDbConnected(): boolean {
  */
 export function configureDb(options: Configuration) {
   config = options;
+  collections = {};
 }
 
 /**
