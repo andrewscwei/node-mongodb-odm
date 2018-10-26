@@ -27,7 +27,7 @@ let client: MongoClient;
 /**
  * Global db configuration options.
  */
-let options: Configuration;
+let config: Configuration;
 
 /**
  * Collection lookup dictionary.
@@ -51,19 +51,19 @@ process.on('SIGINT', async () => {
 export async function connectToDb(): Promise<void> {
   if (isDbConnected()) return;
 
-  if (!options) throw new Error('You must configure connection options by calling #configureDb()');
+  if (!config) throw new Error('You must configure connection options by calling #configureDb()');
 
   // Resolve the authentication string.
-  const authentication = (options.username && options.password) ? `${options.username}:${options.password}` : undefined;
+  const authentication = (config.username && config.password) ? `${config.username}:${config.password}` : undefined;
 
   // Database client URL.
-  const url = `mongodb://${authentication ? `${authentication}@` : ''}${options.host}/${options.name}`;
+  const url = `mongodb://${authentication ? `${authentication}@` : ''}${config.host}/${config.name}`;
 
   client = await MongoClient.connect(url, {
     useNewUrlParser: true,
   });
 
-  const connection = client.db(options.name);
+  const connection = client.db(config.name);
 
   log('MongoDB client is open:', url);
 
@@ -118,10 +118,10 @@ export function isDbConnected(): boolean {
 /**
  * Configures the ODM.
  *
- * @param descriptor - Configuration descriptor.
+ * @param options - Configuration options.
  */
-export function configureDb(descriptor: Configuration) {
-  options = descriptor;
+export function configureDb(options: Configuration) {
+  config = options;
 }
 
 /**
@@ -130,7 +130,7 @@ export function configureDb(descriptor: Configuration) {
  * @return The database instance.
  */
 export async function getDbInstance(): Promise<Db> {
-  if (client) return client.db(options.name);
+  if (client) return client.db(config.name);
 
   log('There is no MongoDB client, establishing one now...');
 
@@ -147,7 +147,7 @@ export async function getDbInstance(): Promise<Db> {
  * @return The model class.
  */
 export function getModel(modelOrCollectionName: string): typeof Model {
-  const models = options.models!;
+  const models = config.models!;
 
   assert(!is.nullOrUndefined(models), new Error('You must register models using the configureDb() function'));
 
@@ -175,7 +175,7 @@ export function getModel(modelOrCollectionName: string): typeof Model {
  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html}
  */
 export async function getCollection(modelOrCollectionName: string): Promise<Collection> {
-  const models = options.models!;
+  const models = config.models!;
 
   assert(!is.nullOrUndefined(models), new Error('You must register models using the configureDb() function'));
 
