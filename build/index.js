@@ -18,6 +18,7 @@ const is_1 = __importDefault(require("@sindresorhus/is"));
 const assert_1 = __importDefault(require("assert"));
 const debug_1 = __importDefault(require("debug"));
 const mongodb_1 = require("mongodb");
+exports.ObjectID = mongodb_1.ObjectID;
 const Model_1 = __importDefault(require("./core/Model"));
 exports.Model = Model_1.default;
 const log = debug_1.default('mongodb-odm');
