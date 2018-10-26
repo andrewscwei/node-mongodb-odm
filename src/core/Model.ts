@@ -947,7 +947,7 @@ abstract class Model {
 
       const setOnInsert = _.omit({
         ...uu.$setOnInsert || {},
-        qq,
+        ...qq as object,
       }, Object.keys(uu.$set || {}));
 
       if (!is.emptyObject(setOnInsert)) {

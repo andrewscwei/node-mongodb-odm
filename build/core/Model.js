@@ -468,7 +468,7 @@ class Model {
             }
             if (options.upsert === true) {
                 qq = yield this.beforeInsert(qq, options);
-                const setOnInsert = lodash_1.default.omit(Object.assign({}, uu.$setOnInsert || {}, { qq }), Object.keys(uu.$set || {}));
+                const setOnInsert = lodash_1.default.omit(Object.assign({}, uu.$setOnInsert || {}, qq), Object.keys(uu.$set || {}));
                 if (!is_1.default.emptyObject(setOnInsert)) {
                     uu.$setOnInsert = setOnInsert;
                 }
