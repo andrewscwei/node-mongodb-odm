@@ -943,6 +943,7 @@ abstract class Model {
     // query to the database as well, unless they are already in the update
     // query.
     if (options.upsert === true) {
+      // Make a copy of the query in case it is manipulated by the hooks.
       const beforeInsert = await this.beforeInsert<U>(_.cloneDeep(qq), { ...options, strict: false });
       const setOnInsert = _.omit({
         ...uu.$setOnInsert || {},
