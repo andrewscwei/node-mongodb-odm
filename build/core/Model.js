@@ -142,13 +142,13 @@ class Model {
         return __awaiter(this, void 0, void 0, function* () {
             const collection = yield this.getCollection();
             const [q, u] = (options.skipHooks === true) ? [query, update] : yield this.beforeUpdate(query, update, options);
-            log(`${this.schema.model}.updateOne:`, JSON.stringify(q, null, 0), JSON.stringify(u, null, 0));
+            log(`${this.schema.model}.updateOne:`, JSON.stringify(q, null, 0), JSON.stringify(u, null, 0), JSON.stringify(options, null, 0));
             if (options.returnDoc === true) {
                 if (!is_1.default.object(q)) {
                     throw new Error('Invalid query, maybe it is not sanitized? This could happen if you enabled skipHooks in the options, in which case you will need to sanitize the query yourself');
                 }
                 const res = yield collection.findOneAndUpdate(q, u, Object.assign({}, options, { returnOriginal: true }));
-                log(`${this.schema.model}.updateOne results:`, JSON.stringify(res, null, 0));
+                log(`${this.schema.model}.updateOne results:`, JSON.stringify(res, null, 0), JSON.stringify(options, null, 0));
                 assert_1.default(res.ok === 1, new Error('Update failed'));
                 let oldDoc;
                 let newDoc;

@@ -366,7 +366,7 @@ abstract class Model {
     const collection = await this.getCollection();
     const [q, u] = (options.skipHooks === true) ? [query, update] : await this.beforeUpdate<U>(query, update, options);
 
-    log(`${this.schema.model}.updateOne:`, JSON.stringify(q, null, 0), JSON.stringify(u, null, 0));
+    log(`${this.schema.model}.updateOne:`, JSON.stringify(q, null, 0), JSON.stringify(u, null, 0), JSON.stringify(options, null, 0));
 
     if (options.returnDoc === true) {
       if (!is.object(q)) {
@@ -376,7 +376,7 @@ abstract class Model {
       // Need to keep the original doc for the didUpdateDocument() hook.
       const res = await collection.findOneAndUpdate(q, u, { ...options, returnOriginal: true });
 
-      log(`${this.schema.model}.updateOne results:`, JSON.stringify(res, null, 0));
+      log(`${this.schema.model}.updateOne results:`, JSON.stringify(res, null, 0), JSON.stringify(options, null, 0));
 
       assert(res.ok === 1, new Error('Update failed'));
 
