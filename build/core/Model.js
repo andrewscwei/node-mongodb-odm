@@ -458,15 +458,20 @@ class Model {
                     $set: sanitizeDocument_1.default(this.schema, u),
                 };
             }
-            if (!uu.$set)
-                uu.$set = {};
             if ((this.schema.timestamps === true) && (options.ignoreTimestamps !== true)) {
+                if (!uu.$set)
+                    uu.$set = {};
                 uu.$set.updatedAt = new Date();
             }
-            uu.$set = yield this.formatDocument(uu.$set);
+            if (uu.$set) {
+                uu.$set = yield this.formatDocument(uu.$set);
+            }
             if (options.upsert === true) {
                 qq = yield this.beforeInsert(qq, options);
-                uu.$setOnInsert = lodash_1.default.omit(qq, Object.keys(uu.$set));
+                const setOnInsert = lodash_1.default.omit(Object.assign({}, uu.$setOnInsert || {}, { qq }), Object.keys(uu.$set || {}));
+                if (!is_1.default.emptyObject(setOnInsert)) {
+                    uu.$setOnInsert = setOnInsert;
+                }
             }
             yield this.validateDocument(uu.$set, Object.assign({ ignoreUniqueIndex: true }, options));
             return [qq, uu];

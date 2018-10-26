@@ -927,16 +927,16 @@ abstract class Model {
       };
     }
 
-    // Create $set operator if it doesn't exist.
-    if (!uu.$set) uu.$set = {};
-
     // Add updated timestamps if applicable.
     if ((this.schema.timestamps === true) && (options.ignoreTimestamps !== true)) {
+      if (!uu.$set) uu.$set = {};
       uu.$set.updatedAt = new Date();
     }
 
     // Format all fields in the update query.
-    uu.$set = await this.formatDocument<U>(uu.$set as Document<U>);
+    if (uu.$set) {
+      uu.$set = await this.formatDocument<U>(uu.$set as Document<U>);
+    }
 
     // In the case of an upsert, we need to preprocess the query as if this was
     // an insertion. We also need to tell the database to save all fields in the
@@ -944,7 +944,15 @@ abstract class Model {
     // query.
     if (options.upsert === true) {
       qq = await this.beforeInsert<U>(qq, options);
-      uu.$setOnInsert = _.omit(qq, Object.keys(uu.$set));
+
+      const setOnInsert = _.omit({
+        ...uu.$setOnInsert || {},
+        qq,
+      }, Object.keys(uu.$set || {}));
+
+      if (!is.emptyObject(setOnInsert)) {
+        uu.$setOnInsert = setOnInsert;
+      }
     }
 
     // Validate all fields in the update query.
