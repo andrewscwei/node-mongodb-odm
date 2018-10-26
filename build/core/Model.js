@@ -440,7 +440,7 @@ class Model {
     static beforeUpdate(query, update, options = {}) {
         return __awaiter(this, void 0, void 0, function* () {
             const [q, u] = yield this.willUpdateDocument(query, update);
-            let qq = sanitizeQuery_1.default(this.schema, q);
+            const qq = sanitizeQuery_1.default(this.schema, q);
             let uu;
             if (types_1.typeIsUpdate(u)) {
                 uu = Object.assign({}, u);
@@ -467,8 +467,8 @@ class Model {
                 uu.$set = yield this.formatDocument(uu.$set);
             }
             if (options.upsert === true) {
-                qq = yield this.beforeInsert(qq, options);
-                const setOnInsert = lodash_1.default.omit(Object.assign({}, uu.$setOnInsert || {}, qq), Object.keys(uu.$set || {}));
+                const beforeInsert = yield this.beforeInsert(qq, options);
+                const setOnInsert = lodash_1.default.omit(Object.assign({}, uu.$setOnInsert || {}, beforeInsert), Object.keys(uu.$set || {}));
                 if (!is_1.default.emptyObject(setOnInsert)) {
                     uu.$setOnInsert = setOnInsert;
                 }

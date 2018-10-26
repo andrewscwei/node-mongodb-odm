@@ -908,7 +908,7 @@ abstract class Model {
 
     // First sanitize the inputs. We want to be able to make sure the query is
     // valid and that the update object is a proper update query.
-    let qq: Document<U> = sanitizeQuery<U>(this.schema, q);
+    const qq: Document<U> = sanitizeQuery<U>(this.schema, q);
     let uu: Update<U>;
 
     if (typeIsUpdate<U>(u)) {
@@ -943,11 +943,10 @@ abstract class Model {
     // query to the database as well, unless they are already in the update
     // query.
     if (options.upsert === true) {
-      qq = await this.beforeInsert<U>(qq, options);
-
+      const beforeInsert = await this.beforeInsert<U>(qq, options);
       const setOnInsert = _.omit({
         ...uu.$setOnInsert || {},
-        ...qq as object,
+        ...beforeInsert as object,
       }, Object.keys(uu.$set || {}));
 
       if (!is.emptyObject(setOnInsert)) {
