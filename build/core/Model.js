@@ -412,10 +412,12 @@ class Model {
         return __awaiter(this, void 0, void 0, function* () {
             const fields = this.schema.fields;
             const d = yield this.willInsertDocument(doc);
-            let o = sanitizeDocument_1.default(this.schema, doc);
+            let o = sanitizeDocument_1.default(this.schema, d);
             if ((this.schema.timestamps === true) && (options.ignoreTimestamps !== true)) {
-                o.createdAt = new Date();
-                o.updatedAt = new Date();
+                if (!is_1.default.date(o.createdAt))
+                    o.createdAt = new Date();
+                if (!is_1.default.date(o.updatedAt))
+                    o.updatedAt = new Date();
             }
             for (const key in this.schema.fields) {
                 if (!this.schema.fields.hasOwnProperty(key))
@@ -428,7 +430,7 @@ class Model {
                 o[key] = (is_1.default.function_(fieldSpecs.default)) ? fieldSpecs.default() : fieldSpecs.default;
             }
             o = yield this.formatDocument(o);
-            yield this.validateDocument(o, Object.assign({ ignoreUniqueIndex: true }, options));
+            yield this.validateDocument(o, Object.assign({ ignoreUniqueIndex: true, strict: true }, options));
             return o;
         });
     }
@@ -461,13 +463,14 @@ class Model {
             if ((this.schema.timestamps === true) && (options.ignoreTimestamps !== true)) {
                 if (!uu.$set)
                     uu.$set = {};
-                uu.$set.updatedAt = new Date();
+                if (!is_1.default.date(uu.$set.updatedAt))
+                    uu.$set.updatedAt = new Date();
             }
             if (uu.$set) {
                 uu.$set = yield this.formatDocument(uu.$set);
             }
             if (options.upsert === true) {
-                const beforeInsert = yield this.beforeInsert(qq, options);
+                const beforeInsert = yield this.beforeInsert(qq, Object.assign({}, options, { strict: false }));
                 const setOnInsert = lodash_1.default.omit(Object.assign({}, uu.$setOnInsert || {}, beforeInsert), Object.keys(uu.$set || {}));
                 if (!is_1.default.emptyObject(setOnInsert)) {
                     uu.$setOnInsert = setOnInsert;

@@ -852,12 +852,12 @@ abstract class Model {
     // Call event hook first.
     const d = await this.willInsertDocument<U>(doc);
 
-    let o = sanitizeDocument<U>(this.schema, doc);
+    let o = sanitizeDocument<U>(this.schema, d);
 
     // Unless specified, always renew the `createdAt` and `updatedAt` fields.
     if ((this.schema.timestamps === true) && (options.ignoreTimestamps !== true)) {
-      o.createdAt = new Date();
-      o.updatedAt = new Date();
+      if (!is.date(o.createdAt)) o.createdAt = new Date();
+      if (!is.date(o.updatedAt)) o.updatedAt = new Date();
     }
 
     // Before inserting this document, go through each field and make sure that
@@ -879,7 +879,7 @@ abstract class Model {
     o = await this.formatDocument<U>(o);
 
     // Finally, validate the document as a final sanity check.
-    await this.validateDocument<U>(o, { ignoreUniqueIndex: true, ...options });
+    await this.validateDocument<U>(o, { ignoreUniqueIndex: true, strict: true, ...options });
 
     return o;
   }
@@ -930,7 +930,7 @@ abstract class Model {
     // Add updated timestamps if applicable.
     if ((this.schema.timestamps === true) && (options.ignoreTimestamps !== true)) {
       if (!uu.$set) uu.$set = {};
-      uu.$set.updatedAt = new Date();
+      if (!is.date(uu.$set.updatedAt)) uu.$set.updatedAt = new Date();
     }
 
     // Format all fields in the update query.
@@ -943,7 +943,7 @@ abstract class Model {
     // query to the database as well, unless they are already in the update
     // query.
     if (options.upsert === true) {
-      const beforeInsert = await this.beforeInsert<U>(qq, options);
+      const beforeInsert = await this.beforeInsert<U>(qq, { ...options, strict: false });
       const setOnInsert = _.omit({
         ...uu.$setOnInsert || {},
         ...beforeInsert as object,
