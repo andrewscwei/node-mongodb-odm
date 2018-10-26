@@ -6,7 +6,7 @@
 import is from '@sindresorhus/is';
 import assert from 'assert';
 import debug from 'debug';
-import { Collection, Db, MongoClient, MongoError } from 'mongodb';
+import { Collection, Db, MongoClient, MongoError, ObjectID } from 'mongodb';
 import Model from './core/Model';
 
 const log = debug('mongodb-odm');
@@ -227,3 +227,4 @@ export { default as sanitizeDocument } from './utils/sanitizeDocument';
 export { default as sanitizeQuery } from './utils/sanitizeQuery';
 export { default as validateFieldValue } from './utils/validateFieldValue';
 export { Model };
+export { ObjectID };
