@@ -943,7 +943,7 @@ abstract class Model {
     // query to the database as well, unless they are already in the update
     // query.
     if (options.upsert === true) {
-      const beforeInsert = await this.beforeInsert<U>(qq, { ...options, strict: false });
+      const beforeInsert = await this.beforeInsert<U>(_.cloneDeep(qq), { ...options, strict: false });
       const setOnInsert = _.omit({
         ...uu.$setOnInsert || {},
         ...beforeInsert as object,

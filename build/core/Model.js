@@ -470,7 +470,7 @@ class Model {
                 uu.$set = yield this.formatDocument(uu.$set);
             }
             if (options.upsert === true) {
-                const beforeInsert = yield this.beforeInsert(qq, Object.assign({}, options, { strict: false }));
+                const beforeInsert = yield this.beforeInsert(lodash_1.default.cloneDeep(qq), Object.assign({}, options, { strict: false }));
                 const setOnInsert = lodash_1.default.omit(Object.assign({}, uu.$setOnInsert || {}, beforeInsert), Object.keys(uu.$set || {}));
                 if (!is_1.default.emptyObject(setOnInsert)) {
                     uu.$setOnInsert = setOnInsert;
