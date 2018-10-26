@@ -334,6 +334,10 @@ class Model {
     }
     static validateDocument(doc, options = {}) {
         return __awaiter(this, void 0, void 0, function* () {
+            if (!is_1.default.object(doc))
+                throw new Error('Invalid document provided');
+            if (is_1.default.emptyObject(doc))
+                throw new Error('Empty objects are not permitted');
             const fields = this.schema.fields;
             for (const key in doc) {
                 if (key === '_id')

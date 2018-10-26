@@ -712,6 +712,9 @@ abstract class Model {
    * @return `true` will be fulfilled if all tests have passed.
    */
   static async validateDocument<U = {}>(doc: Document<U>, options: ModelValidateDocumentOptions = {}): Promise<boolean> {
+    if (!is.object(doc)) throw new Error('Invalid document provided');
+    if (is.emptyObject(doc)) throw new Error('Empty objects are not permitted');
+
     const fields: { [fieldName: string]: FieldSpecs } = this.schema.fields;
 
     for (const key in doc) {
