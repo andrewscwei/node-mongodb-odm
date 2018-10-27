@@ -104,6 +104,8 @@ class Model {
     }
     static insertOne(doc, options) {
         return __awaiter(this, void 0, void 0, function* () {
+            if (this.schema.noInserts === true)
+                throw new Error('Insertions are disallowed for this model');
             const t = yield this.beforeInsert(doc || this.randomFields(), Object.assign({ strict: true }, options));
             log(`${this.schema.model}.insertOne:`, JSON.stringify(t, null, 0));
             const collection = yield this.getCollection();
@@ -120,6 +122,8 @@ class Model {
     }
     static insertMany(docs, options = {}) {
         return __awaiter(this, void 0, void 0, function* () {
+            if ((this.schema.noInserts === true) || (this.schema.noInsertMany === true))
+                throw new Error('Multiple insertions are disallowed for this model');
             const n = docs.length;
             const t = new Array(n);
             for (let i = 0; i < n; i++) {
@@ -140,6 +144,8 @@ class Model {
     }
     static updateOne(query, update, options = {}) {
         return __awaiter(this, void 0, void 0, function* () {
+            if (this.schema.noUpdates === true)
+                throw new Error('Updates are disallowed for this model');
             const collection = yield this.getCollection();
             const [q, u] = (options.skipHooks === true) ? [query, update] : yield this.beforeUpdate(query, update, options);
             log(`${this.schema.model}.updateOne:`, JSON.stringify(q, null, 0), JSON.stringify(u, null, 0), JSON.stringify(options, null, 0));
@@ -187,6 +193,8 @@ class Model {
     }
     static updateMany(query, update, options = {}) {
         return __awaiter(this, void 0, void 0, function* () {
+            if ((this.schema.noUpdates === true) || (this.schema.noUpdateMany === true))
+                throw new Error('Multiple updates are disallowed for this model');
             const [q, u] = yield this.beforeUpdate(query, update, options);
             const collection = yield this.getCollection();
             log(`${this.schema.model}.updateMany:`, JSON.stringify(q, null, 0), JSON.stringify(u, null, 0), JSON.stringify(options, null, 0));
@@ -227,6 +235,8 @@ class Model {
     }
     static deleteOne(query, options = {}) {
         return __awaiter(this, void 0, void 0, function* () {
+            if (this.schema.noDeletes === true)
+                throw new Error('Deletions are disallowed for this model');
             const q = yield this.beforeDelete(query, options);
             log(`${this.schema.model}.deleteOne:`, JSON.stringify(query, null, 0));
             const collection = yield this.getCollection();
@@ -254,6 +264,8 @@ class Model {
     }
     static deleteMany(query, options = {}) {
         return __awaiter(this, void 0, void 0, function* () {
+            if ((this.schema.noDeletes === true) || (this.schema.noDeleteMany === true))
+                throw new Error('Multiple deletions are disallowed for this model');
             const q = yield this.beforeDelete(query, options);
             log(`${this.schema.model}.deleteMany:`, JSON.stringify(q, null, 0));
             const collection = yield this.getCollection();
@@ -445,6 +457,8 @@ class Model {
     }
     static beforeUpdate(query, update, options = {}) {
         return __awaiter(this, void 0, void 0, function* () {
+            if ((options.upsert === true) && (this.schema.allowUpsert !== true))
+                throw new Error('Attempting to upsert a document while upserting is disallowed in the schema');
             const [q, u] = yield this.willUpdateDocument(query, update);
             const qq = sanitizeQuery_1.default(this.schema, q);
             let uu;

@@ -279,6 +279,8 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~insertWriteOpResult}
    */
   static async insertOne<U = {}>(doc?: Document<U>, options?: ModelInsertOneOptions): Promise<null | Document<U>> {
+    if (this.schema.noInserts === true) throw new Error('Insertions are disallowed for this model');
+
     // Apply before insert handler.
     const t = await this.beforeInsert<U>(doc || this.randomFields<U>(), { strict: true, ...options });
 
@@ -317,6 +319,8 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~insertWriteOpResult}
    */
   static async insertMany<U = {}>(docs: Document<U>[], options: ModelInsertManyOptions = {}): Promise<Document<U>[]> {
+    if ((this.schema.noInserts === true) || (this.schema.noInsertMany === true)) throw new Error('Multiple insertions are disallowed for this model');
+
     const n = docs.length;
     const t: typeof docs = new Array(n);
 
@@ -363,6 +367,8 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
    */
   static async updateOne<U = {}>(query: Query<U>, update: Document<U> | Update<U>, options: ModelUpdateOneOptions = {}): Promise<null | boolean | Document<U>> {
+    if (this.schema.noUpdates === true) throw new Error('Updates are disallowed for this model');
+
     const collection = await this.getCollection();
     const [q, u] = (options.skipHooks === true) ? [query, update] : await this.beforeUpdate<U>(query, update, options);
 
@@ -443,6 +449,8 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
    */
   static async updateMany<U = {}>(query: Query<U>, update: Document<U> | Update<U>, options: ModelUpdateManyOptions = {}): Promise<Document<U>[] | boolean> {
+    if ((this.schema.noUpdates === true) || (this.schema.noUpdateMany === true)) throw new Error('Multiple updates are disallowed for this model');
+
     const [q, u] = await this.beforeUpdate<U>(query, update, options);
     const collection = await this.getCollection();
 
@@ -509,6 +517,8 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~deleteWriteOpResult}
    */
   static async deleteOne<U = {}>(query: Query<U>, options: ModelDeleteOneOptions = {}): Promise<Document<U> | boolean | null> {
+    if (this.schema.noDeletes === true) throw new Error('Deletions are disallowed for this model');
+
     const q = await this.beforeDelete<U>(query, options);
 
     log(`${this.schema.model}.deleteOne:`, JSON.stringify(query, null, 0));
@@ -561,6 +571,8 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~deleteWriteOpResult}
    */
   static async deleteMany<U = {}>(query: Query<U>, options: ModelDeleteManyOptions = {}): Promise<boolean | Document<U>[]> {
+    if ((this.schema.noDeletes === true) || (this.schema.noDeleteMany === true)) throw new Error('Multiple deletions are disallowed for this model');
+
     const q = await this.beforeDelete(query, options);
 
     log(`${this.schema.model}.deleteMany:`, JSON.stringify(q, null, 0));
@@ -907,6 +919,8 @@ abstract class Model {
    * @return The modified update to apply.
    */
   private static async beforeUpdate<U = {}>(query: Query<U>, update: Document<U> | Update<U>, options: ModelUpdateOneOptions | ModelUpdateManyOptions = {}): Promise<[Document<U>, Update<U>]> {
+    if ((options.upsert === true) && (this.schema.allowUpsert !== true)) throw new Error('Attempting to upsert a document while upserting is disallowed in the schema');
+
     const [q, u] = await this.willUpdateDocument<U>(query, update);
 
     // First sanitize the inputs. We want to be able to make sure the query is

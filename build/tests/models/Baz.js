@@ -8,6 +8,7 @@ const Model_1 = __importDefault(require("../../core/Model"));
 exports.BazSchema = {
     model: 'Baz',
     collection: 'bazs',
+    allowUpsert: true,
     fields: {
         aString: { type: String, required: true, random: () => faker_1.default.random.alphaNumeric(10) },
         aNumber: { type: Number, default: () => faker_1.default.random.number() },

@@ -99,6 +99,41 @@ export interface Schema<T = {}> {
   timestamps?: boolean;
 
   /**
+   * Specifies whether upserting is allowed.
+   */
+  allowUpsert?: boolean;
+
+  /**
+   * Specifies whether any form of insertion is disabled.
+   */
+  noInserts?: boolean;
+
+  /**
+   * Specifies whether multiple simultaneous insertions are disabled.
+   */
+  noInsertMany?: boolean;
+
+  /**
+   * Specifies whether any form of updates is disabled.
+   */
+  noUpdates?: boolean;
+
+  /**
+   * Specifies whether multiple simultaneous updates are disabled.
+   */
+  noUpdateMany?: boolean;
+
+  /**
+   * Specifies whether any form of deletions is disabled.
+   */
+  noDeletes?: boolean;
+
+  /**
+   * Specifies whether multiple simultaneous deletions are disabled.
+   */
+  noDeleteMany?: boolean;
+
+  /**
    * Indicates whether cascade deletion should occur if a document of this
    * collection is deleted. This array should contain a list of model names
    * indicating that once a document in this collection is deleted, other

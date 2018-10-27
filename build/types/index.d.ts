@@ -28,6 +28,13 @@ export interface Schema<T = {}> {
     model: string;
     collection: string;
     timestamps?: boolean;
+    allowUpsert?: boolean;
+    noInserts?: boolean;
+    noInsertMany?: boolean;
+    noUpdates?: boolean;
+    noUpdateMany?: boolean;
+    noDeletes?: boolean;
+    noDeleteMany?: boolean;
     cascade?: string[];
     fields: {
         [K in keyof T]: FieldSpecs;
