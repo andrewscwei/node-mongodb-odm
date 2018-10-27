@@ -269,7 +269,7 @@ export interface ProjectStageDescriptor {
 /**
  * Data type for acceptable field values.
  */
-type FieldValue = undefined | ObjectID | string | number | boolean | Date | any[] | { [key: string]: FieldValue };
+type FieldValue = undefined | null | ObjectID | string | number | boolean | Date | any[] | { [key: string]: FieldValue };
 
 /**
  * Function for formatting field values, in which the value to be formatted will

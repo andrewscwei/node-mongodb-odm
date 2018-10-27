@@ -108,7 +108,7 @@ export interface ProjectStageDescriptor {
         [key: string]: any;
     };
 }
-declare type FieldValue = undefined | ObjectID | string | number | boolean | Date | any[] | {
+declare type FieldValue = undefined | null | ObjectID | string | number | boolean | Date | any[] | {
     [key: string]: FieldValue;
 };
 declare type FieldFormatFunction = (value: any) => FieldValue;
