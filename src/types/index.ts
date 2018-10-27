@@ -320,11 +320,26 @@ interface SchemaIndex {
   options?: IndexOptions;
 }
 
+/**
+ * Checks if a value is an Update.
+ *
+ * @param value - Value to check.
+ *
+ * @return `true` if value is an Update, `false` otherwise.
+ */
 export function typeIsUpdate<T = {}>(value: any): value is Update<T> {
   if (!is.object(value)) return false;
   return Object.keys(value).some(val => val.startsWith('$'));
 }
 
+/**
+ * Checks if a value is a GeoCoordinate. Also ensures the longitude and latitude
+ * ranges, throws if out of range for either value.
+ *
+ * @param value - Value to check.
+ *
+ * @return `true` if value is a GeoCoordinate, `false` otherwise.
+ */
 export function typeIsGeoCoordinate(value: any): value is GeoCoordinate {
   if (!is.array(value)) return false;
   if (value.length !== 2) return false;
