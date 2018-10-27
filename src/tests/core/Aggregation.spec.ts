@@ -7,7 +7,7 @@ import { describe } from 'mocha';
 import { ObjectID } from 'mongodb';
 import * as db from '../../';
 import Aggregation from '../../core/Aggregation';
-import { MatchStageDescriptor } from '../../types';
+import { AggregationStageDescriptor } from '../../types';
 import Bar, { BarSchema } from '../models/Bar';
 import Baz from '../models/Baz';
 import Foo, { FooSchema } from '../models/Foo';
@@ -29,8 +29,8 @@ describe('core/Aggregation', () => {
     }];
 
     assert.deepStrictEqual(Object.keys(actual[0]), ['$match']);
-    assert(is.directInstanceOf((actual[0] as MatchStageDescriptor).$match._id, ObjectID));
-    assert(expected[0].$match._id.equals((actual[0] as MatchStageDescriptor).$match._id));
+    assert(is.directInstanceOf((actual[0] as AggregationStageDescriptor).$match._id, ObjectID));
+    assert(expected[0].$match._id.equals((actual[0] as AggregationStageDescriptor).$match._id));
   });
 
   it('can generate $lookup stage', () => {
@@ -159,7 +159,7 @@ describe('core/Aggregation', () => {
 
     assert(actual.length === expected.length);
     assert(is.object(actual[0]));
-    assert((actual[0] as MatchStageDescriptor).hasOwnProperty('$match'));
-    assert(objectId.equals((expected[0] as MatchStageDescriptor).$match._id));
+    assert((actual[0] as AggregationStageDescriptor).hasOwnProperty('$match'));
+    assert(objectId.equals((expected[0] as AggregationStageDescriptor).$match._id));
   });
 });

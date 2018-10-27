@@ -34,7 +34,12 @@ export interface Schema<T = {}> {
     };
     indexes?: SchemaIndex[];
 }
-export declare type AggregationPipeline = (MatchStageDescriptor | LookupStageDescriptor | UnwindStageDescriptor | GroupStageDescriptor | SortStageDescriptor | ProjectStageDescriptor | SampleStageDescriptor)[];
+export interface AggregationStageDescriptor {
+    [stageName: string]: {
+        [key: string]: any;
+    };
+}
+export declare type AggregationPipeline = AggregationStageDescriptor[];
 export interface PipelineFactoryOptions {
     prefix?: string;
     pipeline?: AggregationPipeline;
@@ -50,11 +55,6 @@ export declare type MatchStageFactorySpecs = Query;
 export interface MatchStageFactoryOptions {
     prefix?: string;
 }
-export interface MatchStageDescriptor {
-    $match: {
-        [key: string]: any;
-    };
-}
 export interface LookupStageFactorySpecs {
     [modelName: string]: boolean | LookupStageFactorySpecs;
 }
@@ -62,36 +62,11 @@ export interface LookupStageFactoryOptions {
     fromPrefix?: string;
     toPrefix?: string;
 }
-export interface LookupStageDescriptor {
-    $lookup: {
-        [key: string]: any;
-    };
-}
-export interface UnwindStageDescriptor {
-    $unwind: {
-        [key: string]: any;
-    };
-}
 export declare type GroupStageFactorySpecs = string | {
     [key: string]: any;
 };
-export interface GroupStageDescriptor {
-    $group: {
-        [key: string]: any;
-    };
-}
 export interface SortStageFactorySpecs {
     [key: string]: any;
-}
-export interface SortStageDescriptor {
-    $sort: {
-        [key: string]: any;
-    };
-}
-export interface SampleStageDescriptor {
-    $sample: {
-        [key: string]: any;
-    };
 }
 export interface ProjectStageFactoryOptions {
     toPrefix?: string;
@@ -101,11 +76,6 @@ export interface ProjectStageFactoryOptions {
 }
 export interface ProjectStageFactoryOptionsPopulate {
     [modelName: string]: boolean | ProjectStageFactoryOptionsPopulate;
-}
-export interface ProjectStageDescriptor {
-    $project: {
-        [key: string]: any;
-    };
 }
 declare type FieldValue = undefined | null | ObjectID | string | number | boolean | Date | any[] | {
     [key: string]: FieldValue;

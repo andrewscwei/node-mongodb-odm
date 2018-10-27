@@ -124,7 +124,13 @@ export interface Schema<T = {}> {
   indexes?: SchemaIndex[];
 }
 
-export type AggregationPipeline = (MatchStageDescriptor | LookupStageDescriptor | UnwindStageDescriptor | GroupStageDescriptor | SortStageDescriptor | ProjectStageDescriptor | SampleStageDescriptor)[];
+export interface AggregationStageDescriptor {
+  [stageName: string]: {
+    [key: string]: any;
+  };
+}
+
+export type AggregationPipeline = AggregationStageDescriptor[];
 
 export interface PipelineFactoryOptions {
   // Prefix for document attributes.
@@ -167,10 +173,6 @@ export interface MatchStageFactoryOptions {
   prefix?: string;
 }
 
-export interface MatchStageDescriptor {
-  $match: { [key: string]: any };
-}
-
 /**
  * Defines fields to perform lookup on used by #lookupStageFactory(). These
  * fields must be references (i.e. model name as foreign keys) to another model.
@@ -197,34 +199,14 @@ export interface LookupStageFactoryOptions {
   toPrefix?: string;
 }
 
-export interface LookupStageDescriptor {
-  $lookup: { [key: string]: any };
-}
-
-export interface UnwindStageDescriptor {
-  $unwind: { [key: string]: any };
-}
-
 /**
  * Specs that define the $group stage. If this is a string, a simple $group
  * stage will be generated with `_id` equal this string.
  */
 export type GroupStageFactorySpecs = string | { [key: string]: any };
 
-export interface GroupStageDescriptor {
-  $group: { [key: string]: any };
-}
-
 export interface SortStageFactorySpecs {
   [key: string]: any;
-}
-
-export interface SortStageDescriptor {
-  $sort: { [key: string]: any };
-}
-
-export interface SampleStageDescriptor {
-  $sample: { [key: string]: any };
 }
 
 export interface ProjectStageFactoryOptions {
@@ -255,10 +237,6 @@ export interface ProjectStageFactoryOptions {
 
 export interface ProjectStageFactoryOptionsPopulate {
   [modelName: string]: boolean | ProjectStageFactoryOptionsPopulate;
-}
-
-export interface ProjectStageDescriptor {
-  $project: { [key: string]: any };
 }
 
 /**
