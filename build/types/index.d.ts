@@ -13,6 +13,7 @@ export declare type Update<T = {}> = UpdateQuery<Document<T>>;
 export declare type FieldType = FieldBaseType | FieldBaseType[] | {
     [key: string]: FieldSpecs;
 };
+export declare type GeoCoordinate = [number, number];
 export interface FieldSpecs {
     type: FieldType;
     ref?: string;

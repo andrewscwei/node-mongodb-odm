@@ -27,6 +27,11 @@ export type Update<T = {}> = UpdateQuery<Document<T>>;
 export type FieldType = FieldBaseType | FieldBaseType[] | { [key: string]: FieldSpecs };
 
 /**
+ * Geo coordinate type in the format of [longitude, latitude].
+ */
+export type GeoCoordinate = [number, number];
+
+/**
  * Specification for defining a field in the MongoDB collection.
  */
 export interface FieldSpecs {
