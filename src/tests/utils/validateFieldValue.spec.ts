@@ -24,8 +24,8 @@ describe('utils/validate', () => {
 
   it('can validate string with custom method', () => {
     const i = 'Hello, world!';
-    assert(validateFieldValue(i, { type: String, validate: (v) => (v === i) }) === true);
-    assert(validateFieldValue(i, { type: String, validate: (v) => (v !== i) }) === false);
+    assert(validateFieldValue(i, { type: String, validate: (v: string): boolean => (v === i) }) === true);
+    assert(validateFieldValue(i, { type: String, validate: (v: string): boolean => (v !== i) }) === false);
   });
 
   it('can validate numbers with inclusive maximum', () => {
@@ -42,8 +42,8 @@ describe('utils/validate', () => {
 
   it('can validate numbers from custom method', () => {
     const i = 6;
-    assert(validateFieldValue(i, { type: Number, validate: (v) => (v > 5 && v < 7) }) === true);
-    assert(validateFieldValue(i, { type: Number, validate: (v) => (v < 5) }) === false);
+    assert(validateFieldValue(i, { type: Number, validate: (v: number): boolean => (v > 5 && v < 7) }) === true);
+    assert(validateFieldValue(i, { type: Number, validate: (v: number): boolean => (v < 5) }) === false);
   });
 
   it('can validate booleans', () => {

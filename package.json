@@ -6,10 +6,11 @@
   "scripts": {
     "clean": "rimraf build",
     "build": "npm run clean && tsc",
-    "test:ts": "NODE_ENV=test mocha --require dotenv/config --require ts-node/register --timeout 10000 --reporter spec --full-trace --colors --recursive --bail --exit $([ -z \"$npm_config_path\" ] && echo src/tests/**/*.ts || echo $npm_config_path)",
     "test": "NODE_ENV=test DEBUG=mongodb-odm* mocha --require dotenv/config --timeout 10000 --reporter spec --full-trace --colors --recursive --bail --exit $([ -z \"$npm_config_path\" ] && echo build/tests || echo $npm_config_path)",
     "db": "mkdirp .mongodb/data && mongod --bind_ip 0.0.0.0 --dbpath .mongodb/data --logpath .mongodb/mongod.log --fork",
-    "db:stop": "kill -15 $(pgrep mongo)"
+    "db:stop": "kill -15 $(pgrep mongo)",
+    "lint": "tslint \"src/**/*.ts\" --project tsconfig.json",
+    "lint:fix": "npm run lint -- --fix"
   },
   "repository": {
     "type": "git",
