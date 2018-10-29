@@ -4,7 +4,7 @@ import { FilterQuery, IndexOptions, ObjectID, UpdateQuery } from 'mongodb';
 /**
  * Full structure of a document.
  */
-export type Document<T = {}> = { [K in keyof T]: T[K] } & { _id: ObjectID; createdAt?: Date; updatedAt?: Date; } & { [key: string]: FieldValue; };
+export type Document<T = {}> = { [K in keyof T]: T[K] } & { _id: ObjectID; createdAt?: Date; updatedAt?: Date; } & { [field: string]: FieldValue; };
 
 /**
  * Structure that represents parts of a document.
@@ -362,7 +362,7 @@ export function typeIsUpdate<T = {}>(value: any): value is Update<T> {
  *
  * @return `true` if value is an identifiable Document, `false` otherwise.
  */
-export function typeIsIdentifiableDocument<T = {}>(value: any): value is { _id: ObjectID } {
+export function typeIsIdentifiableDocument(value: any): value is { _id: ObjectID } & { [field: string]: FieldValue; } {
   if (is.nullOrUndefined(value)) return false;
   if (!is.plainObject(value)) return false;
   if (!typeIsObjectID(value._id)) return false;
