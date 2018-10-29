@@ -106,7 +106,7 @@ export interface Schema<T = any> {
   /**
    * Specifies whether upserting is allowed.
    */
-  allowUpsert?: boolean;
+  allowUpserts?: boolean;
 
   /**
    * Specifies whether any form of insertion is disabled.

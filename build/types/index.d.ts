@@ -30,7 +30,7 @@ export interface Schema<T = any> {
     model: string;
     collection: string;
     timestamps?: boolean;
-    allowUpsert?: boolean;
+    allowUpserts?: boolean;
     noInserts?: boolean;
     noInsertMany?: boolean;
     noUpdates?: boolean;

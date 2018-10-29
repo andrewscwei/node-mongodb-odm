@@ -13,7 +13,7 @@ export interface BazProps {
 export const BazSchema: Schema<BazProps> = {
   model: 'Baz',
   collection: 'bazs',
-  allowUpsert: true,
+  allowUpserts: true,
   fields: {
     aString: { type: String, required: true, random: () => Faker.random.alphaNumeric(10) },
     aNumber: { type: Number, default: () => Faker.random.number() },

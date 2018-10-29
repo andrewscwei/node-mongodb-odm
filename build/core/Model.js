@@ -455,7 +455,7 @@ class Model {
     }
     static beforeUpdate(query, update, options = {}) {
         return __awaiter(this, void 0, void 0, function* () {
-            if ((options.upsert === true) && (this.schema.allowUpsert !== true))
+            if ((options.upsert === true) && (this.schema.allowUpserts !== true))
                 throw new Error('Attempting to upsert a document while upserting is disallowed in the schema');
             const [q, u] = yield this.willUpdateDocument(query, update);
             const qq = sanitizeQuery_1.default(this.schema, q);

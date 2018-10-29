@@ -821,7 +821,7 @@ abstract class Model {
    * @return The modified update to apply.
    */
   private static async beforeUpdate<T>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options: ModelUpdateOneOptions | ModelUpdateManyOptions = {}): Promise<[DocumentFragment<T>, Update<T>]> {
-    if ((options.upsert === true) && (this.schema.allowUpsert !== true)) throw new Error('Attempting to upsert a document while upserting is disallowed in the schema');
+    if ((options.upsert === true) && (this.schema.allowUpserts !== true)) throw new Error('Attempting to upsert a document while upserting is disallowed in the schema');
 
     const [q, u] = await this.willUpdateDocument<T>(query, update);
 
