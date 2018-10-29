@@ -234,7 +234,7 @@ abstract class Model {
    *
    * @return The matching document as the fulfillment value.
    */
-  static async findOne<T = {}, R extends T = T>(query?: Query<T>, options?: ModelFindOneOptions): Promise<null | Document<R>> {
+  static async findOne<T = {}, R = T>(query?: Query<T>, options?: ModelFindOneOptions): Promise<null | Document<R>> {
     if (is.nullOrUndefined(query)) {
       const collection = await this.getCollection();
       const results = await collection.aggregate(this.pipeline(query).concat([{ $sample: { size: 1 } }])).toArray();
@@ -263,7 +263,7 @@ abstract class Model {
    *
    * @return The matching documents as the fulfillment value.
    */
-  static async findMany<T = {}, R extends T = T>(query?: Query<T>, options?: ModelFindManyOptions): Promise<Document<R>[]> {
+  static async findMany<T = {}, R = T>(query?: Query<T>, options?: ModelFindManyOptions): Promise<Document<R>[]> {
     const collection = await this.getCollection();
     const results = await collection.aggregate(this.pipeline(query), options).toArray();
     return results;
@@ -369,7 +369,7 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndUpdate}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
    */
-  static async updateOne<T = {}, R extends T = T>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options: ModelUpdateOneOptions = {}): Promise<null | boolean | Document<R>> {
+  static async updateOne<T = {}, R = T>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options: ModelUpdateOneOptions = {}): Promise<null | boolean | Document<R>> {
     if (this.schema.noUpdates === true) throw new Error('Updates are disallowed for this model');
 
     const collection = await this.getCollection();
@@ -451,7 +451,7 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndUpdate}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
    */
-  static async updateMany<T = {}, R extends T = T>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options: ModelUpdateManyOptions = {}): Promise<Document<T>[] | boolean> {
+  static async updateMany<T = {}>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options: ModelUpdateManyOptions = {}): Promise<Document<T>[] | boolean> {
     if ((this.schema.noUpdates === true) || (this.schema.noUpdateMany === true)) throw new Error('Multiple updates are disallowed for this model');
 
     const [q, u] = await this.beforeUpdate<T>(query, update, options);
@@ -460,26 +460,20 @@ abstract class Model {
     log(`${this.schema.model}.updateMany:`, JSON.stringify(q, null, 0), JSON.stringify(u, null, 0), JSON.stringify(options, null, 0));
 
     if (options.returnDocs === true) {
-      const docs = await this.findMany<T, R>(q);
+      const docs = await this.findMany<T>(q);
       const n = docs.length;
+      const results: Document<T>[] = [];
 
       if ((n <= 0) && (options.upsert === true)) {
-        const results: Document<R>[] = [];
-        const res = await this.updateOne<T, R>(q, u, { ...options, returnDoc: true, skipHooks: true });
+        const res = await this.updateOne<T>(q, u, { ...options, returnDoc: true, skipHooks: true });
 
         if (is.boolean(res) || is.null_(res)) {
           throw new Error('Error upserting document during an updateMany operation');
         }
 
         results.push(res);
-
-        await this.afterUpdate<T, R>(undefined, results);
-
-        return results;
       }
       else {
-        const results: Document<T>[] = [];
-
         for (let i = 0; i < n; i++) {
           const doc = docs[i];
           const result = await collection.findOneAndUpdate({ _id: doc._id }, u, { returnOriginal: false, ...options });
@@ -491,11 +485,11 @@ abstract class Model {
         }
 
         log(`${this.schema.model}.updateMany results:`, JSON.stringify(results, null, 0));
-
-        await this.afterUpdate<T, T>(undefined, results);
-
-        return results;
       }
+
+      await this.afterUpdate<T, T>(undefined, results);
+
+      return results;
     }
     else {
       const results = await collection.updateMany(q, u, options);
@@ -506,7 +500,7 @@ abstract class Model {
 
       if (results.result.n <= 0) return false;
 
-      await this.afterUpdate<T, R>();
+      await this.afterUpdate<T, T>();
 
       return true;
     }
@@ -641,7 +635,7 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndReplace}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~findAndModifyWriteOpResult}
    */
-  static async findAndReplaceOne<T = {}, R extends T = T>(query: Query<T>, replacement: DocumentFragment<T> = this.randomFields<T>(), options: ModelReplaceOneOptions = {}): Promise<null | Document<R>> {
+  static async findAndReplaceOne<T = {}, R = T>(query: Query<T>, replacement: DocumentFragment<T> = this.randomFields<T>(), options: ModelReplaceOneOptions = {}): Promise<null | Document<R>> {
     const q = await this.beforeDelete<T>(query, options);
     const r = await this.beforeInsert<T>(replacement, options);
 

@@ -201,18 +201,15 @@ class Model {
             if (options.returnDocs === true) {
                 const docs = yield this.findMany(q);
                 const n = docs.length;
+                const results = [];
                 if ((n <= 0) && (options.upsert === true)) {
-                    const results = [];
                     const res = yield this.updateOne(q, u, Object.assign({}, options, { returnDoc: true, skipHooks: true }));
                     if (is_1.default.boolean(res) || is_1.default.null_(res)) {
                         throw new Error('Error upserting document during an updateMany operation');
                     }
                     results.push(res);
-                    yield this.afterUpdate(undefined, results);
-                    return results;
                 }
                 else {
-                    const results = [];
                     for (let i = 0; i < n; i++) {
                         const doc = docs[i];
                         const result = yield collection.findOneAndUpdate({ _id: doc._id }, u, Object.assign({ returnOriginal: false }, options));
@@ -221,9 +218,9 @@ class Model {
                         results.push(result.value);
                     }
                     log(`${this.schema.model}.updateMany results:`, JSON.stringify(results, null, 0));
-                    yield this.afterUpdate(undefined, results);
-                    return results;
                 }
+                yield this.afterUpdate(undefined, results);
+                return results;
             }
             else {
                 const results = yield collection.updateMany(q, u, options);
