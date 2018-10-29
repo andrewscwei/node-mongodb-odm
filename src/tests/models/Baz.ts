@@ -4,8 +4,8 @@ import { Schema } from '../../types';
 
 export interface BazProps {
   aString: string;
-  aNumber: number;
-  aBoolean: boolean;
+  aNumber?: number;
+  aBoolean?: boolean;
   aFormattedString?: string;
   anEncryptedString?: string;
 }

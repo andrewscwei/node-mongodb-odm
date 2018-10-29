@@ -6,7 +6,7 @@ export interface FooProps {
   aString: string;
   aNumber: number;
   aBar: ObjectID;
-  aFoo: ObjectID;
+  aFoo?: ObjectID;
 }
 
 export const FooSchema: Schema<FooProps> = {

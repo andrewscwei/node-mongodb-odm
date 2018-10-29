@@ -5,13 +5,13 @@ export interface BarProps {
     aBar: ObjectID;
     aString: string;
     aDate: Date;
-    anObject: {
+    anObject?: {
         aString: string;
         aNumber: number;
         aBoolean: boolean;
     };
     aNumber: number;
-    aBoolean: boolean;
+    aBoolean?: boolean;
 }
 export declare const BarSchema: Schema<BarProps>;
 export default class Bar extends Model {

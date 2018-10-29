@@ -6,13 +6,13 @@ export interface BarProps {
   aBar: ObjectID;
   aString: string;
   aDate: Date;
-  anObject: {
+  anObject?: {
     aString: string;
     aNumber: number;
     aBoolean: boolean;
   };
   aNumber: number;
-  aBoolean: boolean;
+  aBoolean?: boolean;
 }
 
 export const BarSchema: Schema<BarProps> = {
