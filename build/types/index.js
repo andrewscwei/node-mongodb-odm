@@ -16,13 +16,13 @@ function typeIsIdentifiableDocument(value) {
         return false;
     if (!is_1.default.plainObject(value))
         return false;
-    if (!typeIsObjectID(value))
+    if (!typeIsObjectID(value._id))
         return false;
     return true;
 }
 exports.typeIsIdentifiableDocument = typeIsIdentifiableDocument;
 function typeIsObjectID(value) {
-    if (!is_1.default.directInstanceOf(value._id, mongodb_1.ObjectID))
+    if (!is_1.default.directInstanceOf(value, mongodb_1.ObjectID))
         return false;
     return true;
 }

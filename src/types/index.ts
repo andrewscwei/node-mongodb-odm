@@ -355,7 +355,7 @@ export function typeIsUpdate<T = {}>(value: any): value is Update<T> {
 export function typeIsIdentifiableDocument<T = {}>(value: any): value is Document<T> {
   if (is.nullOrUndefined(value)) return false;
   if (!is.plainObject(value)) return false;
-  if (!typeIsObjectID(value)) return false;
+  if (!typeIsObjectID(value._id)) return false;
   return true;
 }
 
@@ -367,7 +367,7 @@ export function typeIsIdentifiableDocument<T = {}>(value: any): value is Documen
  * @return `true` if valie is an ObjectID, `false` otherwise.
  */
 export function typeIsObjectID(value: any): value is ObjectID {
-  if (!is.directInstanceOf(value._id, ObjectID)) return false;
+  if (!is.directInstanceOf(value, ObjectID)) return false;
   return true;
 }
 
