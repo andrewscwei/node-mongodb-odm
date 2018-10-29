@@ -271,7 +271,7 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndUpdate}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
    */
-  static async updateOne<T = {}, R = T>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options: ModelUpdateOneOptions = {}): Promise<null | boolean | Document<R>> {
+  static async updateOne<T = {}>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options: ModelUpdateOneOptions = {}): Promise<null | boolean | Document<T>> {
     if (this.schema.noUpdates === true) throw new Error('Updates are disallowed for this model');
 
     const collection = await this.getCollection();
@@ -300,10 +300,10 @@ abstract class Model {
 
         if (is.nullOrUndefined(oldDoc)) return null;
 
-        newDoc = await this.findOne<T, R>(oldDoc._id);
+        newDoc = await this.findOne<T>(oldDoc._id);
       }
       else {
-        newDoc = await this.findOne<T, R>(res.lastErrorObject.upserted);
+        newDoc = await this.findOne<T>(res.lastErrorObject.upserted);
       }
 
       if (is.nullOrUndefined(newDoc)) {
@@ -311,7 +311,7 @@ abstract class Model {
       }
 
       if (options.skipHooks !== true) {
-        await this.afterUpdate<T, R>(oldDoc, newDoc);
+        await this.afterUpdate<T>(oldDoc, newDoc);
       }
 
       return newDoc;
@@ -330,7 +330,7 @@ abstract class Model {
       if (res.result.n <= 0) return false;
 
       if (options.skipHooks !== true) {
-        await this.afterUpdate<T, R>();
+        await this.afterUpdate<T>();
       }
 
       return true;
@@ -389,7 +389,7 @@ abstract class Model {
         log(`${this.schema.model}.updateMany results:`, JSON.stringify(results, null, 0));
       }
 
-      await this.afterUpdate<T, T>(undefined, results);
+      await this.afterUpdate<T>(undefined, results);
 
       return results;
     }
@@ -402,7 +402,7 @@ abstract class Model {
 
       if (results.result.n <= 0) return false;
 
-      await this.afterUpdate<T, T>();
+      await this.afterUpdate<T>();
 
       return true;
     }
@@ -537,7 +537,7 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndReplace}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~findAndModifyWriteOpResult}
    */
-  static async findAndReplaceOne<T = {}, R = T>(query: Query<T>, replacement: DocumentFragment<T> = this.randomFields<T>(), options: ModelReplaceOneOptions = {}): Promise<null | Document<R>> {
+  static async findAndReplaceOne<T = {}>(query: Query<T>, replacement: DocumentFragment<T> = this.randomFields<T>(), options: ModelReplaceOneOptions = {}): Promise<null | Document<T>> {
     const q = await this.beforeDelete<T>(query, options);
     const r = await this.beforeInsert<T>(replacement, options);
 
@@ -554,14 +554,14 @@ abstract class Model {
 
     if (is.nullOrUndefined(oldDoc)) return null;
 
-    const newDoc = await this.findOne<T, R>(r);
+    const newDoc = await this.findOne<T>(r);
 
     if (is.null_(newDoc)) {
       throw new Error('Document is replaced but unable to find the new document in the database');
     }
 
     await this.afterDelete<T>(results.value);
-    await this.afterInsert<R>(newDoc);
+    await this.afterInsert<T>(newDoc);
 
     return (options.returnOriginal === true) ? oldDoc : newDoc;
   }
@@ -709,7 +709,7 @@ abstract class Model {
    *
    * @param doc - The inserted document.
    */
-  static async didInsertDocument<R>(doc: Document<R>): Promise<void> {}
+  static async didInsertDocument<T>(doc: Document<T>): Promise<void> {}
 
   /**
    * Handler called before an attempted update operation. This method must
@@ -733,7 +733,7 @@ abstract class Model {
    * @param newDocs - The updated document(s). This is only available if
    *                  `returnDoc` or `returnDocs` was enabled.
    */
-  static async didUpdateDocument<T, R>(prevDoc?: Document<T>, newDocs?: Document<R> | Document<R>[]): Promise<void> {}
+  static async didUpdateDocument<T>(prevDoc?: Document<T>, newDocs?: Document<T> | Document<T>[]): Promise<void> {}
 
   /**
    * Handler called before an attempt to delete a document.
@@ -887,8 +887,8 @@ abstract class Model {
    * @param oldDoc - The original document.
    * @param newDoc - The updated document.
    */
-  private static async afterUpdate<T, R>(oldDoc?: Document<T>, newDocs?: Document<R> | Document<R>[]) {
-    await this.didUpdateDocument<T, R>(oldDoc, newDocs);
+  private static async afterUpdate<T>(oldDoc?: Document<T>, newDocs?: Document<T> | Document<T>[]) {
+    await this.didUpdateDocument<T>(oldDoc, newDocs);
   }
 
   /**
