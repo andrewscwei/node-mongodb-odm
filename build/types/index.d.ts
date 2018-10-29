@@ -5,7 +5,8 @@ export declare type Document<T = {}> = {
     _id: ObjectID;
     createdAt?: Date;
     updatedAt?: Date;
-    [field: string]: FieldValue;
+} & {
+    [key: string]: FieldValue;
 };
 export declare type DocumentFragment<T = {}> = Partial<Document<T>>;
 export declare type Query<T = {}> = string | ObjectID | FilterQuery<T>;

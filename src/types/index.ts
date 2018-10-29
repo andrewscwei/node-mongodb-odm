@@ -4,7 +4,7 @@ import { FilterQuery, IndexOptions, ObjectID, UpdateQuery } from 'mongodb';
 /**
  * Full structure of a document.
  */
-export type Document<T = {}> = { [K in keyof T]: T[K] } & { _id: ObjectID; createdAt?: Date; updatedAt?: Date; [field: string]: FieldValue; };
+export type Document<T = {}> = { [K in keyof T]: T[K] } & { _id: ObjectID; createdAt?: Date; updatedAt?: Date; } & { [key: string]: FieldValue; };
 
 /**
  * Structure that represents parts of a document.
