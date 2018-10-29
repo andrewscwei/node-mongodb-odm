@@ -1,7 +1,7 @@
 import assert from 'assert';
 import { describe, it } from 'mocha';
 import { ObjectID } from 'mongodb';
-import { Document } from '../../types';
+import { DocumentFragment } from '../../types';
 import sanitizeQuery from '../../utils/sanitizeQuery';
 import Baz, { BazProps } from '../models/Baz';
 
@@ -29,7 +29,7 @@ describe('utils/sanitizeQuery', () => {
   it('can generate valid queries removing extraneous fields', () => {
     const objectId = new ObjectID();
 
-    const expected: Document<BazProps> = {
+    const expected: DocumentFragment<BazProps> = {
       _id: objectId,
       aString: 'baz',
     };
@@ -45,7 +45,7 @@ describe('utils/sanitizeQuery', () => {
   it('can generate valid queries while keeping extraneous fields', () => {
     const objectId = new ObjectID();
 
-    const expected: Document<BazProps> = {
+    const expected: DocumentFragment<BazProps> = {
       _id: objectId,
       aString: 'baz',
     };

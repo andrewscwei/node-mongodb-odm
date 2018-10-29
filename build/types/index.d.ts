@@ -1,17 +1,21 @@
-import { IndexOptions, ObjectID, UpdateQuery } from 'mongodb';
+import { FilterQuery, IndexOptions, ObjectID, UpdateQuery } from 'mongodb';
 declare type FieldBaseType = typeof String | typeof Number | typeof Boolean | typeof Date | typeof ObjectID | typeof Array;
-export declare type Document<T = {}> = Partial<T> & {
-    _id?: ObjectID;
+export declare type Document<T = {}> = {
+    [K in keyof T]: T[K];
+} & {
+    _id: ObjectID;
     createdAt?: Date;
     updatedAt?: Date;
     [field: string]: FieldValue;
 };
-export declare type Query<T = {}> = string | ObjectID | Document<T> | {
-    [key: string]: any;
-};
-export declare type Update<T = {}> = UpdateQuery<Document<T>>;
+export declare type DocumentFragment<T = {}> = Partial<Document<T>>;
+export declare type Query<T = {}> = string | ObjectID | FilterQuery<T>;
+export declare type Update<T = {}> = UpdateQuery<DocumentFragment<T>>;
 export declare type FieldType = FieldBaseType | FieldBaseType[] | {
-    [key: string]: FieldSpecs;
+    [field: string]: FieldSpecs;
+};
+export declare type FieldValue = undefined | null | ObjectID | string | number | boolean | Date | any[] | {
+    [subfield: string]: FieldValue;
 };
 export declare type GeoCoordinate = [number, number];
 export interface FieldSpecs {
@@ -84,9 +88,6 @@ export interface ProjectStageFactoryOptions {
 export interface ProjectStageFactoryOptionsPopulate {
     [modelName: string]: boolean | ProjectStageFactoryOptionsPopulate;
 }
-declare type FieldValue = undefined | null | ObjectID | string | number | boolean | Date | any[] | {
-    [key: string]: FieldValue;
-};
 declare type FieldFormatFunction = (value: any) => FieldValue;
 declare type FieldValidationStrategy = RegExp | number | any[] | FieldValidationFunction;
 declare type FieldValidationFunction = (value: any) => boolean;
@@ -99,7 +100,9 @@ interface SchemaIndex {
     options?: IndexOptions;
 }
 export declare function typeIsUpdate<T = {}>(value: any): value is Update<T>;
-export declare function typeIsIdentifiableDocument<T = {}>(value: any): value is Document<T>;
+export declare function typeIsIdentifiableDocument<T = {}>(value: any): value is {
+    _id: ObjectID;
+};
 export declare function typeIsObjectID(value: any): value is ObjectID;
 export declare function typeIsGeoCoordinate(value: any): value is GeoCoordinate;
 export {};

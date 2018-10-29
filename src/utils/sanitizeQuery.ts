@@ -1,11 +1,8 @@
 import is from '@sindresorhus/is';
 import { ObjectID } from 'mongodb';
-import { Document, Query, Schema } from '../types';
+import { Query, Schema } from '../types';
 import sanitizeDocument from './sanitizeDocument';
 
-/**
- * Options for sanitizeQuery().
- */
 interface SanitizeQueryOptions {
   /**
    * If set to `true`, fields that are not specified in the schema will be
@@ -21,10 +18,10 @@ interface SanitizeQueryOptions {
  *   1. Wraps an ObjectID instance or string representing an ObjectID into a
  *      proper query.
  *   2. If strict mode is enabled, the provided schema will be used to strip out
- *      all extraneous fields from the input.
+ *      all extraneous fields from the input. @see sanitizeDocument
  *
  * @param schema - The collection schema.
- * @param query - The input query to sanitize.
+ * @param query - The query object to sanitize.
  * @param options - @see SanitizeQueryOptions
  *
  * @return The sanitized query.
@@ -44,17 +41,17 @@ interface SanitizeQueryOptions {
  * sanitizeQuery(schema, { a: 'b', b: 'c', garbage: 'garbage' })
  * sanitizeQuery(schema, { a: 'b', b: 'c', garbage: 'garbage' }, { strict: true })
  */
-export default function sanitizeQuery<T = {}>(schema: Schema, query: Query<T>, { strict = true }: SanitizeQueryOptions = {}): Document<T> {
+export default function sanitizeQuery<T = {}>(schema: Schema, query: Query, { strict = true }: SanitizeQueryOptions = {}): { [key: string]: any } {
   if (is.directInstanceOf(query, ObjectID)) {
-    return { _id: query } as Document<T>;
+    return { _id: query };
   }
   else if (is.string(query)) {
-    return { _id: new ObjectID(query) } as Document<T>;
+    return { _id: new ObjectID(query) };
   }
   else if (strict) {
     return sanitizeDocument<T>(schema, query);
   }
   else {
-    return query as Document<T>;
+    return query;
   }
 }

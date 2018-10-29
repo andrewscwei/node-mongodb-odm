@@ -3,9 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 function sanitizeDocument(schema, doc) {
     const o = {};
     for (const key in doc) {
-        if (!schema.timestamps && (key === 'createdAt'))
+        if ((schema.timestamps !== true) && (key === 'createdAt'))
             continue;
-        if (!schema.timestamps && (key === 'updatedAt'))
+        if ((schema.timestamps !== true) && (key === 'updatedAt'))
             continue;
         if ((key !== '_id') && !schema.fields.hasOwnProperty(key))
             continue;

@@ -10,9 +10,9 @@ import assert from 'assert';
 import bcrypt from 'bcrypt';
 import debug from 'debug';
 import _ from 'lodash';
-import { Collection, CollectionAggregationOptions, CollectionInsertManyOptions, CollectionInsertOneOptions, CommonOptions, FindOneAndReplaceOption, ObjectID, ReplaceOneOptions } from 'mongodb';
+import { Collection, CollectionAggregationOptions, CollectionInsertManyOptions, CollectionInsertOneOptions, CommonOptions, FilterQuery, FindOneAndReplaceOption, ObjectID, ReplaceOneOptions } from 'mongodb';
 import { getCollection, getModel } from '..';
-import { AggregationPipeline, Document, FieldSpecs, PipelineFactoryOptions, PipelineFactorySpecs, Query, Schema, typeIsUpdate, Update } from '../types';
+import { AggregationPipeline, Document, DocumentFragment, FieldSpecs, PipelineFactoryOptions, PipelineFactorySpecs, Query, Schema, typeIsUpdate, Update } from '../types';
 import sanitizeDocument from '../utils/sanitizeDocument';
 import sanitizeQuery from '../utils/sanitizeQuery';
 import validateFieldValue from '../utils/validateFieldValue';
@@ -150,8 +150,8 @@ abstract class Model {
    *
    * @return A collection of fields whose values are randomly generated.
    */
-  static randomFields<U = {}>(fixedFields: Document<U> = {}, { includeOptionals = false }: ModelRandomFieldsOptions = {}): Document<U> {
-    const o: Document<U> = {};
+  static randomFields<T = {}>(fixedFields: DocumentFragment<T> = {}, { includeOptionals = false }: ModelRandomFieldsOptions = {}): DocumentFragment<T> {
+    const o: DocumentFragment<T> = {};
     const fields: { [fieldName: string]: FieldSpecs } = this.schema.fields;
 
     for (const key in fields) {
@@ -166,12 +166,12 @@ abstract class Model {
       if (!includeOptionals && !fieldSpecs.required) continue;
 
       // Use provided random function if provided in the schema.
-      if (fieldSpecs.random) o[key] = fieldSpecs.random();
+      if (fieldSpecs.random) o[key as keyof T] = fieldSpecs.random();
     }
 
     for (const key in fixedFields) {
       if (!fixedFields.hasOwnProperty(key)) continue;
-      o[key] = fixedFields[key];
+      o[key as keyof T] = fixedFields[key as keyof T];
     }
 
     return o;
@@ -187,7 +187,7 @@ abstract class Model {
    *
    * @return Aggregation pipeline.
    */
-  static pipeline<U = {}>(queryOrSpecs?: Query<U> | PipelineFactorySpecs, options?: PipelineFactoryOptions): AggregationPipeline {
+  static pipeline<T = {}>(queryOrSpecs?: Query<T> | PipelineFactorySpecs, options?: PipelineFactoryOptions): AggregationPipeline {
     if (!this.schema) throw new Error('This model has no schema, you must define this static proerty in the derived class');
 
     // Check if the argument conforms to aggregation factory specs.
@@ -208,8 +208,8 @@ abstract class Model {
    *
    * @return The matching ObjectID.
    */
-  static async identifyOne<U = {}>(query: Query<U>): Promise<ObjectID> {
-    const result = await this.findOne<U>(query);
+  static async identifyOne<T = {}>(query: Query<T>): Promise<ObjectID> {
+    const result = await this.findOne<T>(query);
 
     if (is.nullOrUndefined(result)) {
       throw new Error(`No results found while identifying this ${this.schema.model} using the query ${JSON.stringify(query, null, 0)}`);
@@ -231,10 +231,10 @@ abstract class Model {
    *
    * @return The matching document as the fulfillment value.
    */
-  static async findOne<U = {}>(query?: Query<U>, options?: ModelFindOneOptions): Promise<null | Document<U>> {
+  static async findOne<T = {}>(query?: Query<T>, options?: ModelFindOneOptions): Promise<null | Document<T>> {
     if (is.nullOrUndefined(query)) {
       const collection = await this.getCollection();
-      const results = await collection.aggregate(this.pipeline<U>(query).concat([{ $sample: { size: 1 } }])).toArray();
+      const results = await collection.aggregate(this.pipeline(query).concat([{ $sample: { size: 1 } }])).toArray();
 
       assert(results.length <= 1, new Error('More than 1 random document found even though only 1 was supposed to be found.'));
 
@@ -243,7 +243,7 @@ abstract class Model {
       return null;
     }
     else {
-      const results = await this.findMany<U>(query, options);
+      const results = await this.findMany<T>(query, options);
 
       if (results.length === 0) return null;
 
@@ -260,9 +260,9 @@ abstract class Model {
    *
    * @return The matching documents as the fulfillment value.
    */
-  static async findMany<U = {}>(query?: Query<U>, options?: ModelFindManyOptions): Promise<Document<U>[]> {
+  static async findMany<T = {}>(query?: Query<T>, options?: ModelFindManyOptions): Promise<Document<T>[]> {
     const collection = await this.getCollection();
-    const results = await collection.aggregate(this.pipeline<U>(query), options).toArray();
+    const results = await collection.aggregate(this.pipeline(query), options).toArray();
     return results;
   }
 
@@ -278,11 +278,11 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#insertOne}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~insertWriteOpResult}
    */
-  static async insertOne<U = {}>(doc?: Document<U>, options?: ModelInsertOneOptions): Promise<null | Document<U>> {
+  static async insertOne<T>(doc?: DocumentFragment<T>, options?: ModelInsertOneOptions): Promise<null | Document<T>> {
     if (this.schema.noInserts === true) throw new Error('Insertions are disallowed for this model');
 
     // Apply before insert handler.
-    const t = await this.beforeInsert<U>(doc || this.randomFields<U>(), { strict: true, ...options });
+    const t = await this.beforeInsert<T>(doc || this.randomFields<T>(), { strict: true, ...options });
 
     log(`${this.schema.model}.insertOne:`, JSON.stringify(t, null, 0));
 
@@ -299,7 +299,7 @@ abstract class Model {
     const o = results.ops[0];
 
     // Apply after insert handler.
-    await this.afterInsert<U>(o);
+    await this.afterInsert<T>(o);
 
     return o;
   }
@@ -318,7 +318,7 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#insertMany}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~insertWriteOpResult}
    */
-  static async insertMany<U = {}>(docs: Document<U>[], options: ModelInsertManyOptions = {}): Promise<Document<U>[]> {
+  static async insertMany<T = {}>(docs: DocumentFragment<T>[], options: ModelInsertManyOptions = {}): Promise<Document<T>[]> {
     if ((this.schema.noInserts === true) || (this.schema.noInsertMany === true)) throw new Error('Multiple insertions are disallowed for this model');
 
     const n = docs.length;
@@ -326,7 +326,7 @@ abstract class Model {
 
     // Apply before insert handler to each document.
     for (let i = 0; i < n; i++) {
-      t[i] = await this.beforeInsert<U>(docs[i]);
+      t[i] = await this.beforeInsert<T>(docs[i]);
     }
 
     log(`${this.schema.model}.insertMany:`, JSON.stringify(t, null, 0));
@@ -338,11 +338,11 @@ abstract class Model {
 
     assert(results.result.ok === 1);
 
-    const o = results.ops as Document<U>[];
+    const o = results.ops as Document<T>[];
     const m = o.length;
 
     for (let i = 0; i < m; i++) {
-      await this.afterInsert<U>(o[i]);
+      await this.afterInsert<T>(o[i]);
     }
 
     return o;
@@ -366,11 +366,11 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndUpdate}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
    */
-  static async updateOne<U = {}>(query: Query<U>, update: Document<U> | Update<U>, options: ModelUpdateOneOptions = {}): Promise<null | boolean | Document<U>> {
+  static async updateOne<T = {}>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options: ModelUpdateOneOptions = {}): Promise<null | boolean | Document<T>> {
     if (this.schema.noUpdates === true) throw new Error('Updates are disallowed for this model');
 
     const collection = await this.getCollection();
-    const [q, u] = (options.skipHooks === true) ? [query, update] : await this.beforeUpdate<U>(query, update, options);
+    const [q, u] = (options.skipHooks === true) ? [query, update] : await this.beforeUpdate<T>(query, update, options);
 
     log(`${this.schema.model}.updateOne:`, JSON.stringify(q, null, 0), JSON.stringify(u, null, 0), JSON.stringify(options, null, 0));
 
@@ -386,8 +386,8 @@ abstract class Model {
 
       assert(res.ok === 1, new Error('Update failed'));
 
-      let oldDoc: Document<U> | undefined;
-      let newDoc: Document<U> | null;
+      let oldDoc: Document<T> | undefined;
+      let newDoc: Document<T> | null;
 
       // Handle upserts properly.
       if (is.nullOrUndefined(res.lastErrorObject.upserted)) {
@@ -395,10 +395,10 @@ abstract class Model {
 
         if (is.nullOrUndefined(oldDoc)) return null;
 
-        newDoc = await this.findOne(oldDoc._id);
+        newDoc = await this.findOne<T>(oldDoc._id);
       }
       else {
-        newDoc = await this.findOne(res.lastErrorObject.upserted);
+        newDoc = await this.findOne<T>(res.lastErrorObject.upserted);
       }
 
       if (is.nullOrUndefined(newDoc)) {
@@ -406,7 +406,7 @@ abstract class Model {
       }
 
       if (options.skipHooks !== true) {
-        await this.afterUpdate<U>(oldDoc, newDoc);
+        await this.afterUpdate<T>(oldDoc, newDoc);
       }
 
       return newDoc;
@@ -425,7 +425,7 @@ abstract class Model {
       if (res.result.n <= 0) return false;
 
       if (options.skipHooks !== true) {
-        await this.afterUpdate<U>();
+        await this.afterUpdate<T>();
       }
 
       return true;
@@ -448,18 +448,18 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndUpdate}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
    */
-  static async updateMany<U = {}>(query: Query<U>, update: Document<U> | Update<U>, options: ModelUpdateManyOptions = {}): Promise<Document<U>[] | boolean> {
+  static async updateMany<T = {}>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options: ModelUpdateManyOptions = {}): Promise<Document<T>[] | boolean> {
     if ((this.schema.noUpdates === true) || (this.schema.noUpdateMany === true)) throw new Error('Multiple updates are disallowed for this model');
 
-    const [q, u] = await this.beforeUpdate<U>(query, update, options);
+    const [q, u] = await this.beforeUpdate<T>(query, update, options);
     const collection = await this.getCollection();
 
     log(`${this.schema.model}.updateMany:`, JSON.stringify(q, null, 0), JSON.stringify(u, null, 0), JSON.stringify(options, null, 0));
 
     if (options.returnDocs === true) {
-      const docs = await this.findMany<U>(q);
+      const docs = await this.findMany<T>(q);
       const n = docs.length;
-      const results: Document<U>[] = [];
+      const results: Document<T>[] = [];
 
       if ((n <= 0) && (options.upsert === true)) {
         const res = await this.updateOne(q, u, { ...options, returnDoc: true, skipHooks: true });
@@ -484,7 +484,7 @@ abstract class Model {
         log(`${this.schema.model}.updateMany results:`, JSON.stringify(results, null, 0));
       }
 
-      await this.afterUpdate<U>(undefined, results);
+      await this.afterUpdate<T>(undefined, results);
 
       return results;
     }
@@ -497,7 +497,7 @@ abstract class Model {
 
       if (results.result.n <= 0) return false;
 
-      await this.afterUpdate<U>();
+      await this.afterUpdate<T>();
 
       return true;
     }
@@ -516,10 +516,10 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndDelete}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~deleteWriteOpResult}
    */
-  static async deleteOne<U = {}>(query: Query<U>, options: ModelDeleteOneOptions = {}): Promise<Document<U> | boolean | null> {
+  static async deleteOne<T = {}>(query: Query<T>, options: ModelDeleteOneOptions = {}): Promise<Document<T> | boolean | null> {
     if (this.schema.noDeletes === true) throw new Error('Deletions are disallowed for this model');
 
-    const q = await this.beforeDelete<U>(query, options);
+    const q = await this.beforeDelete<T>(query, options);
 
     log(`${this.schema.model}.deleteOne:`, JSON.stringify(query, null, 0));
 
@@ -536,7 +536,7 @@ abstract class Model {
         return null;
       }
 
-      await this.afterDelete<U>(results.value);
+      await this.afterDelete<T>(results.value);
 
       return results.value;
     }
@@ -551,7 +551,7 @@ abstract class Model {
         return false;
       }
 
-      await this.afterDelete<U>();
+      await this.afterDelete<T>();
 
       return true;
     }
@@ -570,7 +570,7 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndDelete}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~deleteWriteOpResult}
    */
-  static async deleteMany<U = {}>(query: Query<U>, options: ModelDeleteManyOptions = {}): Promise<boolean | Document<U>[]> {
+  static async deleteMany<T = {}>(query: Query<T>, options: ModelDeleteManyOptions = {}): Promise<boolean | Document<T>[]> {
     if ((this.schema.noDeletes === true) || (this.schema.noDeleteMany === true)) throw new Error('Multiple deletions are disallowed for this model');
 
     const q = await this.beforeDelete(query, options);
@@ -582,7 +582,7 @@ abstract class Model {
     if (options.returnDocs === true) {
       const docs = await this.findMany(q);
       const n = docs.length;
-      const results: Document<U>[] = [];
+      const results: Document<T>[] = [];
 
       for (let i = 0; i < n; i++) {
         const doc = docs[i];
@@ -599,7 +599,7 @@ abstract class Model {
 
       const m = results.length;
 
-      await this.afterDelete<U>(results);
+      await this.afterDelete<T>(results);
 
       return results;
     }
@@ -632,9 +632,9 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndReplace}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~findAndModifyWriteOpResult}
    */
-  static async findAndReplaceOne<U = {}>(query: Query<U>, replacement: Document<U> = this.randomFields<U>(), options: ModelReplaceOneOptions = {}): Promise<null | Document<U>> {
-    const q = await this.beforeDelete<U>(query, options);
-    const r = await this.beforeInsert<U>(replacement, options);
+  static async findAndReplaceOne<T = {}>(query: Query<T>, replacement: DocumentFragment<T> = this.randomFields<T>(), options: ModelReplaceOneOptions = {}): Promise<null | Document<T>> {
+    const q = await this.beforeDelete<T>(query, options);
+    const r = await this.beforeInsert<T>(replacement, options);
 
     log(`${this.schema.model}.replaceOne:`, JSON.stringify(q, null, 0), JSON.stringify(r, null, 0));
 
@@ -649,14 +649,14 @@ abstract class Model {
 
     if (is.nullOrUndefined(oldDoc)) return null;
 
-    const newDoc = await this.findOne<U>(r);
+    const newDoc = await this.findOne<T>(r);
 
     if (is.null_(newDoc)) {
       throw new Error('Document is replaced but unable to find the new document in the database');
     }
 
-    await this.afterDelete<U>(results.value);
-    await this.afterInsert<U>(newDoc);
+    await this.afterDelete<T>(results.value);
+    await this.afterInsert<T>(newDoc);
 
     return (options.returnOriginal === true) ? oldDoc : newDoc;
   }
@@ -668,7 +668,7 @@ abstract class Model {
    *
    * @return The total number of documents found.
    */
-  static async count<U = {}>(query: Query<U>, options: ModelCountOptions = {}): Promise<number> {
+  static async count(query: Query, options: ModelCountOptions = {}): Promise<number> {
     const results = await this.findMany(query, options);
 
     return results.length;
@@ -683,7 +683,7 @@ abstract class Model {
    *
    * @return The formatted document as the fulfillment value.
    */
-  static async formatDocument<U = {}>(doc: Document<U>): Promise<Document<U>> {
+  static async formatDocument<T = {}>(doc: DocumentFragment<T>): Promise<DocumentFragment<T>> {
     const formattedDoc = _.cloneDeep(doc);
     const fields: { [fieldName: string]: FieldSpecs } = this.schema.fields;
 
@@ -697,13 +697,13 @@ abstract class Model {
       // If the schema has a certain formatting function defined for this field,
       // apply it.
       if (is.function_(fieldSpecs.format)) {
-        const formattedValue = await fieldSpecs.format(formattedDoc[key]);
-        formattedDoc[key] = formattedValue;
+        const formattedValue = await fieldSpecs.format(formattedDoc[key as keyof T]);
+        formattedDoc[key as keyof T] = formattedValue;
       }
 
       // If the schema indicates that this field is encrypted, encrypt it.
       if (fieldSpecs.encrypted === true) {
-        formattedDoc[key] = await bcrypt.hash(`${formattedDoc[key]}`, 10);
+        formattedDoc[key as keyof T] = await bcrypt.hash(`${formattedDoc[key as keyof T]}`, 10);
       }
     }
 
@@ -723,8 +723,8 @@ abstract class Model {
    *
    * @return `true` will be fulfilled if all tests have passed.
    */
-  static async validateDocument<U = {}>(doc: Document<U>, options: ModelValidateDocumentOptions = {}): Promise<boolean> {
-    if (!is.object(doc)) throw new Error('Invalid document provided');
+  static async validateDocument<T = {}>(doc: DocumentFragment<T>, options: ModelValidateDocumentOptions = {}): Promise<boolean> {
+    if (!is.plainObject(doc)) throw new Error('Invalid document provided');
     if (is.emptyObject(doc)) throw new Error('Empty objects are not permitted');
 
     const fields: { [fieldName: string]: FieldSpecs } = this.schema.fields;
@@ -736,7 +736,7 @@ abstract class Model {
       if (this.schema.timestamps && (key === 'updatedAt')) continue;
       if (this.schema.timestamps && (key === 'createdAt')) continue;
 
-      const val = doc[key];
+      const val = doc[key as keyof T];
 
       // #1 Check if field is defined in the schema.
       if (!this.schema.fields.hasOwnProperty(key)) {
@@ -794,7 +794,7 @@ abstract class Model {
    *
    * @return The document to be inserted.
    */
-  static async willInsertDocument<U = {}>(doc: Document<U>): Promise<Document<U>> {
+  static async willInsertDocument<T = {}>(doc: DocumentFragment<T>): Promise<DocumentFragment<T>> {
     return doc;
   }
 
@@ -803,7 +803,7 @@ abstract class Model {
    *
    * @param doc - The inserted document.
    */
-  static async didInsertDocument<U = {}>(doc: Document<U>): Promise<void> {}
+  static async didInsertDocument<T = {}>(doc: Document<T>): Promise<void> {}
 
   /**
    * Handler called before an attempted update operation. This method must
@@ -814,7 +814,7 @@ abstract class Model {
    *
    * @return A tuple of the query and the update descriptor.
    */
-  static async willUpdateDocument<U = {}>(query: Query<U>, update: Document<U> | Update<U>): Promise<[Query<U>, Document<U> | Update<U>]> {
+  static async willUpdateDocument<T = {}>(query: Query<T>, update: DocumentFragment<T> | Update<T>): Promise<[Query, DocumentFragment<T> | Update<T>]> {
     return [query, update];
   }
 
@@ -827,9 +827,7 @@ abstract class Model {
    * @param newDocs - The updated document(s). This is only available if
    *                  `returnDoc` or `returnDocs` was enabled.
    */
-  static async didUpdateDocument<U = {}>(prevDoc?: Document<U>, newDocs?: Document<U> | Document<U>[]): Promise<void> {
-
-  }
+  static async didUpdateDocument<T = {}>(prevDoc?: Document<T>, newDocs?: Document<T> | Document<T>[]): Promise<void> {}
 
   /**
    * Handler called before an attempt to delete a document.
@@ -838,7 +836,7 @@ abstract class Model {
    *
    * @return The document to be deleted.
    */
-  static async willDeleteDocument<U = {}>(query: Query<U>): Promise<Query<U>> {
+  static async willDeleteDocument<T = {}>(query: Query<T>): Promise<Query<T>> {
     return query;
   }
 
@@ -848,9 +846,7 @@ abstract class Model {
    *
    * @param docs - The deleted document(s) if available.
    */
-  static async didDeleteDocument<U = {}>(docs?: Document<U> | Document<U>[]): Promise<void> {
-
-  }
+  static async didDeleteDocument<T = {}>(docs?: Document<T> | Document<T>[]): Promise<void> {}
 
   /**
    * Processes a document before it is inserted. This is also used during an
@@ -861,13 +857,13 @@ abstract class Model {
    *
    * @return Document to be inserted/upserted to the database.
    */
-  private static async beforeInsert<U = {}>(doc: Document<U>, options: ModelInsertOneOptions | ModelInsertManyOptions = {}): Promise<Document<U>> {
+  private static async beforeInsert<T = {}>(doc: DocumentFragment<T>, options: ModelInsertOneOptions | ModelInsertManyOptions = {}): Promise<DocumentFragment<T>> {
     const fields: { [fieldName: string]: FieldSpecs } = this.schema.fields;
 
     // Call event hook first.
-    const d = await this.willInsertDocument<U>(doc);
+    const d = await this.willInsertDocument<T>(doc);
 
-    let o = sanitizeDocument<U>(this.schema, d);
+    let o = sanitizeDocument<T>(this.schema, d);
 
     // Unless specified, always renew the `createdAt` and `updatedAt` fields.
     if ((this.schema.timestamps === true) && (options.ignoreTimestamps !== true)) {
@@ -887,14 +883,14 @@ abstract class Model {
       // apply it.
       if (is.undefined(fieldSpecs.default)) continue;
 
-      o[key] = (is.function_(fieldSpecs.default)) ? fieldSpecs.default() : fieldSpecs.default;
+      o[key as keyof T] = (is.function_(fieldSpecs.default)) ? fieldSpecs.default() : fieldSpecs.default;
     }
 
     // Apply format function defined in the schema if applicable.
-    o = await this.formatDocument<U>(o);
+    o = await this.formatDocument<T>(o);
 
     // Finally, validate the document as a final sanity check.
-    await this.validateDocument<U>(o, { ignoreUniqueIndex: true, strict: true, ...options });
+    await this.validateDocument<T>(o, { ignoreUniqueIndex: true, strict: true, ...options });
 
     return o;
   }
@@ -904,8 +900,8 @@ abstract class Model {
    *
    * @param doc - The inserted document.
    */
-  private static async afterInsert<U = {}>(doc: Document<U>): Promise<void> {
-    await this.didInsertDocument<U>(doc);
+  private static async afterInsert<T = {}>(doc: Document<T>): Promise<void> {
+    await this.didInsertDocument<T>(doc);
   }
 
   /**
@@ -918,29 +914,29 @@ abstract class Model {
    *
    * @return The modified update to apply.
    */
-  private static async beforeUpdate<U = {}>(query: Query<U>, update: Document<U> | Update<U>, options: ModelUpdateOneOptions | ModelUpdateManyOptions = {}): Promise<[Document<U>, Update<U>]> {
+  private static async beforeUpdate<T = {}>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options: ModelUpdateOneOptions | ModelUpdateManyOptions = {}): Promise<[DocumentFragment<T>, Update<T>]> {
     if ((options.upsert === true) && (this.schema.allowUpsert !== true)) throw new Error('Attempting to upsert a document while upserting is disallowed in the schema');
 
-    const [q, u] = await this.willUpdateDocument<U>(query, update);
+    const [q, u] = await this.willUpdateDocument<T>(query, update);
 
     // First sanitize the inputs. We want to be able to make sure the query is
     // valid and that the update object is a proper update query.
-    const qq: Document<U> = sanitizeQuery<U>(this.schema, q);
-    let uu: Update<U>;
+    const qq = sanitizeQuery<T>(this.schema, q) as DocumentFragment<T>;
+    let uu: Update<T>;
 
-    if (typeIsUpdate<U>(u)) {
+    if (typeIsUpdate<T>(u)) {
       uu = {
         ...u,
       };
 
-      if (uu.$set) uu.$set = sanitizeDocument<U>(this.schema, uu.$set);
-      if (uu.$setOnInsert) uu.$setOnInsert = sanitizeDocument<U>(this.schema, uu.$setOnInsert);
-      if (uu.$addToSet) uu.$addToSet = sanitizeDocument<U>(this.schema, uu.$addToSet);
-      if (uu.$push) uu.$push = sanitizeDocument<U>(this.schema, uu.$push);
+      if (uu.$set) uu.$set = sanitizeDocument<T>(this.schema, uu.$set);
+      if (uu.$setOnInsert) uu.$setOnInsert = sanitizeDocument<T>(this.schema, uu.$setOnInsert);
+      if (uu.$addToSet) uu.$addToSet = sanitizeDocument<T>(this.schema, uu.$addToSet);
+      if (uu.$push) uu.$push = sanitizeDocument<T>(this.schema, uu.$push);
     }
     else {
       uu = {
-        $set: sanitizeDocument<U>(this.schema, u),
+        $set: sanitizeDocument<T>(this.schema, u),
       };
     }
 
@@ -952,7 +948,7 @@ abstract class Model {
 
     // Format all fields in the update query.
     if (uu.$set) {
-      uu.$set = await this.formatDocument<U>(uu.$set as Document<U>);
+      uu.$set = await this.formatDocument<T>(uu.$set as Document<T>);
     }
 
     // In the case of an upsert, we need to preprocess the query as if this was
@@ -961,7 +957,7 @@ abstract class Model {
     // query.
     if (options.upsert === true) {
       // Make a copy of the query in case it is manipulated by the hooks.
-      const beforeInsert = await this.beforeInsert<U>(_.cloneDeep(qq), { ...options, strict: false });
+      const beforeInsert = await this.beforeInsert<T>(_.cloneDeep(qq), { ...options, strict: false });
       const setOnInsert = _.omit({
         ...uu.$setOnInsert || {},
         ...beforeInsert as object,
@@ -973,7 +969,7 @@ abstract class Model {
     }
 
     // Validate all fields in the update query.
-    await this.validateDocument<U>(uu.$set as Document<U>, { ignoreUniqueIndex: true, ...options });
+    await this.validateDocument<T>(uu.$set as DocumentFragment<T>, { ignoreUniqueIndex: true, ...options });
 
     return [qq, uu];
   }
@@ -985,8 +981,8 @@ abstract class Model {
    * @param oldDoc - The original document.
    * @param newDoc - The updated document.
    */
-  private static async afterUpdate<U = {}>(oldDoc?: Document<U>, newDocs?: Document<U> | Document<U>[]) {
-    await this.didUpdateDocument<U>(oldDoc, newDocs);
+  private static async afterUpdate<T = {}>(oldDoc?: Document<T>, newDocs?: Document<T> | Document<T>[]) {
+    await this.didUpdateDocument<T>(oldDoc, newDocs);
   }
 
   /**
@@ -995,10 +991,10 @@ abstract class Model {
    * @param query - Query for document to delete.
    * @param options - @see ModelDeleteOneOptions, @see ModelDeleteManyOptions
    */
-  private static async beforeDelete<U = {}>(query: Query<U>, options: ModelDeleteOneOptions | ModelDeleteManyOptions): Promise<Document<U>> {
-    const q = await this.willDeleteDocument(query);
+  private static async beforeDelete<T = {}>(query: Query<T>, options: ModelDeleteOneOptions | ModelDeleteManyOptions): Promise<FilterQuery<T>> {
+    const q = await this.willDeleteDocument<T>(query);
 
-    return sanitizeQuery<U>(this.schema, q);
+    return sanitizeQuery<T>(this.schema, q);
   }
 
   /**
@@ -1008,15 +1004,15 @@ abstract class Model {
    *
    * @todo Cascade deletion only works for first-level foreign keys so far.
    */
-  private static async afterDelete<U = {}>(docs?: Document<U> | Document<U>[]) {
+  private static async afterDelete<T = {}>(docs?: Document<T> | Document<T>[]) {
     if (is.array(docs)) {
       for (const doc of docs) {
         if (!is.directInstanceOf(doc._id, ObjectID)) continue;
-        await this.cascadeDelete<U>(doc._id);
+        await this.cascadeDelete(doc._id);
       }
     }
     else if (!is.nullOrUndefined(docs) && is.directInstanceOf(docs._id, ObjectID)) {
-      await this.cascadeDelete<U>(docs._id);
+      await this.cascadeDelete(docs._id);
     }
 
     await this.didDeleteDocument(docs);
@@ -1029,7 +1025,7 @@ abstract class Model {
    * @param docId - The ID of the document in this collection in which other
    *                collections are pointing to.
    */
-  private static async cascadeDelete<U = {}>(docId: ObjectID) {
+  private static async cascadeDelete(docId: ObjectID) {
     const cascadeModelNames = this.schema.cascade;
 
     if (is.nullOrUndefined(cascadeModelNames)) return;
@@ -1056,6 +1052,10 @@ abstract class Model {
     }
   }
 
+  /**
+   * Prevent instantiation of this class or any of its sub-classes because this
+   * is intended to be a static class.
+   */
   constructor() {
     throw new Error('This is a static class and is prohibited from instantiated');
   }

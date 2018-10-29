@@ -346,7 +346,7 @@ class Model {
     }
     static validateDocument(doc, options = {}) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (!is_1.default.object(doc))
+            if (!is_1.default.plainObject(doc))
                 throw new Error('Invalid document provided');
             if (is_1.default.emptyObject(doc))
                 throw new Error('Empty objects are not permitted');
@@ -412,8 +412,7 @@ class Model {
         });
     }
     static didUpdateDocument(prevDoc, newDocs) {
-        return __awaiter(this, void 0, void 0, function* () {
-        });
+        return __awaiter(this, void 0, void 0, function* () { });
     }
     static willDeleteDocument(query) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -421,8 +420,7 @@ class Model {
         });
     }
     static didDeleteDocument(docs) {
-        return __awaiter(this, void 0, void 0, function* () {
-        });
+        return __awaiter(this, void 0, void 0, function* () { });
     }
     static beforeInsert(doc, options = {}) {
         return __awaiter(this, void 0, void 0, function* () {

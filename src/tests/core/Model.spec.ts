@@ -5,7 +5,7 @@ import Faker from 'faker';
 import { describe, it } from 'mocha';
 import { ObjectID } from 'mongodb';
 import * as db from '../..';
-import { Document } from '../../types';
+import { Document, DocumentFragment } from '../../types';
 import Bar from '../models/Bar';
 import Baz, { BazProps } from '../models/Baz';
 import Foo from '../models/Foo';
@@ -21,12 +21,16 @@ describe('core/Model', () => {
     await (await db.getDbInstance()).dropDatabase();
   });
 
+  it('cannot be instantiated', async () => {
+    assert.throws(() => (new Baz()));
+  });
+
   it('throws an error if the model has no schema defined', async () => {
     assert(Foo.schema);
   });
 
   it('can find a document', async () => {
-    const t: Document<BazProps> = { aString: Faker.random.alphaNumeric(10) };
+    const t: DocumentFragment<BazProps> = { aString: Faker.random.alphaNumeric(10) };
     const res = await Baz.insertOne(t);
 
     assert(res);
@@ -40,9 +44,9 @@ describe('core/Model', () => {
   it('can find multiple documents', async () => {
     const s = Faker.random.alphaNumeric(10);
 
-    await Baz.insertOne({ aString: s });
-    await Baz.insertOne({ aString: s });
-    await Baz.insertOne({ aString: s });
+    await Baz.insertOne<BazProps>({ aString: s });
+    await Baz.insertOne<BazProps>({ aString: s });
+    await Baz.insertOne<BazProps>({ aString: s });
 
     const docs = await Baz.findMany({ aString: s });
 
@@ -57,9 +61,9 @@ describe('core/Model', () => {
   it('can count the total number of documents in the collection', async () => {
     const s = Faker.random.alphaNumeric(10);
 
-    await Baz.insertOne({ aString: s });
-    await Baz.insertOne({ aString: s });
-    await Baz.insertOne({ aString: s });
+    await Baz.insertOne<BazProps>({ aString: s });
+    await Baz.insertOne<BazProps>({ aString: s });
+    await Baz.insertOne<BazProps>({ aString: s });
 
     const count = await Baz.count({ aString: s });
 
@@ -72,7 +76,7 @@ describe('core/Model', () => {
   });
 
   it('can insert a new document', async () => {
-    const t: Document<BazProps> = { aString: Faker.random.alphaNumeric(10) };
+    const t: DocumentFragment<BazProps> = { aString: Faker.random.alphaNumeric(10) };
     const doc = await Baz.insertOne<BazProps>(t);
 
     assert(doc);
@@ -81,7 +85,7 @@ describe('core/Model', () => {
   });
 
   it('can insert multiple documents', async () => {
-    const t: Document<BazProps>[] = [{ aString: Faker.random.alphaNumeric(10) }, { aString: Faker.random.alphaNumeric(10) }, { aString: Faker.random.alphaNumeric(10) }];
+    const t: DocumentFragment<BazProps>[] = [{ aString: Faker.random.alphaNumeric(10) }, { aString: Faker.random.alphaNumeric(10) }, { aString: Faker.random.alphaNumeric(10) }];
     const docs = await Baz.insertMany<BazProps>(t);
 
     assert(docs);
@@ -94,7 +98,7 @@ describe('core/Model', () => {
     let didThrow = true;
 
     try {
-      await Baz.insertOne({ aNumber: 6 }).catch(err => { throw err; });
+      await Baz.insertOne<BazProps>({ aNumber: 6 }).catch(err => { throw err; });
       didThrow = false;
     }
     catch (err) {}
@@ -103,33 +107,34 @@ describe('core/Model', () => {
   });
 
   it('can format documents according to the schema', async () => {
-    const t: Document<BazProps> = { aFormattedString: Faker.random.alphaNumeric(10) };
+    const t: DocumentFragment<BazProps> = { aFormattedString: Faker.random.alphaNumeric(10) };
     const res = await Baz.formatDocument(t);
     assert(Baz.schema.fields.aFormattedString.format!(t.aFormattedString) === res.aFormattedString);
   });
 
   it('can encrypt document fields according to the schema', async () => {
     const s = Faker.random.alphaNumeric(10);
-    const t: Document<BazProps> = { anEncryptedString: s };
-    const res = await Baz.formatDocument(t);
+    const t: DocumentFragment<BazProps> = { anEncryptedString: s };
+    const res = await Baz.formatDocument<BazProps>(t);
+
     assert(await bcrypt.compare(s, res.anEncryptedString!));
   });
 
   it('should automatically generate default values on insert', async () => {
-    const t: Document<BazProps> = { aString: Faker.random.alphaNumeric(10) };
-    const res = await Baz.insertOne(t);
+    const t: DocumentFragment<BazProps> = { aString: Faker.random.alphaNumeric(10) };
+    const res = await Baz.insertOne<BazProps>(t);
     assert(res!.aBoolean === Baz.schema.fields.aBoolean.default);
   });
 
   it('should automatically format values on insert according to the schema', async () => {
-    const t: Document<BazProps> = { aString: Faker.random.alphaNumeric(10), aFormattedString: Faker.random.alphaNumeric(10) };
+    const t: DocumentFragment<BazProps> = { aString: Faker.random.alphaNumeric(10), aFormattedString: Faker.random.alphaNumeric(10) };
     const res = await Baz.insertOne(t);
     assert(Baz.schema.fields.aFormattedString.format!(t.aFormattedString) === res!.aFormattedString);
   });
 
   it('can update an existing doc', async () => {
     const s = Faker.random.alphaNumeric(10);
-    const t: Document<BazProps> = { aString: Faker.random.alphaNumeric(10) };
+    const t: DocumentFragment<BazProps> = { aString: Faker.random.alphaNumeric(10) };
 
     await Baz.insertOne(t);
 
@@ -140,7 +145,7 @@ describe('core/Model', () => {
 
   it('can upsert a doc if it does not already exist', async () => {
     const s = Faker.random.alphaNumeric(10);
-    const t: Document<BazProps> = { aString: s };
+    const t: DocumentFragment<BazProps> = { aString: s };
 
     await Baz.updateOne(t, { aFormattedString: Faker.random.alphaNumeric(10) }, { upsert: true });
 
@@ -176,6 +181,7 @@ describe('core/Model', () => {
     const res = await Baz.updateOne<BazProps>({ aString: Faker.random.alphaNumeric(10) }, { aFormattedString: s }, { upsert: true, returnDoc: true });
 
     assert(!is.nullOrUndefined(res));
+    assert(!is.boolean(res));
     assert((res as Document<BazProps>).aFormattedString !== s);
     assert((res as Document<BazProps>).aFormattedString === Baz.schema.fields.aFormattedString.format!(s));
   });
@@ -183,7 +189,7 @@ describe('core/Model', () => {
   it('can update multiple existing docs', async () => {
     const s = Faker.random.alphaNumeric(10);
     const t = Faker.random.alphaNumeric(10);
-    const q: Document<BazProps>[] = [{ aString: s }, { aString: s }, { aString: s }];
+    const q: DocumentFragment<BazProps>[] = [{ aString: s }, { aString: s }, { aString: s }];
     const docs = await Baz.insertMany<BazProps>(q);
 
     assert(docs);
@@ -217,7 +223,8 @@ describe('core/Model', () => {
 
   it('can delete a doc', async () => {
     const s = Faker.random.alphaNumeric(10);
-    const doc = await Baz.insertOne<BazProps>({ aString: s });
+
+    await Baz.insertOne<BazProps>({ aString: s });
 
     assert(!is.null_(await Baz.findOne<BazProps>({ aString: s })));
 
@@ -247,11 +254,11 @@ describe('core/Model', () => {
 
     await Baz.insertMany<BazProps>([{ aString: s }, { aString: s }, { aString: s }]);
 
-    assert((await Baz.count<BazProps>({ aString: s })) === 3);
+    assert((await Baz.count({ aString: s })) === 3);
 
     await Baz.deleteMany<BazProps>({ aString: s });
 
-    assert((await Baz.count<BazProps>({ aString: s })) === 0);
+    assert((await Baz.count({ aString: s })) === 0);
   });
 
   it('can delete multiple docs and return the deleted docs', async () => {
@@ -259,7 +266,7 @@ describe('core/Model', () => {
 
     await Baz.insertMany<BazProps>([{ aString: s }, { aString: s }, { aString: s }]);
 
-    assert((await Baz.count<BazProps>({ aString: s })) === 3);
+    assert((await Baz.count({ aString: s })) === 3);
 
     const res = await Baz.deleteMany<BazProps>({ aString: s }, { returnDocs: true });
 

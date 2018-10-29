@@ -37,6 +37,9 @@ mocha_1.describe('core/Model', () => {
     before(() => __awaiter(this, void 0, void 0, function* () {
         yield (yield db.getDbInstance()).dropDatabase();
     }));
+    mocha_1.it('cannot be instantiated', () => __awaiter(this, void 0, void 0, function* () {
+        assert_1.default.throws(() => (new Baz_1.default()));
+    }));
     mocha_1.it('throws an error if the model has no schema defined', () => __awaiter(this, void 0, void 0, function* () {
         assert_1.default(Foo_1.default.schema);
     }));
@@ -151,6 +154,7 @@ mocha_1.describe('core/Model', () => {
         const s = faker_1.default.random.alphaNumeric(10);
         const res = yield Baz_1.default.updateOne({ aString: faker_1.default.random.alphaNumeric(10) }, { aFormattedString: s }, { upsert: true, returnDoc: true });
         assert_1.default(!is_1.default.nullOrUndefined(res));
+        assert_1.default(!is_1.default.boolean(res));
         assert_1.default(res.aFormattedString !== s);
         assert_1.default(res.aFormattedString === Baz_1.default.schema.fields.aFormattedString.format(s));
     }));
@@ -181,7 +185,7 @@ mocha_1.describe('core/Model', () => {
     }));
     mocha_1.it('can delete a doc', () => __awaiter(this, void 0, void 0, function* () {
         const s = faker_1.default.random.alphaNumeric(10);
-        const doc = yield Baz_1.default.insertOne({ aString: s });
+        yield Baz_1.default.insertOne({ aString: s });
         assert_1.default(!is_1.default.null_(yield Baz_1.default.findOne({ aString: s })));
         const res = yield Baz_1.default.deleteOne({ aString: s });
         assert_1.default(res === true);

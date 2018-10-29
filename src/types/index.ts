@@ -1,5 +1,5 @@
 import is from '@sindresorhus/is';
-import { IndexOptions, ObjectID, UpdateQuery } from 'mongodb';
+import { FilterQuery, IndexOptions, ObjectID, UpdateQuery } from 'mongodb';
 
 /**
  * Data type for basic field types.
@@ -7,24 +7,34 @@ import { IndexOptions, ObjectID, UpdateQuery } from 'mongodb';
 type FieldBaseType = typeof String | typeof Number | typeof Boolean | typeof Date | typeof ObjectID | typeof Array;
 
 /**
- * MongoDB document structure.
+ * Full structure of a document.
  */
-export type Document<T = {}> = Partial<T> & { _id?: ObjectID; createdAt?: Date; updatedAt?: Date; [field: string]: FieldValue; };
+export type Document<T = {}> = { [K in keyof T]: T[K] } & { _id: ObjectID; createdAt?: Date; updatedAt?: Date; [field: string]: FieldValue; };
+
+/**
+ * Structure that represents parts of a document.
+ */
+export type DocumentFragment<T = {}> = Partial<Document<T>>;
 
 /**
  * Query for finding documents in the MongoDB database.
  */
-export type Query<T = {}> = string | ObjectID | Document<T> | { [key: string]: any };
+export type Query<T = {}> = string | ObjectID | FilterQuery<T>;
 
 /**
  * Document update descriptor.
  */
-export type Update<T = {}> = UpdateQuery<Document<T>>;
+export type Update<T = {}> = UpdateQuery<DocumentFragment<T>>;
 
 /**
  * Data type for all field types.
  */
-export type FieldType = FieldBaseType | FieldBaseType[] | { [key: string]: FieldSpecs };
+export type FieldType = FieldBaseType | FieldBaseType[] | { [field: string]: FieldSpecs };
+
+/**
+ * Data type for acceptable field values.
+ */
+export type FieldValue = undefined | null | ObjectID | string | number | boolean | Date | any[] | { [subfield: string]: FieldValue };
 
 /**
  * Geo coordinate type in the format of [longitude, latitude].
@@ -275,11 +285,6 @@ export interface ProjectStageFactoryOptionsPopulate {
 }
 
 /**
- * Data type for acceptable field values.
- */
-type FieldValue = undefined | null | ObjectID | string | number | boolean | Date | any[] | { [key: string]: FieldValue };
-
-/**
  * Function for formatting field values, in which the value to be formatted will
  * be passed into this function as its only paramenter.
  */
@@ -352,7 +357,7 @@ export function typeIsUpdate<T = {}>(value: any): value is Update<T> {
  *
  * @return `true` if value is an identifiable Document, `false` otherwise.
  */
-export function typeIsIdentifiableDocument<T = {}>(value: any): value is Document<T> {
+export function typeIsIdentifiableDocument<T = {}>(value: any): value is { _id: ObjectID } {
   if (is.nullOrUndefined(value)) return false;
   if (!is.plainObject(value)) return false;
   if (!typeIsObjectID(value._id)) return false;

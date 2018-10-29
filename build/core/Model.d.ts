@@ -1,5 +1,5 @@
 import { Collection, CollectionAggregationOptions, CollectionInsertManyOptions, CollectionInsertOneOptions, CommonOptions, FindOneAndReplaceOption, ObjectID, ReplaceOneOptions } from 'mongodb';
-import { AggregationPipeline, Document, PipelineFactoryOptions, PipelineFactorySpecs, Query, Schema, Update } from '../types';
+import { AggregationPipeline, Document, DocumentFragment, PipelineFactoryOptions, PipelineFactorySpecs, Query, Schema, Update } from '../types';
 interface ModelRandomFieldsOptions {
     includeOptionals?: boolean;
 }
@@ -39,27 +39,27 @@ interface ModelCountOptions extends ModelFindManyOptions {
 declare abstract class Model {
     static schema: Schema;
     static getCollection(): Promise<Collection>;
-    static randomFields<U = {}>(fixedFields?: Document<U>, { includeOptionals }?: ModelRandomFieldsOptions): Document<U>;
-    static pipeline<U = {}>(queryOrSpecs?: Query<U> | PipelineFactorySpecs, options?: PipelineFactoryOptions): AggregationPipeline;
-    static identifyOne<U = {}>(query: Query<U>): Promise<ObjectID>;
-    static findOne<U = {}>(query?: Query<U>, options?: ModelFindOneOptions): Promise<null | Document<U>>;
-    static findMany<U = {}>(query?: Query<U>, options?: ModelFindManyOptions): Promise<Document<U>[]>;
-    static insertOne<U = {}>(doc?: Document<U>, options?: ModelInsertOneOptions): Promise<null | Document<U>>;
-    static insertMany<U = {}>(docs: Document<U>[], options?: ModelInsertManyOptions): Promise<Document<U>[]>;
-    static updateOne<U = {}>(query: Query<U>, update: Document<U> | Update<U>, options?: ModelUpdateOneOptions): Promise<null | boolean | Document<U>>;
-    static updateMany<U = {}>(query: Query<U>, update: Document<U> | Update<U>, options?: ModelUpdateManyOptions): Promise<Document<U>[] | boolean>;
-    static deleteOne<U = {}>(query: Query<U>, options?: ModelDeleteOneOptions): Promise<Document<U> | boolean | null>;
-    static deleteMany<U = {}>(query: Query<U>, options?: ModelDeleteManyOptions): Promise<boolean | Document<U>[]>;
-    static findAndReplaceOne<U = {}>(query: Query<U>, replacement?: Document<U>, options?: ModelReplaceOneOptions): Promise<null | Document<U>>;
-    static count<U = {}>(query: Query<U>, options?: ModelCountOptions): Promise<number>;
-    static formatDocument<U = {}>(doc: Document<U>): Promise<Document<U>>;
-    static validateDocument<U = {}>(doc: Document<U>, options?: ModelValidateDocumentOptions): Promise<boolean>;
-    static willInsertDocument<U = {}>(doc: Document<U>): Promise<Document<U>>;
-    static didInsertDocument<U = {}>(doc: Document<U>): Promise<void>;
-    static willUpdateDocument<U = {}>(query: Query<U>, update: Document<U> | Update<U>): Promise<[Query<U>, Document<U> | Update<U>]>;
-    static didUpdateDocument<U = {}>(prevDoc?: Document<U>, newDocs?: Document<U> | Document<U>[]): Promise<void>;
-    static willDeleteDocument<U = {}>(query: Query<U>): Promise<Query<U>>;
-    static didDeleteDocument<U = {}>(docs?: Document<U> | Document<U>[]): Promise<void>;
+    static randomFields<T = {}>(fixedFields?: DocumentFragment<T>, { includeOptionals }?: ModelRandomFieldsOptions): DocumentFragment<T>;
+    static pipeline<T = {}>(queryOrSpecs?: Query<T> | PipelineFactorySpecs, options?: PipelineFactoryOptions): AggregationPipeline;
+    static identifyOne<T = {}>(query: Query<T>): Promise<ObjectID>;
+    static findOne<T = {}>(query?: Query<T>, options?: ModelFindOneOptions): Promise<null | Document<T>>;
+    static findMany<T = {}>(query?: Query<T>, options?: ModelFindManyOptions): Promise<Document<T>[]>;
+    static insertOne<T>(doc?: DocumentFragment<T>, options?: ModelInsertOneOptions): Promise<null | Document<T>>;
+    static insertMany<T = {}>(docs: DocumentFragment<T>[], options?: ModelInsertManyOptions): Promise<Document<T>[]>;
+    static updateOne<T = {}>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options?: ModelUpdateOneOptions): Promise<null | boolean | Document<T>>;
+    static updateMany<T = {}>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options?: ModelUpdateManyOptions): Promise<Document<T>[] | boolean>;
+    static deleteOne<T = {}>(query: Query<T>, options?: ModelDeleteOneOptions): Promise<Document<T> | boolean | null>;
+    static deleteMany<T = {}>(query: Query<T>, options?: ModelDeleteManyOptions): Promise<boolean | Document<T>[]>;
+    static findAndReplaceOne<T = {}>(query: Query<T>, replacement?: DocumentFragment<T>, options?: ModelReplaceOneOptions): Promise<null | Document<T>>;
+    static count(query: Query, options?: ModelCountOptions): Promise<number>;
+    static formatDocument<T = {}>(doc: DocumentFragment<T>): Promise<DocumentFragment<T>>;
+    static validateDocument<T = {}>(doc: DocumentFragment<T>, options?: ModelValidateDocumentOptions): Promise<boolean>;
+    static willInsertDocument<T = {}>(doc: DocumentFragment<T>): Promise<DocumentFragment<T>>;
+    static didInsertDocument<T = {}>(doc: Document<T>): Promise<void>;
+    static willUpdateDocument<T = {}>(query: Query<T>, update: DocumentFragment<T> | Update<T>): Promise<[Query, DocumentFragment<T> | Update<T>]>;
+    static didUpdateDocument<T = {}>(prevDoc?: Document<T>, newDocs?: Document<T> | Document<T>[]): Promise<void>;
+    static willDeleteDocument<T = {}>(query: Query<T>): Promise<Query<T>>;
+    static didDeleteDocument<T = {}>(docs?: Document<T> | Document<T>[]): Promise<void>;
     private static beforeInsert;
     private static afterInsert;
     private static beforeUpdate;
