@@ -1,6 +1,4 @@
 import { FilterQuery, IndexOptions, ObjectID, UpdateQuery } from 'mongodb';
-declare type FieldBasicType = typeof String | typeof Number | typeof Boolean | typeof Date | typeof ObjectID | typeof Array;
-declare type FieldBasicValue = null | ObjectID | string | number | boolean | Date;
 export declare type Document<T = {}> = {
     [K in keyof T]: T[K];
 } & {
@@ -89,6 +87,8 @@ export interface ProjectStageFactoryOptions {
 export interface ProjectStageFactoryOptionsPopulate {
     [modelName: string]: boolean | ProjectStageFactoryOptionsPopulate;
 }
+declare type FieldBasicType = typeof String | typeof Number | typeof Boolean | typeof Date | typeof ObjectID | typeof Array;
+declare type FieldBasicValue = null | ObjectID | string | number | boolean | Date;
 declare type FieldFormatFunction = (value: any) => FieldValue;
 declare type FieldValidationStrategy = RegExp | number | any[] | FieldValidationFunction;
 declare type FieldValidationFunction = (value: any) => boolean;

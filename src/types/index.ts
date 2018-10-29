@@ -2,16 +2,6 @@ import is from '@sindresorhus/is';
 import { FilterQuery, IndexOptions, ObjectID, UpdateQuery } from 'mongodb';
 
 /**
- * Data type for basic field types.
- */
-type FieldBasicType = typeof String | typeof Number | typeof Boolean | typeof Date | typeof ObjectID | typeof Array;
-
-/**
- * Data type for basic field value.
- */
-type FieldBasicValue = null | ObjectID | string | number | boolean | Date;
-
-/**
  * Full structure of a document.
  */
 export type Document<T = {}> = { [K in keyof T]: T[K] } & { _id: ObjectID; createdAt?: Date; updatedAt?: Date; [field: string]: FieldValue; };
@@ -288,6 +278,16 @@ export interface ProjectStageFactoryOptions {
 export interface ProjectStageFactoryOptionsPopulate {
   [modelName: string]: boolean | ProjectStageFactoryOptionsPopulate;
 }
+
+/**
+ * Data type for basic field types.
+ */
+type FieldBasicType = typeof String | typeof Number | typeof Boolean | typeof Date | typeof ObjectID | typeof Array;
+
+/**
+ * Data type for basic field value.
+ */
+type FieldBasicValue = null | ObjectID | string | number | boolean | Date;
 
 /**
  * Function for formatting field values, in which the value to be formatted will
