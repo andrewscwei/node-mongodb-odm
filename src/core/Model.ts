@@ -12,7 +12,7 @@ import debug from 'debug';
 import _ from 'lodash';
 import { Collection, CollectionAggregationOptions, CollectionInsertManyOptions, CollectionInsertOneOptions, CommonOptions, FilterQuery, FindOneAndReplaceOption, ObjectID, ReplaceOneOptions } from 'mongodb';
 import { getCollection, getModel } from '..';
-import { AggregationPipeline, Document, DocumentFragment, FieldSpecs, FieldValue, PipelineFactoryOptions, PipelineFactorySpecs, Query, Schema, typeIsUpdate, Update } from '../types';
+import { AggregationPipeline, Document, DocumentFragment, FieldSpecs, PipelineFactoryOptions, PipelineFactorySpecs, Query, Schema, typeIsUpdate, Update } from '../types';
 import sanitizeDocument from '../utils/sanitizeDocument';
 import sanitizeQuery from '../utils/sanitizeQuery';
 import validateFieldValue from '../utils/validateFieldValue';
@@ -211,8 +211,8 @@ abstract class Model {
    * @throws When no document is found with the given query or when the ID of
    *         the found document is invalid.
    */
-  static async identifyOne<T = {}>(query: Query<T>): Promise<ObjectID> {
-    const result = await this.findOne<T>(query);
+  static async identifyOne(query: Query): Promise<ObjectID> {
+    const result = await this.findOne(query);
 
     if (is.nullOrUndefined(result)) {
       throw new Error(`No results found while identifying this ${this.schema.model} using the query ${JSON.stringify(query, null, 0)}`);
@@ -234,7 +234,7 @@ abstract class Model {
    *
    * @return The matching document as the fulfillment value.
    */
-  static async findOne<T = {}>(query?: Query<T>, options?: ModelFindOneOptions): Promise<null | Document<T>> {
+  static async findOne<T = {}, R extends T = T>(query?: Query<T>, options?: ModelFindOneOptions): Promise<null | Document<R>> {
     if (is.nullOrUndefined(query)) {
       const collection = await this.getCollection();
       const results = await collection.aggregate(this.pipeline(query).concat([{ $sample: { size: 1 } }])).toArray();
@@ -246,7 +246,7 @@ abstract class Model {
       return null;
     }
     else {
-      const results = await this.findMany<T>(query, options);
+      const results = await this.findMany<T, R>(query, options);
 
       if (results.length === 0) return null;
 
@@ -263,7 +263,7 @@ abstract class Model {
    *
    * @return The matching documents as the fulfillment value.
    */
-  static async findMany<T = {}>(query?: Query<T>, options?: ModelFindManyOptions): Promise<Document<T>[]> {
+  static async findMany<T = {}, R extends T = T>(query?: Query<T>, options?: ModelFindManyOptions): Promise<Document<R>[]> {
     const collection = await this.getCollection();
     const results = await collection.aggregate(this.pipeline(query), options).toArray();
     return results;
@@ -369,7 +369,7 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndUpdate}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
    */
-  static async updateOne<T = {}>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options: ModelUpdateOneOptions = {}): Promise<null | boolean | Document<T>> {
+  static async updateOne<T = {}, R extends T = T>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options: ModelUpdateOneOptions = {}): Promise<null | boolean | Document<R>> {
     if (this.schema.noUpdates === true) throw new Error('Updates are disallowed for this model');
 
     const collection = await this.getCollection();
@@ -398,10 +398,10 @@ abstract class Model {
 
         if (is.nullOrUndefined(oldDoc)) return null;
 
-        newDoc = await this.findOne<T>(oldDoc._id);
+        newDoc = await this.findOne<T, R>(oldDoc._id);
       }
       else {
-        newDoc = await this.findOne<T>(res.lastErrorObject.upserted);
+        newDoc = await this.findOne<T, R>(res.lastErrorObject.upserted);
       }
 
       if (is.nullOrUndefined(newDoc)) {
@@ -409,7 +409,7 @@ abstract class Model {
       }
 
       if (options.skipHooks !== true) {
-        await this.afterUpdate<T>(oldDoc, newDoc);
+        await this.afterUpdate<T, R>(oldDoc, newDoc);
       }
 
       return newDoc;
@@ -428,7 +428,7 @@ abstract class Model {
       if (res.result.n <= 0) return false;
 
       if (options.skipHooks !== true) {
-        await this.afterUpdate<T>();
+        await this.afterUpdate<T, R>();
       }
 
       return true;
@@ -451,7 +451,7 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndUpdate}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
    */
-  static async updateMany<T = {}>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options: ModelUpdateManyOptions = {}): Promise<Document<T>[] | boolean> {
+  static async updateMany<T = {}, R extends T = T>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options: ModelUpdateManyOptions = {}): Promise<Document<T>[] | boolean> {
     if ((this.schema.noUpdates === true) || (this.schema.noUpdateMany === true)) throw new Error('Multiple updates are disallowed for this model');
 
     const [q, u] = await this.beforeUpdate<T>(query, update, options);
@@ -460,20 +460,26 @@ abstract class Model {
     log(`${this.schema.model}.updateMany:`, JSON.stringify(q, null, 0), JSON.stringify(u, null, 0), JSON.stringify(options, null, 0));
 
     if (options.returnDocs === true) {
-      const docs = await this.findMany<T>(q);
+      const docs = await this.findMany<T, R>(q);
       const n = docs.length;
-      const results: Document<T>[] = [];
 
       if ((n <= 0) && (options.upsert === true)) {
-        const res = await this.updateOne(q, u, { ...options, returnDoc: true, skipHooks: true });
+        const results: Document<R>[] = [];
+        const res = await this.updateOne<T, R>(q, u, { ...options, returnDoc: true, skipHooks: true });
 
         if (is.boolean(res) || is.null_(res)) {
           throw new Error('Error upserting document during an updateMany operation');
         }
 
         results.push(res);
+
+        await this.afterUpdate<T, R>(undefined, results);
+
+        return results;
       }
       else {
+        const results: Document<T>[] = [];
+
         for (let i = 0; i < n; i++) {
           const doc = docs[i];
           const result = await collection.findOneAndUpdate({ _id: doc._id }, u, { returnOriginal: false, ...options });
@@ -485,11 +491,11 @@ abstract class Model {
         }
 
         log(`${this.schema.model}.updateMany results:`, JSON.stringify(results, null, 0));
+
+        await this.afterUpdate<T, T>(undefined, results);
+
+        return results;
       }
-
-      await this.afterUpdate<T>(undefined, results);
-
-      return results;
     }
     else {
       const results = await collection.updateMany(q, u, options);
@@ -500,7 +506,7 @@ abstract class Model {
 
       if (results.result.n <= 0) return false;
 
-      await this.afterUpdate<T>();
+      await this.afterUpdate<T, R>();
 
       return true;
     }
@@ -583,7 +589,7 @@ abstract class Model {
     const collection = await this.getCollection();
 
     if (options.returnDocs === true) {
-      const docs = await this.findMany(q);
+      const docs = await this.findMany<T>(q);
       const n = docs.length;
       const results: Document<T>[] = [];
 
@@ -635,7 +641,7 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndReplace}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~findAndModifyWriteOpResult}
    */
-  static async findAndReplaceOne<T = {}>(query: Query<T>, replacement: DocumentFragment<T> = this.randomFields<T>(), options: ModelReplaceOneOptions = {}): Promise<null | Document<T>> {
+  static async findAndReplaceOne<T = {}, R extends T = T>(query: Query<T>, replacement: DocumentFragment<T> = this.randomFields<T>(), options: ModelReplaceOneOptions = {}): Promise<null | Document<R>> {
     const q = await this.beforeDelete<T>(query, options);
     const r = await this.beforeInsert<T>(replacement, options);
 
@@ -652,14 +658,14 @@ abstract class Model {
 
     if (is.nullOrUndefined(oldDoc)) return null;
 
-    const newDoc = await this.findOne<T>(r);
+    const newDoc = await this.findOne<T, R>(r);
 
     if (is.null_(newDoc)) {
       throw new Error('Document is replaced but unable to find the new document in the database');
     }
 
     await this.afterDelete<T>(results.value);
-    await this.afterInsert<T>(newDoc);
+    await this.afterInsert<R>(newDoc);
 
     return (options.returnOriginal === true) ? oldDoc : newDoc;
   }
@@ -767,6 +773,7 @@ abstract class Model {
         if (!Object.keys(index.spec).every(v => Object.keys(doc).indexOf(v) > -1)) continue;
 
         const uniqueQuery = _.pick(doc, Object.keys(index.spec));
+
         if (await this.findOne(uniqueQuery)) throw new Error(`Another document already exists with ${JSON.stringify(uniqueQuery, null, 0)}`);
       }
     }
@@ -797,7 +804,7 @@ abstract class Model {
    *
    * @return The document to be inserted.
    */
-  static async willInsertDocument<T = {}>(doc: DocumentFragment<T>): Promise<DocumentFragment<T>> {
+  static async willInsertDocument<T>(doc: DocumentFragment<T>): Promise<DocumentFragment<T>> {
     return doc;
   }
 
@@ -806,7 +813,7 @@ abstract class Model {
    *
    * @param doc - The inserted document.
    */
-  static async didInsertDocument<T = {}>(doc: Document<T>): Promise<void> {}
+  static async didInsertDocument<R>(doc: Document<R>): Promise<void> {}
 
   /**
    * Handler called before an attempted update operation. This method must
@@ -817,7 +824,7 @@ abstract class Model {
    *
    * @return A tuple of the query and the update descriptor.
    */
-  static async willUpdateDocument<T = {}>(query: Query<T>, update: DocumentFragment<T> | Update<T>): Promise<[Query, DocumentFragment<T> | Update<T>]> {
+  static async willUpdateDocument<T>(query: Query<T>, update: DocumentFragment<T> | Update<T>): Promise<[Query, DocumentFragment<T> | Update<T>]> {
     return [query, update];
   }
 
@@ -830,7 +837,7 @@ abstract class Model {
    * @param newDocs - The updated document(s). This is only available if
    *                  `returnDoc` or `returnDocs` was enabled.
    */
-  static async didUpdateDocument<T = {}>(prevDoc?: Document<T>, newDocs?: Document<T> | Document<T>[]): Promise<void> {}
+  static async didUpdateDocument<T, R>(prevDoc?: Document<T>, newDocs?: Document<R> | Document<R>[]): Promise<void> {}
 
   /**
    * Handler called before an attempt to delete a document.
@@ -839,7 +846,7 @@ abstract class Model {
    *
    * @return The document to be deleted.
    */
-  static async willDeleteDocument<T = {}>(query: Query<T>): Promise<Query<T>> {
+  static async willDeleteDocument<T>(query: Query<T>): Promise<Query<T>> {
     return query;
   }
 
@@ -849,7 +856,7 @@ abstract class Model {
    *
    * @param docs - The deleted document(s) if available.
    */
-  static async didDeleteDocument<T = {}>(docs?: Document<T> | Document<T>[]): Promise<void> {}
+  static async didDeleteDocument<T>(docs?: Document<T> | Document<T>[]): Promise<void> {}
 
   /**
    * Processes a document before it is inserted. This is also used during an
@@ -860,7 +867,7 @@ abstract class Model {
    *
    * @return Document to be inserted/upserted to the database.
    */
-  private static async beforeInsert<T = {}>(doc: DocumentFragment<T>, options: ModelInsertOneOptions | ModelInsertManyOptions = {}): Promise<DocumentFragment<T>> {
+  private static async beforeInsert<T>(doc: DocumentFragment<T>, options: ModelInsertOneOptions | ModelInsertManyOptions = {}): Promise<DocumentFragment<T>> {
     const fields: { [fieldName: string]: FieldSpecs } = this.schema.fields;
 
     // Call event hook first.
@@ -903,8 +910,8 @@ abstract class Model {
    *
    * @param doc - The inserted document.
    */
-  private static async afterInsert<T = {}>(doc: Document<T>): Promise<void> {
-    await this.didInsertDocument<T>(doc);
+  private static async afterInsert<R>(doc: Document<R>): Promise<void> {
+    await this.didInsertDocument<R>(doc);
   }
 
   /**
@@ -917,7 +924,7 @@ abstract class Model {
    *
    * @return The modified update to apply.
    */
-  private static async beforeUpdate<T = {}>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options: ModelUpdateOneOptions | ModelUpdateManyOptions = {}): Promise<[DocumentFragment<T>, Update<T>]> {
+  private static async beforeUpdate<T>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options: ModelUpdateOneOptions | ModelUpdateManyOptions = {}): Promise<[DocumentFragment<T>, Update<T>]> {
     if ((options.upsert === true) && (this.schema.allowUpsert !== true)) throw new Error('Attempting to upsert a document while upserting is disallowed in the schema');
 
     const [q, u] = await this.willUpdateDocument<T>(query, update);
@@ -984,8 +991,8 @@ abstract class Model {
    * @param oldDoc - The original document.
    * @param newDoc - The updated document.
    */
-  private static async afterUpdate<T = {}>(oldDoc?: Document<T>, newDocs?: Document<T> | Document<T>[]) {
-    await this.didUpdateDocument<T>(oldDoc, newDocs);
+  private static async afterUpdate<T, R>(oldDoc?: Document<T>, newDocs?: Document<R> | Document<R>[]) {
+    await this.didUpdateDocument<T, R>(oldDoc, newDocs);
   }
 
   /**
@@ -994,7 +1001,7 @@ abstract class Model {
    * @param query - Query for document to delete.
    * @param options - @see ModelDeleteOneOptions, @see ModelDeleteManyOptions
    */
-  private static async beforeDelete<T = {}>(query: Query<T>, options: ModelDeleteOneOptions | ModelDeleteManyOptions): Promise<FilterQuery<T>> {
+  private static async beforeDelete<T>(query: Query<T>, options: ModelDeleteOneOptions | ModelDeleteManyOptions): Promise<FilterQuery<T>> {
     const q = await this.willDeleteDocument<T>(query);
 
     return sanitizeQuery<T>(this.schema, q);
@@ -1007,7 +1014,7 @@ abstract class Model {
    *
    * @todo Cascade deletion only works for first-level foreign keys so far.
    */
-  private static async afterDelete<T = {}>(docs?: Document<T> | Document<T>[]) {
+  private static async afterDelete<T>(docs?: Document<T> | Document<T>[]) {
     if (is.array(docs)) {
       for (const doc of docs) {
         if (!is.directInstanceOf(doc._id, ObjectID)) continue;
