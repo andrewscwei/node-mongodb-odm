@@ -4,8 +4,8 @@ export interface BazProps {
     aString: string;
     aNumber: number;
     aBoolean: boolean;
-    aFormattedString: string;
-    anEncryptedString: string;
+    aFormattedString?: string;
+    anEncryptedString?: string;
 }
 export declare const BazSchema: Schema<BazProps>;
 export default class Baz extends Model {

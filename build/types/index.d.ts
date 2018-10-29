@@ -1,7 +1,5 @@
 import { FilterQuery, IndexOptions, ObjectID, UpdateQuery } from 'mongodb';
-export declare type Document<T = {}> = {
-    [K in keyof T]: T[K];
-} & {
+export declare type Document<T = {}> = T & {
     _id: ObjectID;
     createdAt?: Date;
     updatedAt?: Date;
@@ -41,7 +39,7 @@ export interface Schema<T = {}> {
     noDeleteMany?: boolean;
     cascade?: string[];
     fields: {
-        [K in keyof T]: FieldSpecs;
+        [K in keyof Required<T>]: FieldSpecs;
     };
     indexes?: SchemaIndex[];
 }
