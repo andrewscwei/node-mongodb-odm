@@ -1,5 +1,6 @@
 import { FilterQuery, IndexOptions, ObjectID, UpdateQuery } from 'mongodb';
-declare type FieldBaseType = typeof String | typeof Number | typeof Boolean | typeof Date | typeof ObjectID | typeof Array;
+declare type FieldBasicType = typeof String | typeof Number | typeof Boolean | typeof Date | typeof ObjectID | typeof Array;
+declare type FieldBasicValue = null | ObjectID | string | number | boolean | Date;
 export declare type Document<T = {}> = {
     [K in keyof T]: T[K];
 } & {
@@ -11,10 +12,10 @@ export declare type Document<T = {}> = {
 export declare type DocumentFragment<T = {}> = Partial<Document<T>>;
 export declare type Query<T = {}> = string | ObjectID | FilterQuery<T>;
 export declare type Update<T = {}> = UpdateQuery<DocumentFragment<T>>;
-export declare type FieldType = FieldBaseType | FieldBaseType[] | {
+export declare type FieldType = FieldBasicType | FieldBasicType[] | {
     [field: string]: FieldSpecs;
 };
-export declare type FieldValue = undefined | null | ObjectID | string | number | boolean | Date | any[] | {
+export declare type FieldValue = undefined | FieldBasicValue | FieldBasicValue[] | {
     [subfield: string]: FieldValue;
 };
 export declare type GeoCoordinate = [number, number];

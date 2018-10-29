@@ -4,7 +4,12 @@ import { FilterQuery, IndexOptions, ObjectID, UpdateQuery } from 'mongodb';
 /**
  * Data type for basic field types.
  */
-type FieldBaseType = typeof String | typeof Number | typeof Boolean | typeof Date | typeof ObjectID | typeof Array;
+type FieldBasicType = typeof String | typeof Number | typeof Boolean | typeof Date | typeof ObjectID | typeof Array;
+
+/**
+ * Data type for basic field value.
+ */
+type FieldBasicValue = null | ObjectID | string | number | boolean | Date;
 
 /**
  * Full structure of a document.
@@ -29,12 +34,12 @@ export type Update<T = {}> = UpdateQuery<DocumentFragment<T>>;
 /**
  * Data type for all field types.
  */
-export type FieldType = FieldBaseType | FieldBaseType[] | { [field: string]: FieldSpecs };
+export type FieldType = FieldBasicType | FieldBasicType[] | { [field: string]: FieldSpecs };
 
 /**
  * Data type for acceptable field values.
  */
-export type FieldValue = undefined | null | ObjectID | string | number | boolean | Date | any[] | { [subfield: string]: FieldValue };
+export type FieldValue = undefined | FieldBasicValue | FieldBasicValue[] | { [subfield: string]: FieldValue };
 
 /**
  * Geo coordinate type in the format of [longitude, latitude].
