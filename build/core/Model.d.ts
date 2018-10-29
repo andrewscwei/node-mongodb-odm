@@ -1,41 +1,5 @@
-import { Collection, CollectionAggregationOptions, CollectionInsertManyOptions, CollectionInsertOneOptions, CommonOptions, FindOneAndReplaceOption, ObjectID, ReplaceOneOptions } from 'mongodb';
-import { AggregationPipeline, Document, DocumentFragment, PipelineFactoryOptions, PipelineFactorySpecs, Query, Schema, Update } from '../types';
-interface ModelRandomFieldsOptions {
-    includeOptionals?: boolean;
-}
-interface ModelValidateDocumentOptions {
-    strict?: boolean;
-    ignoreUniqueIndex?: boolean;
-}
-interface ModelFindOneOptions extends CollectionAggregationOptions {
-}
-interface ModelFindManyOptions extends CollectionAggregationOptions {
-}
-interface ModelInsertOneOptions extends ModelValidateDocumentOptions, CollectionInsertOneOptions {
-    ignoreTimestamps?: boolean;
-}
-interface ModelInsertManyOptions extends ModelValidateDocumentOptions, CollectionInsertManyOptions {
-    ignoreTimestamps?: boolean;
-}
-interface ModelUpdateOneOptions extends ModelInsertOneOptions, FindOneAndReplaceOption, ReplaceOneOptions {
-    returnDoc?: boolean;
-    ignoreTimestamps?: boolean;
-    skipHooks?: boolean;
-}
-interface ModelUpdateManyOptions extends CommonOptions, FindOneAndReplaceOption {
-    returnDocs?: boolean;
-    ignoreTimestamps?: boolean;
-}
-interface ModelDeleteOneOptions extends CommonOptions {
-    returnDoc?: boolean;
-}
-interface ModelDeleteManyOptions extends CommonOptions {
-    returnDocs?: boolean;
-}
-interface ModelReplaceOneOptions extends FindOneAndReplaceOption, ModelDeleteOneOptions, ModelInsertOneOptions {
-}
-interface ModelCountOptions extends ModelFindManyOptions {
-}
+import { Collection, ObjectID } from 'mongodb';
+import { AggregationPipeline, Document, DocumentFragment, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOptions, PipelineFactorySpecs, Query, Schema, Update } from '../types';
 declare abstract class Model {
     static schema: Schema;
     static getCollection(): Promise<Collection>;

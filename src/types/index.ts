@@ -1,5 +1,5 @@
 import is from '@sindresorhus/is';
-import { FilterQuery, IndexOptions, ObjectID, UpdateQuery } from 'mongodb';
+import { CollectionAggregationOptions, CollectionInsertManyOptions, CollectionInsertOneOptions, CommonOptions, FilterQuery, FindOneAndReplaceOption, IndexOptions, ObjectID, ReplaceOneOptions, UpdateQuery } from 'mongodb';
 
 /**
  * Full structure of a document.
@@ -163,6 +163,104 @@ export interface Schema<T = any> {
    */
   indexes?: SchemaIndex[];
 }
+
+/**
+ * Options for Model.randomFields.
+ */
+export interface ModelRandomFieldsOptions {
+  /**
+   * Specifies whether optional fields will be generated as well.
+   */
+  includeOptionals?: boolean;
+}
+
+/**
+ * Options for Model.validateDocument.
+ */
+export interface ModelValidateDocumentOptions {
+  /**
+   * Tells the validation process to account for required fields. That is, if
+   * this is `true` and some required fields are missing in the document to be
+   * validated, validation fails.
+   */
+  strict?: boolean;
+
+  /**
+   * Tells the validation process to account for unique indexes. That is, if
+   * this is `false` and one or more field values are not unique when it
+   * supposedly has a unique index, validation fails.
+   */
+  ignoreUniqueIndex?: boolean;
+}
+
+export interface ModelFindOneOptions extends CollectionAggregationOptions {}
+
+export interface ModelFindManyOptions extends CollectionAggregationOptions {}
+
+export interface ModelInsertOneOptions extends ModelValidateDocumentOptions, CollectionInsertOneOptions {
+  /**
+   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are
+   * automatically generated before insertion.
+   */
+  ignoreTimestamps?: boolean;
+}
+
+export interface ModelInsertManyOptions extends ModelValidateDocumentOptions, CollectionInsertManyOptions {
+  /**
+   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are
+   * automatically generated before insertion.
+   */
+  ignoreTimestamps?: boolean;
+}
+
+export interface ModelUpdateOneOptions extends ModelInsertOneOptions, FindOneAndReplaceOption, ReplaceOneOptions {
+  /**
+   * Specifies whether updated doc is returned when update completes.
+   */
+  returnDoc?: boolean;
+
+  /**
+   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are
+   * automatically generated before insertion.
+   */
+  ignoreTimestamps?: boolean;
+
+  /**
+   * Specifies whether beforeUpdate() and afterUpdate() hooks are skipped.
+   */
+  skipHooks?: boolean;
+}
+
+export interface ModelUpdateManyOptions extends CommonOptions, FindOneAndReplaceOption {
+  /**
+   * Specifies whether updated docs are returned when update completes.
+   */
+  returnDocs?: boolean;
+
+  /**
+   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are
+   * automatically generated before insertion.
+   */
+  ignoreTimestamps?: boolean;
+}
+
+export interface ModelDeleteOneOptions extends CommonOptions {
+  /**
+   * Specifies whether deleted doc is returned when deletion completes.
+   */
+  returnDoc?: boolean;
+}
+
+export interface ModelDeleteManyOptions extends CommonOptions {
+  /**
+   * Specifies whether deleted docs are returned when deletion completes.
+   */
+  returnDocs?: boolean;
+}
+
+export interface ModelReplaceOneOptions extends FindOneAndReplaceOption, ModelDeleteOneOptions, ModelInsertOneOptions {}
+
+export interface ModelCountOptions extends ModelFindManyOptions {}
 
 export interface AggregationStageDescriptor {
   [stageName: string]: {

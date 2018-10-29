@@ -1,4 +1,4 @@
-import { FilterQuery, IndexOptions, ObjectID, UpdateQuery } from 'mongodb';
+import { CollectionAggregationOptions, CollectionInsertManyOptions, CollectionInsertOneOptions, CommonOptions, FilterQuery, FindOneAndReplaceOption, IndexOptions, ObjectID, ReplaceOneOptions, UpdateQuery } from 'mongodb';
 export declare type Document<T = {}> = T & {
     _id: ObjectID;
     createdAt?: Date;
@@ -42,6 +42,42 @@ export interface Schema<T = any> {
         [K in keyof Required<T>]: FieldSpecs<NonNullable<T[K]>>;
     };
     indexes?: SchemaIndex[];
+}
+export interface ModelRandomFieldsOptions {
+    includeOptionals?: boolean;
+}
+export interface ModelValidateDocumentOptions {
+    strict?: boolean;
+    ignoreUniqueIndex?: boolean;
+}
+export interface ModelFindOneOptions extends CollectionAggregationOptions {
+}
+export interface ModelFindManyOptions extends CollectionAggregationOptions {
+}
+export interface ModelInsertOneOptions extends ModelValidateDocumentOptions, CollectionInsertOneOptions {
+    ignoreTimestamps?: boolean;
+}
+export interface ModelInsertManyOptions extends ModelValidateDocumentOptions, CollectionInsertManyOptions {
+    ignoreTimestamps?: boolean;
+}
+export interface ModelUpdateOneOptions extends ModelInsertOneOptions, FindOneAndReplaceOption, ReplaceOneOptions {
+    returnDoc?: boolean;
+    ignoreTimestamps?: boolean;
+    skipHooks?: boolean;
+}
+export interface ModelUpdateManyOptions extends CommonOptions, FindOneAndReplaceOption {
+    returnDocs?: boolean;
+    ignoreTimestamps?: boolean;
+}
+export interface ModelDeleteOneOptions extends CommonOptions {
+    returnDoc?: boolean;
+}
+export interface ModelDeleteManyOptions extends CommonOptions {
+    returnDocs?: boolean;
+}
+export interface ModelReplaceOneOptions extends FindOneAndReplaceOption, ModelDeleteOneOptions, ModelInsertOneOptions {
+}
+export interface ModelCountOptions extends ModelFindManyOptions {
 }
 export interface AggregationStageDescriptor {
     [stageName: string]: {

@@ -10,113 +10,15 @@ import assert from 'assert';
 import bcrypt from 'bcrypt';
 import debug from 'debug';
 import _ from 'lodash';
-import { Collection, CollectionAggregationOptions, CollectionInsertManyOptions, CollectionInsertOneOptions, CommonOptions, FilterQuery, FindOneAndReplaceOption, ObjectID, ReplaceOneOptions } from 'mongodb';
+import { Collection, FilterQuery, ObjectID } from 'mongodb';
 import { getCollection, getModel } from '..';
-import { AggregationPipeline, Document, DocumentFragment, FieldSpecs, PipelineFactoryOptions, PipelineFactorySpecs, Query, Schema, typeIsUpdate, Update } from '../types';
+import { AggregationPipeline, Document, DocumentFragment, FieldSpecs, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOptions, PipelineFactorySpecs, Query, Schema, typeIsUpdate, Update } from '../types';
 import sanitizeDocument from '../utils/sanitizeDocument';
 import sanitizeQuery from '../utils/sanitizeQuery';
 import validateFieldValue from '../utils/validateFieldValue';
 import Aggregation from './Aggregation';
 
 const log = debug('mongodb-odm:model');
-
-/**
- * Options for Model.randomFields.
- */
-interface ModelRandomFieldsOptions {
-  /**
-   * Specifies whether optional fields will be generated as well.
-   */
-  includeOptionals?: boolean;
-}
-
-/**
- * Options for Model.validateDocument.
- */
-interface ModelValidateDocumentOptions {
-  /**
-   * Tells the validation process to account for required fields. That is, if
-   * this is `true` and some required fields are missing in the document to be
-   * validated, validation fails.
-   */
-  strict?: boolean;
-
-  /**
-   * Tells the validation process to account for unique indexes. That is, if
-   * this is `false` and one or more field values are not unique when it
-   * supposedly has a unique index, validation fails.
-   */
-  ignoreUniqueIndex?: boolean;
-}
-
-interface ModelFindOneOptions extends CollectionAggregationOptions {}
-
-interface ModelFindManyOptions extends CollectionAggregationOptions {}
-
-interface ModelInsertOneOptions extends ModelValidateDocumentOptions, CollectionInsertOneOptions {
-  /**
-   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are
-   * automatically generated before insertion.
-   */
-  ignoreTimestamps?: boolean;
-}
-
-interface ModelInsertManyOptions extends ModelValidateDocumentOptions, CollectionInsertManyOptions {
-  /**
-   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are
-   * automatically generated before insertion.
-   */
-  ignoreTimestamps?: boolean;
-}
-
-interface ModelUpdateOneOptions extends ModelInsertOneOptions, FindOneAndReplaceOption, ReplaceOneOptions {
-  /**
-   * Specifies whether updated doc is returned when update completes.
-   */
-  returnDoc?: boolean;
-
-  /**
-   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are
-   * automatically generated before insertion.
-   */
-  ignoreTimestamps?: boolean;
-
-  /**
-   * Specifies whether beforeUpdate() and afterUpdate() hooks are skipped.
-   */
-  skipHooks?: boolean;
-}
-
-interface ModelUpdateManyOptions extends CommonOptions, FindOneAndReplaceOption {
-  /**
-   * Specifies whether updated docs are returned when update completes.
-   */
-  returnDocs?: boolean;
-
-  /**
-   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are
-   * automatically generated before insertion.
-   */
-  ignoreTimestamps?: boolean;
-}
-
-interface ModelDeleteOneOptions extends CommonOptions {
-  /**
-   * Specifies whether deleted doc is returned when deletion completes.
-   */
-  returnDoc?: boolean;
-}
-
-interface ModelDeleteManyOptions extends CommonOptions {
-  /**
-   * Specifies whether deleted docs are returned when deletion completes.
-   */
-  returnDocs?: boolean;
-}
-
-interface ModelReplaceOneOptions extends FindOneAndReplaceOption, ModelDeleteOneOptions, ModelInsertOneOptions {}
-
-interface ModelCountOptions extends ModelFindManyOptions {}
 
 abstract class Model {
   /**
