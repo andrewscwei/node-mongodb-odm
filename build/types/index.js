@@ -4,12 +4,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const is_1 = __importDefault(require("@sindresorhus/is"));
+const mongodb_1 = require("mongodb");
 function typeIsUpdate(value) {
     if (!is_1.default.object(value))
         return false;
     return Object.keys(value).some(val => val.startsWith('$'));
 }
 exports.typeIsUpdate = typeIsUpdate;
+function typeIsDocument(value) {
+    if (is_1.default.nullOrUndefined(value))
+        return false;
+    if (!is_1.default.plainObject(value))
+        return false;
+    if (!is_1.default.directInstanceOf(value._id, mongodb_1.ObjectID))
+        return false;
+    return true;
+}
+exports.typeIsDocument = typeIsDocument;
 function typeIsGeoCoordinate(value) {
     if (!is_1.default.array(value))
         return false;

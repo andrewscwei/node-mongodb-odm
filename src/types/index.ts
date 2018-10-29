@@ -346,6 +346,20 @@ export function typeIsUpdate<T = {}>(value: any): value is Update<T> {
 }
 
 /**
+ * Checks if a value is a Document.
+ *
+ * @param value - Value to check.
+ *
+ * @return `true` if value is a Document, `false` otherwise.
+ */
+export function typeIsDocument<T = {}>(value: any): value is Document<T> {
+  if (is.nullOrUndefined(value)) return false;
+  if (!is.plainObject(value)) return false;
+  if (!is.directInstanceOf(value._id, ObjectID)) return false;
+  return true;
+}
+
+/**
  * Checks if a value is a GeoCoordinate. Also ensures the longitude and latitude
  * ranges, throws if out of range for either value.
  *

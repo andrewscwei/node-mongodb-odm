@@ -99,5 +99,6 @@ interface SchemaIndex {
     options?: IndexOptions;
 }
 export declare function typeIsUpdate<T = {}>(value: any): value is Update<T>;
+export declare function typeIsDocument<T = {}>(value: any): value is Document<T>;
 export declare function typeIsGeoCoordinate(value: any): value is GeoCoordinate;
 export {};
