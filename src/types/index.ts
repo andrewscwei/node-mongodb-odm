@@ -39,7 +39,7 @@ export type GeoCoordinate = [number, number];
 /**
  * Specification for defining a field in the MongoDB collection.
  */
-export interface FieldSpecs {
+export interface FieldSpecs<T = FieldValue> {
   /**
    * @see FieldType
    */
@@ -66,25 +66,25 @@ export interface FieldSpecs {
   /**
    * Default value of the field.
    */
-  default?: FieldValue | FieldDefaultValueFunction;
+  default?: T | FieldDefaultValueFunction<T>;
 
   /**
    * @see FieldFormatFunction
    */
-  format?: FieldFormatFunction;
+  format?: FieldFormatFunction<T>;
 
   /**
    * @see FieldValidationStrategy
    */
-  validate?: FieldValidationStrategy;
+  validate?: FieldValidationStrategy<T>;
 
   /**
    * @see FieldRandomValueFunction
    */
-  random?: FieldRandomValueFunction;
+  random?: FieldRandomValueFunction<T>;
 }
 
-export interface Schema<T = {}> {
+export interface Schema<T = any> {
   /**
    * Name of the model. Should be in upper cammel-case, i.e. `Model`.
    */
@@ -153,7 +153,7 @@ export interface Schema<T = {}> {
    * @see FieldSpecs
    */
   fields: {
-    [K in keyof Required<T>]: FieldSpecs;
+    [K in keyof Required<T>]: FieldSpecs<NonNullable<T[K]>>;
   };
 
   /**
@@ -293,7 +293,7 @@ type FieldBasicValue = null | ObjectID | string | number | boolean | Date;
  * Function for formatting field values, in which the value to be formatted will
  * be passed into this function as its only paramenter.
  */
-type FieldFormatFunction = (value: any) => FieldValue;
+type FieldFormatFunction<T = FieldValue> = (value: T) => T;
 
 /**
  * The validation strategy can be one of several types. The behavior per type is
@@ -306,23 +306,23 @@ type FieldFormatFunction = (value: any) => FieldValue;
  *   4. Function: The value to be validated will be passed into this function
  *                and it must return `true`.
  */
-type FieldValidationStrategy = RegExp | number | any[] | FieldValidationFunction;
+type FieldValidationStrategy<T = FieldValue> = RegExp | number | any[] | FieldValidationFunction<T>;
 
 /**
  * Function for validating field values, in which the value to be validated
  * is passed into the function as its only argument.
  */
-type FieldValidationFunction = (value: any) => boolean;
+type FieldValidationFunction<T = FieldValue> = (value: T) => boolean;
 
 /**
  * Function for generating a random value for the associated field.
  */
-type FieldRandomValueFunction = () => FieldValue;
+type FieldRandomValueFunction<T = FieldValue> = () => T;
 
 /**
  * Function for generating a default value for the associated field.
  */
-type FieldDefaultValueFunction = () => FieldValue;
+type FieldDefaultValueFunction<T = FieldValue> = () => T;
 
 /**
  * Describes the indexes to be created in the associated collection.

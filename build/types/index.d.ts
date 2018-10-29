@@ -16,17 +16,17 @@ export declare type FieldValue = undefined | FieldBasicValue | FieldBasicValue[]
     [subfield: string]: FieldValue;
 };
 export declare type GeoCoordinate = [number, number];
-export interface FieldSpecs {
+export interface FieldSpecs<T = FieldValue> {
     type: FieldType;
     ref?: string;
     required?: boolean;
     encrypted?: boolean;
-    default?: FieldValue | FieldDefaultValueFunction;
-    format?: FieldFormatFunction;
-    validate?: FieldValidationStrategy;
-    random?: FieldRandomValueFunction;
+    default?: T | FieldDefaultValueFunction<T>;
+    format?: FieldFormatFunction<T>;
+    validate?: FieldValidationStrategy<T>;
+    random?: FieldRandomValueFunction<T>;
 }
-export interface Schema<T = {}> {
+export interface Schema<T = any> {
     model: string;
     collection: string;
     timestamps?: boolean;
@@ -39,7 +39,7 @@ export interface Schema<T = {}> {
     noDeleteMany?: boolean;
     cascade?: string[];
     fields: {
-        [K in keyof Required<T>]: FieldSpecs;
+        [K in keyof Required<T>]: FieldSpecs<NonNullable<T[K]>>;
     };
     indexes?: SchemaIndex[];
 }
@@ -88,11 +88,11 @@ export interface ProjectStageFactoryOptionsPopulate {
 }
 declare type FieldBasicType = typeof String | typeof Number | typeof Boolean | typeof Date | typeof ObjectID | typeof Array;
 declare type FieldBasicValue = null | ObjectID | string | number | boolean | Date;
-declare type FieldFormatFunction = (value: any) => FieldValue;
-declare type FieldValidationStrategy = RegExp | number | any[] | FieldValidationFunction;
-declare type FieldValidationFunction = (value: any) => boolean;
-declare type FieldRandomValueFunction = () => FieldValue;
-declare type FieldDefaultValueFunction = () => FieldValue;
+declare type FieldFormatFunction<T = FieldValue> = (value: T) => T;
+declare type FieldValidationStrategy<T = FieldValue> = RegExp | number | any[] | FieldValidationFunction<T>;
+declare type FieldValidationFunction<T = FieldValue> = (value: T) => boolean;
+declare type FieldRandomValueFunction<T = FieldValue> = () => T;
+declare type FieldDefaultValueFunction<T = FieldValue> = () => T;
 interface SchemaIndex {
     spec: {
         [key: string]: any;

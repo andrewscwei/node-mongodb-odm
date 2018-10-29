@@ -1,6 +1,7 @@
 import assert from 'assert';
 import { describe, it } from 'mocha';
 import { ObjectID } from 'mongodb';
+import { FieldSpecs } from '../../types';
 import validateFieldValue from '../../utils/validateFieldValue';
 
 describe('utils/validate', () => {
@@ -24,8 +25,8 @@ describe('utils/validate', () => {
 
   it('can validate string with custom method', () => {
     const i = 'Hello, world!';
-    assert(validateFieldValue(i, { type: String, validate: (v: string): boolean => (v === i) }) === true);
-    assert(validateFieldValue(i, { type: String, validate: (v: string): boolean => (v !== i) }) === false);
+    assert(validateFieldValue(i, { type: String, validate: (v: string): boolean => (v === i) } as FieldSpecs<any>) === true);
+    assert(validateFieldValue(i, { type: String, validate: (v: string): boolean => (v !== i) } as FieldSpecs<any>) === false);
   });
 
   it('can validate numbers with inclusive maximum', () => {
@@ -42,8 +43,8 @@ describe('utils/validate', () => {
 
   it('can validate numbers from custom method', () => {
     const i = 6;
-    assert(validateFieldValue(i, { type: Number, validate: (v: number): boolean => (v > 5 && v < 7) }) === true);
-    assert(validateFieldValue(i, { type: Number, validate: (v: number): boolean => (v < 5) }) === false);
+    assert(validateFieldValue(i, { type: Number, validate: (v: number): boolean => (v > 5 && v < 7) } as FieldSpecs<any>) === true);
+    assert(validateFieldValue(i, { type: Number, validate: (v: number): boolean => (v < 5) } as FieldSpecs<any>) === false);
   });
 
   it('can validate booleans', () => {

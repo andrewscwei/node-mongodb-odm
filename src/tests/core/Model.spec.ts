@@ -109,7 +109,7 @@ describe('core/Model', () => {
   it('can format documents according to the schema', async () => {
     const t: DocumentFragment<BazProps> = { aFormattedString: Faker.random.alphaNumeric(10) };
     const res = await Baz.formatDocument(t);
-    assert(Baz.schema.fields.aFormattedString.format!(t.aFormattedString) === res.aFormattedString);
+    assert(Baz.schema.fields.aFormattedString.format!(t.aFormattedString!) === res.aFormattedString);
   });
 
   it('can encrypt document fields according to the schema', async () => {
@@ -129,7 +129,7 @@ describe('core/Model', () => {
   it('should automatically format values on insert according to the schema', async () => {
     const t: DocumentFragment<BazProps> = { aString: Faker.random.alphaNumeric(10), aFormattedString: Faker.random.alphaNumeric(10) };
     const res = await Baz.insertOne(t);
-    assert(Baz.schema.fields.aFormattedString.format!(t.aFormattedString) === res!.aFormattedString);
+    assert(Baz.schema.fields.aFormattedString.format!(t.aFormattedString!) === res!.aFormattedString);
   });
 
   it('can update an existing doc', async () => {
