@@ -100,5 +100,6 @@ interface SchemaIndex {
 }
 export declare function typeIsUpdate<T = {}>(value: any): value is Update<T>;
 export declare function typeIsIdentifiableDocument<T = {}>(value: any): value is Document<T>;
+export declare function typeIsObjectID(value: any): value is ObjectID;
 export declare function typeIsGeoCoordinate(value: any): value is GeoCoordinate;
 export {};

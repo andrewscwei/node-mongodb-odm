@@ -16,11 +16,17 @@ function typeIsIdentifiableDocument(value) {
         return false;
     if (!is_1.default.plainObject(value))
         return false;
-    if (!is_1.default.directInstanceOf(value._id, mongodb_1.ObjectID))
+    if (!typeIsObjectID(value))
         return false;
     return true;
 }
 exports.typeIsIdentifiableDocument = typeIsIdentifiableDocument;
+function typeIsObjectID(value) {
+    if (!is_1.default.directInstanceOf(value._id, mongodb_1.ObjectID))
+        return false;
+    return true;
+}
+exports.typeIsObjectID = typeIsObjectID;
 function typeIsGeoCoordinate(value) {
     if (!is_1.default.array(value))
         return false;

@@ -350,11 +350,23 @@ export function typeIsUpdate<T = {}>(value: any): value is Update<T> {
  *
  * @param value - Value to check.
  *
- * @return `true` if value is a Document, `false` otherwise.
+ * @return `true` if value is an identifiable Document, `false` otherwise.
  */
 export function typeIsIdentifiableDocument<T = {}>(value: any): value is Document<T> {
   if (is.nullOrUndefined(value)) return false;
   if (!is.plainObject(value)) return false;
+  if (!typeIsObjectID(value)) return false;
+  return true;
+}
+
+/**
+ * Checks if a value is an ObjectID.
+ *
+ * @param value - Value to check.
+ *
+ * @return `true` if valie is an ObjectID, `false` otherwise.
+ */
+export function typeIsObjectID(value: any): value is ObjectID {
   if (!is.directInstanceOf(value._id, ObjectID)) return false;
   return true;
 }
