@@ -6,12 +6,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const is_1 = __importDefault(require("@sindresorhus/is"));
 const mongodb_1 = require("mongodb");
 function typeIsUpdate(value) {
-    if (!is_1.default.object(value))
+    if (!is_1.default.plainObject(value))
         return false;
     return Object.keys(value).some(val => val.startsWith('$'));
 }
 exports.typeIsUpdate = typeIsUpdate;
-function typeIsDocument(value) {
+function typeIsIdentifiableDocument(value) {
     if (is_1.default.nullOrUndefined(value))
         return false;
     if (!is_1.default.plainObject(value))
@@ -20,7 +20,7 @@ function typeIsDocument(value) {
         return false;
     return true;
 }
-exports.typeIsDocument = typeIsDocument;
+exports.typeIsIdentifiableDocument = typeIsIdentifiableDocument;
 function typeIsGeoCoordinate(value) {
     if (!is_1.default.array(value))
         return false;

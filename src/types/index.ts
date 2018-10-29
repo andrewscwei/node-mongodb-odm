@@ -341,18 +341,18 @@ interface SchemaIndex {
  * @return `true` if value is an Update, `false` otherwise.
  */
 export function typeIsUpdate<T = {}>(value: any): value is Update<T> {
-  if (!is.object(value)) return false;
+  if (!is.plainObject(value)) return false;
   return Object.keys(value).some(val => val.startsWith('$'));
 }
 
 /**
- * Checks if a value is a Document.
+ * Checks if a value is an identifiable Document.
  *
  * @param value - Value to check.
  *
  * @return `true` if value is a Document, `false` otherwise.
  */
-export function typeIsDocument<T = {}>(value: any): value is Document<T> {
+export function typeIsIdentifiableDocument<T = {}>(value: any): value is Document<T> {
   if (is.nullOrUndefined(value)) return false;
   if (!is.plainObject(value)) return false;
   if (!is.directInstanceOf(value._id, ObjectID)) return false;
