@@ -547,6 +547,9 @@ class Model {
             }
         });
     }
+    constructor() {
+        throw new Error('This is a static class and is prohibited from instantiated');
+    }
 }
 exports.default = Model;
 //# sourceMappingURL=Model.js.map

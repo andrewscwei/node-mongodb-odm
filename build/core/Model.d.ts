@@ -67,5 +67,6 @@ declare abstract class Model {
     private static beforeDelete;
     private static afterDelete;
     private static cascadeDelete;
+    constructor();
 }
 export default Model;
