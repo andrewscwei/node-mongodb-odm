@@ -6,7 +6,7 @@ export declare type Document<T = {}> = {
     createdAt?: Date;
     updatedAt?: Date;
 } & {
-    [key: string]: FieldValue;
+    [field: string]: FieldValue;
 };
 export declare type DocumentFragment<T = {}> = Partial<Document<T>>;
 export declare type Query<T = {}> = string | ObjectID | FilterQuery<T>;
@@ -102,8 +102,10 @@ interface SchemaIndex {
     options?: IndexOptions;
 }
 export declare function typeIsUpdate<T = {}>(value: any): value is Update<T>;
-export declare function typeIsIdentifiableDocument<T = {}>(value: any): value is {
+export declare function typeIsIdentifiableDocument(value: any): value is {
     _id: ObjectID;
+} & {
+    [field: string]: FieldValue;
 };
 export declare function typeIsObjectID(value: any): value is ObjectID;
 export declare function typeIsGeoCoordinate(value: any): value is GeoCoordinate;
