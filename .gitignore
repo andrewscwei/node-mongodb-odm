@@ -96,7 +96,7 @@ dump.rdb
 # Generated static files
 public
 dist
-build
+# build
 upload
 uploads
 docs
@@ -120,7 +120,7 @@ secrets.json
 # Xcode
 
 ## Build generated
-build/
+# build/
 DerivedData/
 
 ## Various settings
