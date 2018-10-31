@@ -62,7 +62,7 @@ jobs:
 
 workflows:
   version: 2
-  main:
+  build_test_deploy:
     jobs:
       - build:
           filters:
