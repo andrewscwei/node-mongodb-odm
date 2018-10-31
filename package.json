@@ -1,5 +1,5 @@
 {
-  "name": "mongodb-odm",
+  "name": "@andrewscwei/mongodb-odm",
   "version": "0.10.0",
   "description": "ODM for MongoDB",
   "main": "build/index.js",
@@ -14,18 +14,18 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sybl/mongodb-odm.git"
+    "url": "git+https://github.com/andrewscwei/node-mongodb-odm.git"
   },
   "keywords": [
     "mongodb",
     "odm"
   ],
   "author": "Andrew Wei <andrewscwei@gmail.com>",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/sybl/mongodb-odm/issues"
+    "url": "https://github.com/andrewscwei/node-mongodb-odm/issues"
   },
-  "homepage": "https://github.com/sybl/mongodb-odm#readme",
+  "homepage": "https://github.com/andrewscwei/node-mongodb-odm#readme",
   "files": [
     "build"
   ],
