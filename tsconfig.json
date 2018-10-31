@@ -8,7 +8,6 @@
     "experimentalDecorators": true,
     "diagnostics": true,
     "lib": ["es6"],
-    "listEmittedFiles": true,
     "module": "commonjs",
     "moduleResolution": "node",
     "noImplicitAny": true,

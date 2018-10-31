@@ -47,6 +47,8 @@ process.on('SIGINT', async () => {
 /**
  * Establishes a new connection to the database based on the initialized
  * configuration. If there already exists one, this method does nothing.
+ *
+ * @throws {Error} ODM is not configured.
  */
 export async function connectToDb(): Promise<void> {
   if (isDbConnected()) return;
@@ -146,11 +148,14 @@ export async function getDbInstance(): Promise<Db> {
  * @param modelOrCollectionName - Model or collection name.
  *
  * @return The model class.
+ *
+ * @throws {Error} There are no models registered with the ODM.
+ * @throws {Error} No model found with the provided name.
  */
 export function getModel(modelOrCollectionName: string): typeof Model {
-  const models = config.models!;
+  const models = config.models;
 
-  assert(!is.nullOrUndefined(models), new Error('You must register models using the configureDb() function'));
+  if (is.nullOrUndefined(models)) throw new Error('You must register models using the configureDb() function');
 
   if (models.hasOwnProperty(modelOrCollectionName)) return models[modelOrCollectionName];
 
@@ -228,3 +233,4 @@ export { default as sanitizeQuery } from './utils/sanitizeQuery';
 export { default as validateFieldValue } from './utils/validateFieldValue';
 export { Model };
 export { ObjectID };
+

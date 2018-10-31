@@ -486,6 +486,11 @@ export function typeIsObjectID(value: any): value is ObjectID {
  * @param value - Value to check.
  *
  * @return `true` if value is a GeoCoordinate, `false` otherwise.
+ *
+ * @throws {Error} Longitude is less than -180.
+ * @throws {Error} Longitude is greather than 180.
+ * @throws {Error} Latitude is less than -90.
+ * @throws {Error} Latitude is greater than 90.
  */
 export function typeIsGeoCoordinate(value: any): value is GeoCoordinate {
   if (!is.array(value)) return false;

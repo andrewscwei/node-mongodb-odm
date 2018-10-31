@@ -33,6 +33,8 @@ abstract class Model {
    * @return The MongoDB collection.
    *
    * @see getCollection()
+   *
+   * @throws {Error} Model class has no static property `schema` defined.
    */
   static async getCollection(): Promise<Collection> {
     if (!this.schema) throw new Error('This model has no schema, you must define this static proerty in the derived class');
@@ -88,6 +90,8 @@ abstract class Model {
    * @param options - @see PipelineFactoryOptions
    *
    * @return Aggregation pipeline.
+   *
+   * @throws {Error} Model class has no static property `schema` defined.
    */
   static pipeline<T = {}>(queryOrSpecs?: Query<T> | PipelineFactorySpecs, options?: PipelineFactoryOptions): AggregationPipeline {
     if (!this.schema) throw new Error('This model has no schema, you must define this static proerty in the derived class');
@@ -110,8 +114,8 @@ abstract class Model {
    *
    * @return The matching ObjectID.
    *
-   * @throws When no document is found with the given query or when the ID of
-   *         the found document is invalid.
+   * @throws {Error} No document is found with the given query.
+   * @throws {Error} ID of the found document is not a valid ObjectID.
    */
   static async identifyOne(query: Query): Promise<ObjectID> {
     const result = await this.findOne(query);
@@ -119,8 +123,8 @@ abstract class Model {
     if (is.nullOrUndefined(result)) {
       throw new Error(`No results found while identifying this ${this.schema.model} using the query ${JSON.stringify(query, null, 0)}`);
     }
-    else if (is.nullOrUndefined(result._id)) {
-      throw new Error(`Cannot identify this ${this.schema.model} using the query ${JSON.stringify(query, null, 0)}`);
+    else if (!ObjectID.isValid(result._id)) {
+      throw new Error(`ID of ${result} is not a valid ObjectID`);
     }
     else {
       return result._id!;
@@ -182,6 +186,10 @@ abstract class Model {
    *
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#insertOne}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~insertWriteOpResult}
+   *
+   * @throws {Error} This method is called even though insertions are disabled
+   *                 in the schema.
+   * @throws {MongoError} collection#insertOne failed.
    */
   static async insertOne<T>(doc?: DocumentFragment<T>, options?: ModelInsertOneOptions): Promise<null | Document<T>> {
     if (this.schema.noInserts === true) throw new Error('Insertions are disallowed for this model');
@@ -222,6 +230,9 @@ abstract class Model {
    *
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#insertMany}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~insertWriteOpResult}
+   *
+   * @throws {Error} This method is called even though insertions or multiple
+   *                 insertions are disabled in the schema.
    */
   static async insertMany<T = {}>(docs: DocumentFragment<T>[], options: ModelInsertManyOptions = {}): Promise<Document<T>[]> {
     if ((this.schema.noInserts === true) || (this.schema.noInsertMany === true)) throw new Error('Multiple insertions are disallowed for this model');
@@ -270,6 +281,12 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#updateOne}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndUpdate}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
+   *
+   * @throws {Error} This method is called even though updates are disabled in
+   *                 the schema.
+   * @throws {Error} Query is invalid probably because it is not santized due to
+   *                 hooks being skipped.
+   * @throws {Error} A doc is updated but it cannot be found.
    */
   static async updateOne<T = {}>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options: ModelUpdateOneOptions = {}): Promise<null | boolean | Document<T>> {
     if (this.schema.noUpdates === true) throw new Error('Updates are disallowed for this model');
@@ -280,12 +297,12 @@ abstract class Model {
     log(`${this.schema.model}.updateOne:`, JSON.stringify(q, null, 0), JSON.stringify(u, null, 0), JSON.stringify(options, null, 0));
 
     if (options.returnDoc === true) {
-      if (!is.object(q)) {
+      if (!is.plainObject(q)) {
         throw new Error('Invalid query, maybe it is not sanitized? This could happen if you enabled skipHooks in the options, in which case you will need to sanitize the query yourself');
       }
 
       // Need to keep the original doc for the didUpdateDocument() hook.
-      const res = await collection.findOneAndUpdate(q, u, { ...options, returnOriginal: true });
+      const res = await collection.findOneAndUpdate(q as { [key: string]: any }, u, { ...options, returnOriginal: true });
 
       log(`${this.schema.model}.updateOne results:`, JSON.stringify(res, null, 0), JSON.stringify(options, null, 0));
 
@@ -317,11 +334,11 @@ abstract class Model {
       return newDoc;
     }
     else {
-      if (!is.object(q)) {
+      if (!is.plainObject(q)) {
         throw new Error('Invalid query, maybe it is not sanitized? This could happen if you enabled skipHooks in the options, in which case you will need to sanitize the query yourself');
       }
 
-      const res = await collection.updateOne(q, u, options);
+      const res = await collection.updateOne(q as { [key: string]: any }, u, options);
 
       log(`${this.schema.model}.updateOne results:`, JSON.stringify(res, null, 0));
 
@@ -352,6 +369,10 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#updateMany}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndUpdate}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
+   *
+   * @throws {Error} This method is called even though updates or multiple
+   *                 updates are disabled in the schema.
+   * @throws {Error} One of the updated docs are not returned.
    */
   static async updateMany<T = {}>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options: ModelUpdateManyOptions = {}): Promise<Document<T>[] | boolean> {
     if ((this.schema.noUpdates === true) || (this.schema.noUpdateMany === true)) throw new Error('Multiple updates are disallowed for this model');
@@ -369,7 +390,7 @@ abstract class Model {
       if ((n <= 0) && (options.upsert === true)) {
         const res = await this.updateOne<T>(q, u, { ...options, returnDoc: true, skipHooks: true });
 
-        if (is.boolean(res) || is.null_(res)) {
+        if (is.boolean(res) || is.nullOrUndefined(res)) {
           throw new Error('Error upserting document during an updateMany operation');
         }
 
@@ -420,6 +441,9 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#deleteOne}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndDelete}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~deleteWriteOpResult}
+   *
+   * @throws {Error} This method is called even though deletions are disabled in
+   *                 the schema.
    */
   static async deleteOne<T = {}>(query: Query<T>, options: ModelDeleteOneOptions = {}): Promise<Document<T> | boolean | null> {
     if (this.schema.noDeletes === true) throw new Error('Deletions are disallowed for this model');
@@ -474,6 +498,9 @@ abstract class Model {
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#deleteMany}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndDelete}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~deleteWriteOpResult}
+   *
+   * @throws {Error} This method is called even though deletions or multiple
+   *                 deletions are disabled in the schema.
    */
   static async deleteMany<T = {}>(query: Query<T>, options: ModelDeleteManyOptions = {}): Promise<boolean | Document<T>[]> {
     if ((this.schema.noDeletes === true) || (this.schema.noDeleteMany === true)) throw new Error('Multiple deletions are disallowed for this model');
@@ -536,6 +563,8 @@ abstract class Model {
    *
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndReplace}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~findAndModifyWriteOpResult}
+   *
+   * @throws {Error} The doc is replaced but it cannot be fetched.
    */
   static async findAndReplaceOne<T = {}>(query: Query<T>, replacement: DocumentFragment<T> = this.randomFields<T>(), options: ModelReplaceOneOptions = {}): Promise<null | Document<T>> {
     const q = await this.beforeDelete<T>(query, options);
@@ -627,6 +656,17 @@ abstract class Model {
    * @param options - @see ModelValidateDocumentOptions
    *
    * @return `true` will be fulfilled if all tests have passed.
+   *
+   * @throws {Error} Document is not an object.
+   * @throws {Error} Document is empty.
+   * @throws {Error} One of the fields in the document is not defined in the
+   *                 schema.
+   * @throws {Error} One of the fields in the document does not pass the
+   *                 validation test.
+   * @throws {Error} One of the fields has a duplicated value as another
+   *                 document in the collection (only if unique indexes are
+   *                 defined in the schema).
+   * @throws {Error} Some required fields in the document are missing.
    */
   static async validateDocument<T = {}>(doc: DocumentFragment<T>, options: ModelValidateDocumentOptions = {}): Promise<boolean> {
     if (!is.plainObject(doc)) throw new Error('Invalid document provided');
@@ -819,6 +859,9 @@ abstract class Model {
    * @param options - @see ModelUpdateOneOptions, @see ModelUpdateManyOptions
    *
    * @return The modified update to apply.
+   *
+   * @throws {Error} Attempting to upsert even though upserts are disabled in
+   *                 the schema.
    */
   private static async beforeUpdate<T>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options: ModelUpdateOneOptions | ModelUpdateManyOptions = {}): Promise<[DocumentFragment<T>, Update<T>]> {
     if ((options.upsert === true) && (this.schema.allowUpserts !== true)) throw new Error('Attempting to upsert a document while upserting is disallowed in the schema');
@@ -930,6 +973,8 @@ abstract class Model {
    *
    * @param docId - The ID of the document in this collection in which other
    *                collections are pointing to.
+   *
+   * @throws {Error} Cascade deletion is incorrectly defined in the schema.
    */
   private static async cascadeDelete(docId: ObjectID) {
     const cascadeModelNames = this.schema.cascade;
@@ -961,6 +1006,9 @@ abstract class Model {
   /**
    * Prevent instantiation of this class or any of its sub-classes because this
    * is intended to be a static class.
+   *
+   * @throws {Error} Attempting to instantiate this model even though it is
+   *                 meant to be a static class.
    */
   constructor() {
     throw new Error('This is a static class and is prohibited from instantiated');
