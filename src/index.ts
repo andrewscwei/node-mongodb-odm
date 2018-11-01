@@ -109,7 +109,7 @@ export async function disconnectFromDb(): Promise<void> {
 /**
  * Checks if the database client is established.
  *
- * @return `true` if connected, `false` otherwise.
+ * @returns `true` if connected, `false` otherwise.
  */
 export function isDbConnected(): boolean {
   if (!client) return false;
@@ -130,7 +130,7 @@ export function configureDb(options: Configuration) {
 /**
  * Gets the database instance from the client.
  *
- * @return The database instance.
+ * @returns The database instance.
  */
 export async function getDbInstance(): Promise<Db> {
   if (client) return client.db(config.name);
@@ -147,7 +147,7 @@ export async function getDbInstance(): Promise<Db> {
  *
  * @param modelOrCollectionName - Model or collection name.
  *
- * @return The model class.
+ * @returns The model class.
  *
  * @throws {Error} There are no models registered with the ODM.
  * @throws {Error} No model found with the provided name.
@@ -176,7 +176,7 @@ export function getModel(modelOrCollectionName: string): typeof Model {
  *
  * @param modelOrCollectionName - The model or collection name.
  *
- * @return The MongoDB collection.
+ * @returns The MongoDB collection.
  *
  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html}
  */

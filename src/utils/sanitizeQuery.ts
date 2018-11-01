@@ -24,7 +24,7 @@ interface SanitizeQueryOptions {
  * @param query - The query object to sanitize.
  * @param options - @see SanitizeQueryOptions
  *
- * @return The sanitized query.
+ * @returns The sanitized query.
  *
  * @example
  * // Returns { "_id": 5927f337c5178b9665b56b1e }

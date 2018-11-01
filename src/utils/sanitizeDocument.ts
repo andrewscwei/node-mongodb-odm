@@ -7,7 +7,7 @@ import { DocumentFragment, FieldValue, Schema } from '../types';
  * @param schema - The collection schema.
  * @param doc - The partial document to sanitize.
  *
- * @return The sanitized partial document.
+ * @returns The sanitized partial document.
  *
  * @example
  * // Returns { a: 'b', b: 'c' }

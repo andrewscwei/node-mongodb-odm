@@ -446,7 +446,7 @@ interface SchemaIndex {
  *
  * @param value - Value to check.
  *
- * @return `true` if value is an Update, `false` otherwise.
+ * @returns `true` if value is an Update, `false` otherwise.
  */
 export function typeIsUpdate<T = {}>(value: any): value is Update<T> {
   if (!is.plainObject(value)) return false;
@@ -458,7 +458,7 @@ export function typeIsUpdate<T = {}>(value: any): value is Update<T> {
  *
  * @param value - Value to check.
  *
- * @return `true` if value is an identifiable Document, `false` otherwise.
+ * @returns `true` if value is an identifiable Document, `false` otherwise.
  */
 export function typeIsIdentifiableDocument(value: any): value is { _id: ObjectID } & { [field: string]: FieldValue; } {
   if (is.nullOrUndefined(value)) return false;
@@ -472,7 +472,7 @@ export function typeIsIdentifiableDocument(value: any): value is { _id: ObjectID
  *
  * @param value - Value to check.
  *
- * @return `true` if valie is an ObjectID, `false` otherwise.
+ * @returns `true` if valie is an ObjectID, `false` otherwise.
  */
 export function typeIsValidObjectID(value: any): value is ObjectID {
   if (is.nullOrUndefined(value)) return false;
@@ -487,7 +487,7 @@ export function typeIsValidObjectID(value: any): value is ObjectID {
  *
  * @param value - Value to check.
  *
- * @return `true` if value is a GeoCoordinate, `false` otherwise.
+ * @returns `true` if value is a GeoCoordinate, `false` otherwise.
  *
  * @throws {Error} Longitude is less than -180.
  * @throws {Error} Longitude is greather than 180.

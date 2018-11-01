@@ -20,7 +20,7 @@ export default abstract class Aggregation {
    *                                         the pipeline.
    * @param options - Additional options.
    *
-   * @return The generated aggregate pipeline.
+   * @returns The generated aggregate pipeline.
    */
   static pipelineFactory(schema: Schema, { $lookup, $match, $prune, $group, $sort }: PipelineFactorySpecs = {}, { prefix = '', pipeline = [] }: PipelineFactoryOptions = {}): AggregationPipeline {
     assert(is.undefined($match) || is.object($match) || is.string($match));
@@ -56,7 +56,7 @@ export default abstract class Aggregation {
    * @param specs - Specs (aka query in this case) that defines the match.
    * @param options - Additional options.
    *
-   * @return The aggregation pipeline that handles the generated $match stage.
+   * @returns The aggregation pipeline that handles the generated $match stage.
    *
    * @example
    * // Returns [{ "$match": { "_id": 5927f337c5178b9665b56b1e } }]
@@ -92,7 +92,7 @@ export default abstract class Aggregation {
    *                nested foreign keys.
    * @param options - Additional options.
    *
-   * @return The aggregation pipeline that handles the generated $lookup stage.
+   * @returns The aggregation pipeline that handles the generated $lookup stage.
    *
    * @example
    * // Returns [{ "$lookup": { "from": "subModels", "localField": "subModel", "foreignField": "_id", "as": "subModel" } },
@@ -165,7 +165,7 @@ export default abstract class Aggregation {
    * @param schema - The schema of the database collection.
    * @param specs - Specs that define the $group stage.
    *
-   * @return The aggregation pipeline that handles the generated $group stage.
+   * @returns The aggregation pipeline that handles the generated $group stage.
    *
    * @example
    * // Returns [{ "$group": { "_id": "$foo" } }]
@@ -196,7 +196,7 @@ export default abstract class Aggregation {
    * @param schema - The schema of the database collection.
    * @param specs - Specs that define the $sort stage.
    *
-   * @return The aggregation pipeline that handles the generated $sort stage.
+   * @returns The aggregation pipeline that handles the generated $sort stage.
    *
    * @example
    * // Returns [{ "$sort": { "a": 1, "b": -1 } }]
@@ -217,7 +217,7 @@ export default abstract class Aggregation {
    * @param schema - The schema of the database collection.
    * @param options - Additional options.
    *
-   * @return The aggregation pipeline that handles the generated $project stage.
+   * @returns The aggregation pipeline that handles the generated $project stage.
    *
    * @example
    * // Returns [{ "$project": { "_id": "_id", "a": "a", "b": "b", "c": "c", "model": "model" } }]

@@ -9,7 +9,7 @@ import { FieldSpecs, FieldType } from '../types';
  * @param value - The value to check.
  * @param specs - @see FieldSpecs
  *
- * @return `true` if validation passes, `false` otherwise.
+ * @returns `true` if validation passes, `false` otherwise.
  *
  * @throws {TypeError} Value is marked as required in the specs but it is null
  *                     or undefined.

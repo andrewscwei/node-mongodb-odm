@@ -30,7 +30,7 @@ abstract class Model {
   /**
    * Gets the MongoDB collection associated with this model.
    *
-   * @return The MongoDB collection.
+   * @returns The MongoDB collection.
    *
    * @see getCollection()
    *
@@ -52,7 +52,7 @@ abstract class Model {
    *                      output.
    * @param options - @see ModelRandomFieldsOptions
    *
-   * @return A collection of fields whose values are randomly generated.
+   * @returns A collection of fields whose values are randomly generated.
    */
   static randomFields<T = {}>(fixedFields: DocumentFragment<T> = {}, { includeOptionals = false }: ModelRandomFieldsOptions = {}): DocumentFragment<T> {
     const o: DocumentFragment<T> = {};
@@ -89,7 +89,7 @@ abstract class Model {
    *                       for the aggregation factory function.
    * @param options - @see PipelineFactoryOptions
    *
-   * @return Aggregation pipeline.
+   * @returns Aggregation pipeline.
    *
    * @throws {Error} Model class has no static property `schema` defined.
    */
@@ -112,7 +112,7 @@ abstract class Model {
    *
    * @param query - Query used for the $match stage of the aggregation pipeline.
    *
-   * @return The matching ObjectID.
+   * @returns The matching ObjectID.
    *
    * @throws {Error} No document is found with the given query.
    * @throws {Error} ID of the found document is not a valid ObjectID.
@@ -138,7 +138,7 @@ abstract class Model {
    * @param query - Query used for the $match stage of the aggregation pipeline.
    * @param options - @see module:mongodb.Collection#aggregate
    *
-   * @return The matching document as the fulfillment value.
+   * @returns The matching document as the fulfillment value.
    */
   static async findOne<T = {}, R = T>(query?: Query<T>, options?: ModelFindOneOptions): Promise<null | Document<R>> {
     if (is.nullOrUndefined(query)) {
@@ -167,7 +167,7 @@ abstract class Model {
    * @param query - Query used for the $match stage of the aggregation pipeline.
    * @param options - @see module:mongodb.Collection#aggregate
    *
-   * @return The matching documents as the fulfillment value.
+   * @returns The matching documents as the fulfillment value.
    */
   static async findMany<T = {}, R = T>(query?: Query<T>, options?: ModelFindManyOptions): Promise<Document<R>[]> {
     const collection = await this.getCollection();
@@ -182,7 +182,7 @@ abstract class Model {
    * @param doc - Document to be inserted. @see module:mongodb.Collection#insertOne
    * @param options - @see ModelInsertOneOptions
    *
-   * @return The inserted document.
+   * @returns The inserted document.
    *
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#insertOne}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~insertWriteOpResult}
@@ -223,7 +223,7 @@ abstract class Model {
    * @param docs - Array of documents to insert. @see module:mongodb.Collection#insertMany
    * @param options - @see module:mongodb.Collection#insertMany
    *
-   * @return The inserted documents.
+   * @returns The inserted documents.
    *
    * @todo This method iterates through every document to apply the beforeInsert
    *       hook. Consider a more cost-efficient approach?
@@ -274,7 +274,7 @@ abstract class Model {
    *                 belonging to this model to update to, or an update query.
    * @param options - @see ModelUpdateOneOptions
    *
-   * @return The updated doc if `returnDoc` is set to `true`, else `true` or
+   * @returns The updated doc if `returnDoc` is set to `true`, else `true` or
    *         `false` depending on whether or not the operation was successful.
    *
    * @see {@link https://docs.mongodb.com/manual/reference/operator/update-field/}
@@ -362,7 +362,7 @@ abstract class Model {
    *                 belonging to this model to update to, or an update query.
    * @param options - @see ModelUpdateManyOptions
    *
-   * @return The updated docs if `returnDocs` is set to `true`, else `true` or
+   * @returns The updated docs if `returnDocs` is set to `true`, else `true` or
    *         `false` depending on whether or not the operation was successful.
    *
    * @see {@link https://docs.mongodb.com/manual/reference/operator/update-field/}
@@ -435,7 +435,7 @@ abstract class Model {
    * @param query - Query for document to delete.
    * @param options @see ModelDeleteOneOptions
    *
-   * @return The deleted doc if `returnDoc` is set to `true`, else `true` or
+   * @returns The deleted doc if `returnDoc` is set to `true`, else `true` or
    *         `false` depending on whether or not the operation was successful.
    *
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#deleteOne}
@@ -492,7 +492,7 @@ abstract class Model {
    * @param query - Query to match documents for deletion.
    * @param options - @see ModelDeleteManyOptions
    *
-   * @return The deleted docs if `returnDocs` is set to `true`, else `true` or
+   * @returns The deleted docs if `returnDocs` is set to `true`, else `true` or
    *         `false` depending on whether or not the operation was successful.
    *
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#deleteMany}
@@ -558,7 +558,7 @@ abstract class Model {
    * @param replacement - The replacement document.
    * @param options - @see ModelReplaceOneOptions
    *
-   * @return The replaced document (by default) or the new document (depending
+   * @returns The replaced document (by default) or the new document (depending
    *         on the `returnOriginal` option) if available, `null` otherwise.
    *
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndReplace}
@@ -600,7 +600,7 @@ abstract class Model {
    *
    * @param query - Query used for the $match stage of the aggregation pipeline.
    *
-   * @return The total number of documents found.
+   * @returns The total number of documents found.
    */
   static async count(query: Query, options: ModelCountOptions = {}): Promise<number> {
     const results = await this.findMany(query, options);
@@ -615,7 +615,7 @@ abstract class Model {
    *
    * @param doc - Document to format.
    *
-   * @return The formatted document as the fulfillment value.
+   * @returns The formatted document as the fulfillment value.
    */
   static async formatDocument<T = {}>(doc: DocumentFragment<T>): Promise<DocumentFragment<T>> {
     const formattedDoc = _.cloneDeep(doc);
@@ -655,7 +655,7 @@ abstract class Model {
    * @param doc - The doc to validate.
    * @param options - @see ModelValidateDocumentOptions
    *
-   * @return `true` will be fulfilled if all tests have passed.
+   * @returns `true` will be fulfilled if all tests have passed.
    *
    * @throws {Error} Document is not an object.
    * @throws {Error} Document is empty.
@@ -738,7 +738,7 @@ abstract class Model {
    * @param doc - The document to be inserted.
    * @param options - Additional options.
    *
-   * @return The document to be inserted.
+   * @returns The document to be inserted.
    */
   static async willInsertDocument<T>(doc: DocumentFragment<T>): Promise<DocumentFragment<T>> {
     return doc;
@@ -758,7 +758,7 @@ abstract class Model {
    * @param query - The query for document(s) to update.
    * @param update - The update descriptor.
    *
-   * @return A tuple of the query and the update descriptor.
+   * @returns A tuple of the query and the update descriptor.
    */
   static async willUpdateDocument<T>(query: Query<T>, update: DocumentFragment<T> | Update<T>): Promise<[Query, DocumentFragment<T> | Update<T>]> {
     return [query, update];
@@ -780,7 +780,7 @@ abstract class Model {
    *
    * @param query - The query for the document to be deleted.
    *
-   * @return The document to be deleted.
+   * @returns The document to be deleted.
    */
   static async willDeleteDocument<T>(query: Query<T>): Promise<Query<T>> {
     return query;
@@ -801,7 +801,7 @@ abstract class Model {
    * @param doc - The document to be inserted/upserted.
    * @param options - @see ModelBeforeInsertOptions
    *
-   * @return Document to be inserted/upserted to the database.
+   * @returns Document to be inserted/upserted to the database.
    */
   private static async beforeInsert<T>(doc: DocumentFragment<T>, options: ModelInsertOneOptions | ModelInsertManyOptions = {}): Promise<DocumentFragment<T>> {
     const fields: { [fieldName: string]: FieldSpecs } = this.schema.fields;
@@ -858,7 +858,7 @@ abstract class Model {
    * @param update - The update to apply.
    * @param options - @see ModelUpdateOneOptions, @see ModelUpdateManyOptions
    *
-   * @return The modified update to apply.
+   * @returns The modified update to apply.
    *
    * @throws {Error} Attempting to upsert even though upserts are disabled in
    *                 the schema.
