@@ -223,7 +223,7 @@ export default function validateFieldValue(value: any, specs: FieldSpecs): boole
           t = false;
         }
 
-        if (!t || error) throw new TypeError(`One or more sub-fields are not valid: ${error ? error.message : 'Unknown reason'}`)
+        if (!t || error) throw new TypeError(`One or more sub-fields are not valid: ${error ? error.message : 'Unknown reason'}`);
       }
     }
 
