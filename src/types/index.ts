@@ -463,19 +463,21 @@ export function typeIsUpdate<T = {}>(value: any): value is Update<T> {
 export function typeIsIdentifiableDocument(value: any): value is { _id: ObjectID } & { [field: string]: FieldValue; } {
   if (is.nullOrUndefined(value)) return false;
   if (!is.plainObject(value)) return false;
-  if (!typeIsObjectID(value._id)) return false;
+  if (!typeIsValidObjectID(value._id)) return false;
   return true;
 }
 
 /**
- * Checks if a value is an ObjectID.
+ * Checks if a value is a value ObjectID.
  *
  * @param value - Value to check.
  *
  * @return `true` if valie is an ObjectID, `false` otherwise.
  */
-export function typeIsObjectID(value: any): value is ObjectID {
+export function typeIsValidObjectID(value: any): value is ObjectID {
+  if (is.nullOrUndefined(value)) return false;
   if (!is.directInstanceOf(value, ObjectID)) return false;
+  if (!ObjectID.isValid(value)) return false;
   return true;
 }
 
