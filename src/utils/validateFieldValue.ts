@@ -1,7 +1,7 @@
 import is from '@sindresorhus/is';
 import assert from 'assert';
 import { ObjectID } from 'mongodb';
-import { FieldSpecs, FieldType } from '../types';
+import { FieldSpecs, FieldType, typeIsValidObjectID } from '../types';
 
 /**
  * Checks a value against field properties definied in a schema.
@@ -156,7 +156,7 @@ export default function validateFieldValue(value: any, specs: FieldSpecs): boole
 
       break;
     case ObjectID:
-      assert(is.directInstanceOf(value, ObjectID), new TypeError(`The value "${value}" is expected to be an ObjectID but instead it is a(n) ${is(value)}`));
+      assert(typeIsValidObjectID(value), new TypeError(`The value "${value}" is expected to be an ObjectID but instead it is a(n) ${is(value)}`));
 
       if (is.regExp(specs.validate)) {
         throw new TypeError('The RegExp validation method is not supported for ObjectID values');

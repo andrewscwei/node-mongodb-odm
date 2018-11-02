@@ -7,7 +7,7 @@ import { describe } from 'mocha';
 import { ObjectID } from 'mongodb';
 import * as db from '../../';
 import Aggregation from '../../core/Aggregation';
-import { AggregationStageDescriptor } from '../../types';
+import { AggregationStageDescriptor, typeIsValidObjectID } from '../../types';
 import Bar, { BarSchema } from '../models/Bar';
 import Baz from '../models/Baz';
 import Foo, { FooSchema } from '../models/Foo';
@@ -29,7 +29,7 @@ describe('core/Aggregation', () => {
     }];
 
     assert.deepStrictEqual(Object.keys(actual[0]), ['$match']);
-    assert(is.directInstanceOf((actual[0] as AggregationStageDescriptor).$match._id, ObjectID));
+    assert(typeIsValidObjectID((actual[0] as AggregationStageDescriptor).$match._id));
     assert(expected[0].$match._id.equals((actual[0] as AggregationStageDescriptor).$match._id));
   });
 

@@ -1,6 +1,6 @@
 import is from '@sindresorhus/is';
 import { ObjectID } from 'mongodb';
-import { Query, Schema } from '../types';
+import { Query, Schema, typeIsValidObjectID } from '../types';
 import sanitizeDocument from './sanitizeDocument';
 
 interface SanitizeQueryOptions {
@@ -42,7 +42,7 @@ interface SanitizeQueryOptions {
  * sanitizeQuery(schema, { a: 'b', b: 'c', garbage: 'garbage' }, { strict: true })
  */
 export default function sanitizeQuery<T = {}>(schema: Schema, query: Query, { strict = true }: SanitizeQueryOptions = {}): { [key: string]: any } {
-  if (is.directInstanceOf(query, ObjectID)) {
+  if (typeIsValidObjectID(query)) {
     return { _id: query };
   }
   else if (is.string(query)) {

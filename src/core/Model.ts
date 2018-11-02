@@ -12,7 +12,7 @@ import debug from 'debug';
 import _ from 'lodash';
 import { Collection, FilterQuery, ObjectID } from 'mongodb';
 import { getCollection, getModel } from '..';
-import { AggregationPipeline, Document, DocumentFragment, FieldSpecs, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOptions, PipelineFactorySpecs, Query, Schema, typeIsUpdate, Update } from '../types';
+import { AggregationPipeline, Document, DocumentFragment, FieldSpecs, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOptions, PipelineFactorySpecs, Query, Schema, typeIsUpdate, typeIsValidObjectID, Update } from '../types';
 import sanitizeDocument from '../utils/sanitizeDocument';
 import sanitizeQuery from '../utils/sanitizeQuery';
 import validateFieldValue from '../utils/validateFieldValue';
@@ -956,11 +956,11 @@ abstract class Model {
   private static async afterDelete<T>(docs?: Document<T> | Document<T>[]) {
     if (is.array(docs)) {
       for (const doc of docs) {
-        if (!is.directInstanceOf(doc._id, ObjectID)) continue;
+        if (!typeIsValidObjectID(doc._id)) continue;
         await this.cascadeDelete(doc._id);
       }
     }
-    else if (!is.nullOrUndefined(docs) && is.directInstanceOf(docs._id, ObjectID)) {
+    else if (!is.nullOrUndefined(docs) && typeIsValidObjectID(docs._id)) {
       await this.cascadeDelete(docs._id);
     }
 
