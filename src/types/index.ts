@@ -509,3 +509,21 @@ export function typeIsGeoCoordinate(value: any): value is GeoCoordinate {
 
   return true;
 }
+
+/**
+ * Makes a geo coordinate based on the provided params.
+ *
+ * @param longitude - Longitude.
+ * @param latitude - Latitude.
+ *
+ * @returns The geo coordinate.
+ *
+ * @throws {Error} Params are invalid.
+ */
+export function GeoCoordinateMake({ longitude, latitude }: { longitude: string | number, latitude: string | number }): GeoCoordinate {
+  const coord = [Number(longitude), Number(latitude)];
+
+  if (!typeIsGeoCoordinate(coord)) throw new Error('Invalid parameters provided');
+
+  return coord;
+}
