@@ -728,11 +728,24 @@ abstract class Model {
   }
 
   /**
+   * Checks if a document exists.
+   *
+   * @param query - Query for document to check.
+   *
+   * @returns `true` if document exists, `false` otherwise.
+   */
+  static async exists(query: Query): Promise<boolean> {
+    const id = await this.identifyOne(query);
+
+    return id ? true : false;
+  }
+
+  /**
    * Counts the documents that match the provided query.
    *
    * @param query - Query used for the $match stage of the aggregation pipeline.
    *
-   * @returns The total number of documents found.
+   * @returns The total number of documents found. The minimum is 0.
    */
   static async count(query: Query, options: ModelCountOptions = {}): Promise<number> {
     const results = await this.findMany(query, options);
