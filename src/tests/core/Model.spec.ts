@@ -98,7 +98,7 @@ describe('core/Model', () => {
     let didThrow = true;
 
     try {
-      await Baz.insertOne<BazProps>({ aNumber: 6 }).catch(err => { throw err; });
+      await Baz.insertOneStrict<BazProps>({ aNumber: 6 }).catch(err => { throw err; });
       didThrow = false;
     }
     catch (err) {}

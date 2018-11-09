@@ -117,46 +117,82 @@ abstract class Model {
    * @throws {Error} No document is found with the given query.
    * @throws {Error} ID of the found document is not a valid ObjectID.
    */
-  static async identifyOne(query: Query): Promise<ObjectID> {
+  static async identifyOneStrict(query: Query): Promise<ObjectID> {
     const result = await this.findOne(query);
 
-    if (is.nullOrUndefined(result)) {
-      throw new Error(`No results found while identifying this ${this.schema.model} using the query ${JSON.stringify(query, null, 0)}`);
+    if (is.nullOrUndefined(result)) throw new Error(`No results found while identifying this ${this.schema.model} using the query ${JSON.stringify(query, null, 0)}`);
+    if (!ObjectID.isValid(result._id)) throw new Error(`ID of ${result} is not a valid ObjectID`);
+
+    return result._id;
+  }
+
+  /**
+   * Same as the strict identify one operation but this method swallows all
+   * errors and returns `null` if document canot be identified.
+   *
+   * @param query - Query used for the $match stage of the aggregation pipeline.
+   *
+   * @returns The matching ObjectID.
+   *
+   * @see Model.identifyOneStrict
+   */
+  static async identifyOne(query: Query): Promise<null | ObjectID> {
+    try {
+      const o = await this.identifyOne(query);
+      return o;
     }
-    else if (!ObjectID.isValid(result._id)) {
-      throw new Error(`ID of ${result} is not a valid ObjectID`);
-    }
-    else {
-      return result._id!;
+    catch (err) {
+      return null;
     }
   }
 
   /**
-   * Finds one document of this collection using the aggregation framework. If
+   * Finds one document from this collection using the aggregation framework. If
    * no query is specified, a random document will be fetched.
    *
    * @param query - Query used for the $match stage of the aggregation pipeline.
    * @param options - @see module:mongodb.Collection#aggregate
    *
    * @returns The matching document as the fulfillment value.
+   *
+   * @throws {Error} No document found.
    */
-  static async findOne<T = {}, R = T>(query?: Query<T>, options?: ModelFindOneOptions): Promise<null | Document<R>> {
+  static async findOneStrict<T = {}, R = T>(query?: Query<T>, options?: ModelFindOneOptions): Promise<Document<R>> {
     if (is.nullOrUndefined(query)) {
       const collection = await this.getCollection();
       const results = await collection.aggregate(this.pipeline(query).concat([{ $sample: { size: 1 } }])).toArray();
 
-      assert(results.length <= 1, new Error('More than 1 random document found even though only 1 was supposed to be found.'));
+      if (results.length !== 1) throw new Error('More or less than 1 random document found even though only 1 was supposed to be found.');
 
-      if (results.length === 1) return results[0];
-
-      return null;
+      return results[0];
     }
     else {
       const results = await this.findMany<T, R>(query, options);
 
-      if (results.length === 0) return null;
+      if (results.length === 0) throw new Error('No document found with provided query');
 
       return results[0];
+    }
+  }
+
+  /**
+   * Same as the strict find one operation but this method swallows all errors
+   * and returns `null` when no document is found.
+   *
+   * @param query - Query used for the $match stage of the aggregation pipeline.
+   * @param options - @see module:mongodb.Collection#aggregate
+   *
+   * @returns The matching document as the fulfillment value.
+   *
+   * @see Model.findOneStrict
+   */
+  static async findOne<T = {}, R = T>(query?: Query<T>, options?: ModelFindOneOptions): Promise<null | Document<R>> {
+    try {
+      const o = await this.findOneStrict<T, R>(query, options);
+      return o;
+    }
+    catch (err) {
+      return null;
     }
   }
 
@@ -191,7 +227,7 @@ abstract class Model {
    *                 in the schema.
    * @throws {MongoError} collection#insertOne failed.
    */
-  static async insertOne<T>(doc?: DocumentFragment<T>, options?: ModelInsertOneOptions): Promise<null | Document<T>> {
+  static async insertOneStrict<T>(doc?: DocumentFragment<T>, options?: ModelInsertOneOptions): Promise<Document<T>> {
     if (this.schema.noInserts === true) throw new Error('Insertions are disallowed for this model');
 
     // Apply before insert handler.
@@ -207,7 +243,7 @@ abstract class Model {
     assert(results.result.ok === 1);
     assert(results.ops.length <= 1, new Error('Somehow insertOne() op inserted more than 1 document'));
 
-    if (results.ops.length < 1) return null;
+    if (results.ops.length < 1) throw new Error('Unable to insert document');
 
     const o = results.ops[0];
 
@@ -215,6 +251,27 @@ abstract class Model {
     await this.afterInsert<T>(o);
 
     return o;
+  }
+
+  /**
+   * Same as the strict insert one operation except this method swallows all
+   * errors and returns null if the document cannot be inserted.
+   *
+   * @param doc - Document to be inserted. @see module:mongodb.Collection#insertOne
+   * @param options - @see ModelInsertOneOptions
+   *
+   * @returns The inserted document.
+   *
+   * @see Model.insertOneStrict
+   */
+  static async insertOne<T>(doc?: DocumentFragment<T>, options?: ModelInsertOneOptions): Promise<null | Document<T>> {
+    try {
+      const o = await this.insertOneStrict<T>(doc, options);
+      return o;
+    }
+    catch (err) {
+      return null;
+    }
   }
 
   /**
@@ -274,8 +331,8 @@ abstract class Model {
    *                 belonging to this model to update to, or an update query.
    * @param options - @see ModelUpdateOneOptions
    *
-   * @returns The updated doc if `returnDoc` is set to `true`, else `true` or
-   *         `false` depending on whether or not the operation was successful.
+   * @returns The updated doc if `returnDoc` is set to `true`, else there is no
+   *          fulfillment value.
    *
    * @see {@link https://docs.mongodb.com/manual/reference/operator/update-field/}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#updateOne}
@@ -288,7 +345,7 @@ abstract class Model {
    *                 hooks being skipped.
    * @throws {Error} A doc is updated but it cannot be found.
    */
-  static async updateOne<T = {}>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options: ModelUpdateOneOptions = {}): Promise<null | boolean | Document<T>> {
+  static async updateOneStrict<T = {}>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options: ModelUpdateOneOptions = {}): Promise<void | Document<T>> {
     if (this.schema.noUpdates === true) throw new Error('Updates are disallowed for this model');
 
     const collection = await this.getCollection();
@@ -315,7 +372,7 @@ abstract class Model {
       if (is.nullOrUndefined(res.lastErrorObject.upserted)) {
         oldDoc = res.value;
 
-        if (is.nullOrUndefined(oldDoc)) return null;
+        if (is.nullOrUndefined(oldDoc)) throw new Error('Unable to return the old document before the update');
 
         newDoc = await this.findOne<T>(oldDoc._id);
       }
@@ -344,13 +401,40 @@ abstract class Model {
 
       assert(res.result.ok === 1);
 
-      if (res.result.n <= 0) return false;
+      if (res.result.n <= 0) throw new Error('Unable to update the document');
 
       if (options.skipHooks !== true) {
         await this.afterUpdate<T>();
       }
+    }
+  }
+
+  /**
+   * Same as the strict update one operation except this method swallows all
+   * errors and returns `null` if no document was updated (and that `returnDoc`
+   * is `true`) or `true`/`false` (if `returnDoc` is `false`).
+   *
+   * @param query - Query for the document to update.
+   * @param update - Either an object whose key/value pair represent the fields
+   *                 belonging to this model to update to, or an update query.
+   * @param options - @see ModelUpdateOneOptions
+   *
+   * @returns The updated doc if `returnDoc` is set to `true`, else either
+   *          `true` or `false` depending on whether the operation was
+   *          successful.
+   *
+   * @see Model.updateOneStrict
+   */
+  static async updateOne<T = {}>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options: ModelUpdateOneOptions = {}): Promise<boolean | null | Document<T>> {
+    try {
+      const o = await this.updateOneStrict<T>(query, update, options);
+
+      if (o && options.returnDoc) return o;
 
       return true;
+    }
+    catch (err) {
+      return options.returnDoc ? null : false;
     }
   }
 
@@ -435,8 +519,7 @@ abstract class Model {
    * @param query - Query for document to delete.
    * @param options @see ModelDeleteOneOptions
    *
-   * @returns The deleted doc if `returnDoc` is set to `true`, else `true` or
-   *         `false` depending on whether or not the operation was successful.
+   * @returns The deleted doc if `returnDoc` is set to `true`.
    *
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#deleteOne}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndDelete}
@@ -444,8 +527,11 @@ abstract class Model {
    *
    * @throws {Error} This method is called even though deletions are disabled in
    *                 the schema.
+   * @throws {Error} Unable to return the deleted document when `returnDoc` is
+   *                 `true`.
+   * @throws {Error} Unable to delete document.
    */
-  static async deleteOne<T = {}>(query: Query<T>, options: ModelDeleteOneOptions = {}): Promise<Document<T> | boolean | null> {
+  static async deleteOneStrict<T = {}>(query: Query<T>, options: ModelDeleteOneOptions = {}): Promise<Document<T> | void> {
     if (this.schema.noDeletes === true) throw new Error('Deletions are disallowed for this model');
 
     const q = await this.beforeDelete<T>(query, options);
@@ -461,9 +547,7 @@ abstract class Model {
 
       assert(results.ok === 1);
 
-      if (!results.value) {
-        return null;
-      }
+      if (!results.value) throw new Error('Unable to return deleted document');
 
       await this.afterDelete<T>(results.value);
 
@@ -474,15 +558,39 @@ abstract class Model {
 
       log(`${this.schema.model}.deleteOne results:`, JSON.stringify(results, null, 0));
 
-      assert(results.result.ok === 1);
+      assert(results.result.ok === 1, new Error('Unable to delete document'));
 
-      if (!is.number(results.result.n) || (results.result.n <= 0)) {
-        return false;
-      }
+      if (!is.number(results.result.n) || (results.result.n <= 0)) throw new Error('Unable to delete document');
 
       await this.afterDelete<T>();
+    }
+  }
 
-      return true;
+  /**
+   * Same as the strict delete one operation except this method swallows all
+   * errors.
+   *
+   * @param query - Query for document to delete.
+   * @param options @see ModelDeleteOneOptions
+   *
+   * @returns The deleted doc if `returnDoc` is set to `true`, else `true` or
+   *         `false` depending on whether or not the operation was successful.
+   *
+   * @see Model.deleteOneStrict
+   */
+  static async deleteOne<T = {}>(query: Query<T>, options: ModelDeleteOneOptions = {}): Promise<Document<T> | null | boolean> {
+    try {
+      const o = await this.deleteOneStrict<T>(query, options);
+
+      if (options.returnDoc && o) {
+        return o;
+      }
+      else {
+        return true;
+      }
+    }
+    catch (err) {
+      return options.returnDoc ? null : false;
     }
   }
 
@@ -559,14 +667,15 @@ abstract class Model {
    * @param options - @see ModelReplaceOneOptions
    *
    * @returns The replaced document (by default) or the new document (depending
-   *         on the `returnOriginal` option) if available, `null` otherwise.
+   *         on the `returnOriginal` option).
    *
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndReplace}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~findAndModifyWriteOpResult}
    *
+   * @throws {Error} The old document cannot be returned.
    * @throws {Error} The doc is replaced but it cannot be fetched.
    */
-  static async findAndReplaceOne<T = {}>(query: Query<T>, replacement?: DocumentFragment<T>, options: ModelReplaceOneOptions = {}): Promise<null | Document<T>> {
+  static async findAndReplaceOneStrict<T = {}>(query: Query<T>, replacement?: DocumentFragment<T>, options: ModelReplaceOneOptions = {}): Promise<Document<T>> {
     const q = await this.beforeDelete<T>(query, options);
     const r = await this.beforeInsert<T>(replacement || (await this.randomFields<T>()), options);
 
@@ -581,7 +690,7 @@ abstract class Model {
 
     const oldDoc = results.value;
 
-    if (is.nullOrUndefined(oldDoc)) return null;
+    if (is.nullOrUndefined(oldDoc)) throw new Error('Unable to return the old document');
 
     const newDoc = await this.findOne<T>(r);
 
@@ -593,6 +702,29 @@ abstract class Model {
     await this.afterInsert<T>(newDoc);
 
     return (options.returnOriginal === true) ? oldDoc : newDoc;
+  }
+
+  /**
+   * Same as the strict find and replace one operation except this method
+   * swallows all errors.
+   *
+   * @param query - Query for document to replace.
+   * @param replacement - The replacement document.
+   * @param options - @see ModelReplaceOneOptions
+   *
+   * @returns The replaced document (by default) or the new document (depending
+   *          on the `returnOriginal` option) if available, `null` otherwise.
+   *
+   * @see Model.findAndReplaceOneStrict
+   */
+  static async findAndReplaceOne<T = {}>(query: Query<T>, replacement?: DocumentFragment<T>, options: ModelReplaceOneOptions = {}): Promise<null | Document<T>> {
+    try {
+      const o = await this.findAndReplaceOneStrict<T>(query, replacement, options);
+      return o;
+    }
+    catch (err) {
+      return null;
+    }
   }
 
   /**
