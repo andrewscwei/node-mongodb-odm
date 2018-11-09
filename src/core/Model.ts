@@ -54,7 +54,7 @@ abstract class Model {
    *
    * @returns A collection of fields whose values are randomly generated.
    */
-  static randomFields<T = {}>(fixedFields: DocumentFragment<T> = {}, { includeOptionals = false }: ModelRandomFieldsOptions = {}): DocumentFragment<T> {
+  static async randomFields<T = {}>(fixedFields: DocumentFragment<T> = {}, { includeOptionals = false }: ModelRandomFieldsOptions = {}): Promise<DocumentFragment<T>> {
     const o: DocumentFragment<T> = {};
     const fields: { [fieldName: string]: FieldSpecs } = this.schema.fields;
 
@@ -195,7 +195,7 @@ abstract class Model {
     if (this.schema.noInserts === true) throw new Error('Insertions are disallowed for this model');
 
     // Apply before insert handler.
-    const t = await this.beforeInsert<T>(doc || this.randomFields<T>(), { strict: true, ...options });
+    const t = await this.beforeInsert<T>(doc || (await this.randomFields<T>()), { strict: true, ...options });
 
     log(`${this.schema.model}.insertOne:`, JSON.stringify(t, null, 0));
 
@@ -566,9 +566,9 @@ abstract class Model {
    *
    * @throws {Error} The doc is replaced but it cannot be fetched.
    */
-  static async findAndReplaceOne<T = {}>(query: Query<T>, replacement: DocumentFragment<T> = this.randomFields<T>(), options: ModelReplaceOneOptions = {}): Promise<null | Document<T>> {
+  static async findAndReplaceOne<T = {}>(query: Query<T>, replacement?: DocumentFragment<T>, options: ModelReplaceOneOptions = {}): Promise<null | Document<T>> {
     const q = await this.beforeDelete<T>(query, options);
-    const r = await this.beforeInsert<T>(replacement, options);
+    const r = await this.beforeInsert<T>(replacement || (await this.randomFields<T>()), options);
 
     log(`${this.schema.model}.replaceOne:`, JSON.stringify(q, null, 0), JSON.stringify(r, null, 0));
 
