@@ -147,6 +147,29 @@ abstract class Model {
   }
 
   /**
+   * Returns an array of document IDs that match the query.
+   *
+   * @param query - Query for this model.
+   *
+   * @returns Array of matching IDs.
+   */
+  static async identifyMany(query?: Query): Promise<ObjectID[]> {
+    const collection = await this.getCollection();
+    const res = await collection.aggregate([
+      ...this.pipeline(query),
+      {
+        $group: {
+          _id: null,
+          ids: { $addToSet: '$_id' },
+        },
+      },
+    ]).toArray();
+
+    if (res.length === 0) return [];
+    return res[0].ids || [];
+  }
+
+  /**
    * Finds one document from this collection using the aggregation framework. If
    * no query is specified, a random document will be fetched.
    *
