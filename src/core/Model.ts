@@ -138,7 +138,7 @@ abstract class Model {
    */
   static async identifyOne(query: Query): Promise<null | ObjectID> {
     try {
-      const o = await this.identifyOne(query);
+      const o = await this.identifyOneStrict(query);
       return o;
     }
     catch (err) {
