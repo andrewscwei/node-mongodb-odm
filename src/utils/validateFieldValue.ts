@@ -9,8 +9,6 @@ import { FieldSpecs, FieldType, typeIsValidObjectID } from '../types';
  * @param value - The value to check.
  * @param specs - @see FieldSpecs
  *
- * @returns `true` if validation passes, `false` otherwise.
- *
  * @throws {TypeError} Value is marked as required in the specs but it is null
  *                     or undefined.
  * @throws {TypeError} Value is supposed to be a string but it is not.
@@ -71,169 +69,141 @@ import { FieldSpecs, FieldType, typeIsValidObjectID } from '../types';
  * @throws {TypeError} Value fails custom validation function (only if validator
  *                     is a function).
  */
-export default function validateFieldValue(value: any, specs: FieldSpecs): boolean {
-  try {
-    // Check if value is undefined or null, then respond accordingly depending on
-    // whether or not it is a required value.
-    if (is.nullOrUndefined(value)) {
-      if (specs.required) {
-        throw new TypeError('The value is marked as required but it is null or undefined');
-      }
-      else {
-        return true;
-      }
+export default function validateFieldValue(value: any, specs: FieldSpecs) {
+  // Check if value is undefined or null, then respond accordingly depending on
+  // whether or not it is a required value.
+  if (is.nullOrUndefined(value)) {
+    if (specs.required) {
+      throw new TypeError('The value is marked as required but it is null or undefined');
     }
-
-    switch (specs.type) {
-    case String:
-      assert(is.string(value), new TypeError(`The value "${value}" is expected to be a string but instead it is a(n) ${is(value)}`));
-
-      if (is.regExp(specs.validate)) {
-        assert(specs.validate.test(value), new TypeError(`The string value does not conform to the RegEx validator: ${specs.validate}`));
-      }
-      else if (is.number(specs.validate)) {
-        assert(value.length <= specs.validate, new TypeError(`The length of the string value "${value}" must be less than or equal to ${specs.validate}`));
-      }
-      else if (is.array(specs.validate)) {
-        assert(specs.validate.indexOf(value) > -1, new TypeError(`The string value "${value}" is not an element of ${specs.validate}`));
-      }
-
-      break;
-    case Number:
-      assert(is.number(value), new TypeError(`The value "${value}" is expected to be a number but instead it is a(n) ${is(value)}`));
-
-      if (is.regExp(specs.validate)) {
-        throw new TypeError('The RegExp validation method is not supported for number values');
-      }
-      else if (is.number(specs.validate)) {
-        assert(value <= specs.validate, new TypeError(`The number value "${value}" must be less than or equal to ${specs.validate}`));
-      }
-      else if (is.array(specs.validate)) {
-        assert(specs.validate.indexOf(value) > -1, new TypeError(`The number value "${value}" is not an element of ${specs.validate}`));
-      }
-
-      break;
-    case Boolean:
-      assert(is.boolean(value), new TypeError(`The value "${value}" is expected to be a boolean but instead it is a(n) ${is(value)}`));
-
-      if (is.regExp(specs.validate)) {
-        throw new TypeError('The RegExp validation method is not supported for boolean values');
-      }
-      else if (is.number(specs.validate)) {
-        throw new TypeError('The number validation method is not supported for boolean vlaues');
-      }
-      else if (is.array(specs.validate)) {
-        assert(specs.validate.indexOf(value) > -1, new TypeError(`The boolean value "${value}" is not an element of ${specs.validate}`));
-      }
-
-      break;
-    case Date:
-      assert(is.date(value), new TypeError(`The value "${value}" is expected to be a date but instead it is a(n) ${is(value)}`));
-
-      if (is.regExp(specs.validate)) {
-        throw new TypeError('The RegExp validation method is not supported for date values');
-      }
-      else if (is.number(specs.validate)) {
-        throw new TypeError('The number validation method is not supported for date values');
-      }
-      else if (is.array(specs.validate)) {
-        throw new TypeError('The array validation method is not supported for date values');
-      }
-
-      break;
-    case Array:
-      assert(is.array(value), new TypeError(`The value "${value}" is expected to be an array but instead it is a(n) ${is(value)}`));
-
-      if (is.regExp(specs.validate)) {
-        throw new TypeError('The RegExp validation method is not supported for array values');
-      }
-      else if (is.number(specs.validate)) {
-        throw new TypeError('The number validation method is not supported for array values');
-      }
-      else if (is.array(specs.validate)) {
-        throw new TypeError('The array validation method is not supported for array values');
-      }
-
-      break;
-    case ObjectID:
-      assert(typeIsValidObjectID(value), new TypeError(`The value "${value}" is expected to be an ObjectID but instead it is a(n) ${is(value)}`));
-
-      if (is.regExp(specs.validate)) {
-        throw new TypeError('The RegExp validation method is not supported for ObjectID values');
-      }
-      else if (is.number(specs.validate)) {
-        throw new TypeError('The number validation method is not supported for ObjectID values');
-      }
-      else if (is.array(specs.validate)) {
-        throw new TypeError('The array validation method is not supported for ObjectID values');
-      }
-
-      break;
-    default:
-      // If type is an array of a type, i.e. [Number].
-      if (is.array(specs.type)) {
-        if (specs.type.length !== 1) throw new TypeError(`Incorrect definition of a typed array type ${specs.type}: when specifying a type as an array of another type, wrap the type with [], hence a one-element array`);
-        if (!is.array(value)) throw new TypeError(`The value "${value}" is expected to be a typed array but instead it is a(n) ${is(value)}`);
-
-        // Ensure that every element within the array conforms to the specified
-        // type and passes the validation test.
-        let t = true;
-        let error;
-
-        try {
-          t = value.reduce((prevVal: boolean, currVal: any) => {
-            return prevVal && validateFieldValue(currVal, {
-              ...specs,
-              type: (specs.type as FieldType[])[0],
-            });
-          }, true);
-        }
-        catch (err) {
-          t = false;
-          error = err;
-        }
-
-        if (!t || error) throw new TypeError(`One or more values within the supposed typed array "${value}" are not of the correct type: ${error ? error.message : 'Unknown reason'}`);
-      }
-      // If type is an object.
-      else if (is.plainObject(specs.type)) {
-        assert(is.plainObject(value), new TypeError(`The value "${value}" is expected to be an object but instead it is a(n) ${is(value)}`));
-
-        if (is.regExp(specs.validate)) {
-          throw new TypeError('The RegExp validation method is not supported for object values');
-        }
-        else if (is.number(specs.validate)) {
-          throw new TypeError('The number validation method is not supported for object values');
-        }
-        else if (is.array(specs.validate)) {
-          throw new TypeError('The array validation method is not supported for object values');
-        }
-
-        let error;
-        let t = true;
-
-        try {
-          for (const subFieldName in specs.type) {
-            if (!specs.type.hasOwnProperty(subFieldName)) continue;
-            t = t && validateFieldValue(value[subFieldName], (specs.type as { [key: string]: FieldSpecs })[subFieldName]);
-          }
-        }
-        catch (err) {
-          error = err;
-          t = false;
-        }
-
-        if (!t || error) throw new TypeError(`One or more sub-fields are not valid: ${error ? error.message : 'Unknown reason'}`);
-      }
+    else {
+      return true;
     }
-
-    if (is.function_(specs.validate)) {
-      assert(specs.validate(value), new TypeError(`The value "${value}" failed to pass custom validation function`));
-    }
-
-    return true;
   }
-  catch (error) {
-    return false;
+
+  switch (specs.type) {
+  case String:
+    assert(is.string(value), new TypeError(`The value "${value}" is expected to be a string but instead it is a(n) ${is(value)}`));
+
+    if (is.regExp(specs.validate)) {
+      assert(specs.validate.test(value), new TypeError(`The string value does not conform to the RegEx validator: ${specs.validate}`));
+    }
+    else if (is.number(specs.validate)) {
+      assert(value.length <= specs.validate, new TypeError(`The length of the string value "${value}" must be less than or equal to ${specs.validate}`));
+    }
+    else if (is.array(specs.validate)) {
+      assert(specs.validate.indexOf(value) > -1, new TypeError(`The string value "${value}" is not an element of ${specs.validate}`));
+    }
+
+    break;
+  case Number:
+    assert(is.number(value), new TypeError(`The value "${value}" is expected to be a number but instead it is a(n) ${is(value)}`));
+
+    if (is.regExp(specs.validate)) {
+      throw new TypeError('The RegExp validation method is not supported for number values');
+    }
+    else if (is.number(specs.validate)) {
+      assert(value <= specs.validate, new TypeError(`The number value "${value}" must be less than or equal to ${specs.validate}`));
+    }
+    else if (is.array(specs.validate)) {
+      assert(specs.validate.indexOf(value) > -1, new TypeError(`The number value "${value}" is not an element of ${specs.validate}`));
+    }
+
+    break;
+  case Boolean:
+    assert(is.boolean(value), new TypeError(`The value "${value}" is expected to be a boolean but instead it is a(n) ${is(value)}`));
+
+    if (is.regExp(specs.validate)) {
+      throw new TypeError('The RegExp validation method is not supported for boolean values');
+    }
+    else if (is.number(specs.validate)) {
+      throw new TypeError('The number validation method is not supported for boolean vlaues');
+    }
+    else if (is.array(specs.validate)) {
+      assert(specs.validate.indexOf(value) > -1, new TypeError(`The boolean value "${value}" is not an element of ${specs.validate}`));
+    }
+
+    break;
+  case Date:
+    assert(is.date(value), new TypeError(`The value "${value}" is expected to be a date but instead it is a(n) ${is(value)}`));
+
+    if (is.regExp(specs.validate)) {
+      throw new TypeError('The RegExp validation method is not supported for date values');
+    }
+    else if (is.number(specs.validate)) {
+      throw new TypeError('The number validation method is not supported for date values');
+    }
+    else if (is.array(specs.validate)) {
+      throw new TypeError('The array validation method is not supported for date values');
+    }
+
+    break;
+  case Array:
+    assert(is.array(value), new TypeError(`The value "${value}" is expected to be an array but instead it is a(n) ${is(value)}`));
+
+    if (is.regExp(specs.validate)) {
+      throw new TypeError('The RegExp validation method is not supported for array values');
+    }
+    else if (is.number(specs.validate)) {
+      throw new TypeError('The number validation method is not supported for array values');
+    }
+    else if (is.array(specs.validate)) {
+      throw new TypeError('The array validation method is not supported for array values');
+    }
+
+    break;
+  case ObjectID:
+    assert(typeIsValidObjectID(value), new TypeError(`The value "${value}" is expected to be an ObjectID but instead it is a(n) ${is(value)}`));
+
+    if (is.regExp(specs.validate)) {
+      throw new TypeError('The RegExp validation method is not supported for ObjectID values');
+    }
+    else if (is.number(specs.validate)) {
+      throw new TypeError('The number validation method is not supported for ObjectID values');
+    }
+    else if (is.array(specs.validate)) {
+      throw new TypeError('The array validation method is not supported for ObjectID values');
+    }
+
+    break;
+  default:
+    // If type is an array of a type, i.e. [Number].
+    if (is.array(specs.type)) {
+      if (specs.type.length !== 1) throw new TypeError(`Incorrect definition of a typed array type ${specs.type}: when specifying a type as an array of another type, wrap the type with [], hence a one-element array`);
+      if (!is.array(value)) throw new TypeError(`The value "${value}" is expected to be a typed array but instead it is a(n) ${is(value)}`);
+
+      // Ensure that every element within the array conforms to the specified
+      // type and passes the validation test.
+      for (const item of value) {
+        validateFieldValue(item, {
+          ...specs,
+          type: (specs.type as FieldType[])[0],
+        });
+      }
+    }
+    // If type is an object.
+    else if (is.plainObject(specs.type)) {
+      assert(is.plainObject(value), new TypeError(`The value "${value}" is expected to be an object but instead it is a(n) ${is(value)}`));
+
+      if (is.regExp(specs.validate)) {
+        throw new TypeError('The RegExp validation method is not supported for object values');
+      }
+      else if (is.number(specs.validate)) {
+        throw new TypeError('The number validation method is not supported for object values');
+      }
+      else if (is.array(specs.validate)) {
+        throw new TypeError('The array validation method is not supported for object values');
+      }
+
+      // Validate each field.
+      for (const subFieldName in specs.type) {
+        if (!specs.type.hasOwnProperty(subFieldName)) continue;
+        validateFieldValue(value[subFieldName], (specs.type as { [key: string]: FieldSpecs })[subFieldName]);
+      }
+    }
+  }
+
+  if (is.function_(specs.validate)) {
+    assert(specs.validate(value), new TypeError(`The value "${value}" failed to pass custom validation function`));
   }
 }

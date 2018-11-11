@@ -859,9 +859,7 @@ abstract class Model {
       // #2 Check if field value conforms to its defined specs.
       const fieldSpecs = fields[key];
 
-      if (!validateFieldValue(val, fieldSpecs)) {
-        throw new Error(`Error validating field '${key}' with value [${JSON.stringify(val, undefined, 0)}] of type [${typeof val}], constraints: ${JSON.stringify(fieldSpecs, null, 0)}, doc: ${JSON.stringify(doc, null, 0)}`);
-      }
+      validateFieldValue(val, fieldSpecs);
     }
 
     // #3 Check for unique fields only if `ignoreUniqueIndex` is not `true`.
@@ -1038,34 +1036,34 @@ abstract class Model {
 
     // First sanitize the inputs. We want to be able to make sure the query is
     // valid and that the update object is a proper update query.
-    const qq = sanitizeQuery<T>(this.schema, q) as DocumentFragment<T>;
-    let uu: Update<T>;
+    const sanitizedQuery = sanitizeQuery<T>(this.schema, q) as DocumentFragment<T>;
+    let sanitizedUpdate: Update<T>;
 
     if (typeIsUpdate<T>(u)) {
-      uu = {
+      sanitizedUpdate = {
         ...u,
       };
 
-      if (uu.$set) uu.$set = sanitizeDocument<T>(this.schema, uu.$set);
-      if (uu.$setOnInsert) uu.$setOnInsert = sanitizeDocument<T>(this.schema, uu.$setOnInsert);
-      if (uu.$addToSet) uu.$addToSet = sanitizeDocument<T>(this.schema, uu.$addToSet);
-      if (uu.$push) uu.$push = sanitizeDocument<T>(this.schema, uu.$push);
+      if (sanitizedUpdate.$set) sanitizedUpdate.$set = sanitizeDocument<T>(this.schema, sanitizedUpdate.$set);
+      if (sanitizedUpdate.$setOnInsert) sanitizedUpdate.$setOnInsert = sanitizeDocument<T>(this.schema, sanitizedUpdate.$setOnInsert);
+      if (sanitizedUpdate.$addToSet) sanitizedUpdate.$addToSet = sanitizeDocument<T>(this.schema, sanitizedUpdate.$addToSet);
+      if (sanitizedUpdate.$push) sanitizedUpdate.$push = sanitizeDocument<T>(this.schema, sanitizedUpdate.$push);
     }
     else {
-      uu = {
+      sanitizedUpdate = {
         $set: sanitizeDocument<T>(this.schema, u),
       };
     }
 
     // Add updated timestamps if applicable.
     if ((this.schema.timestamps === true) && (options.ignoreTimestamps !== true)) {
-      if (!uu.$set) uu.$set = {};
-      if (!is.date(uu.$set.updatedAt)) uu.$set.updatedAt = new Date();
+      if (!sanitizedUpdate.$set) sanitizedUpdate.$set = {};
+      if (!is.date(sanitizedUpdate.$set.updatedAt)) sanitizedUpdate.$set.updatedAt = new Date();
     }
 
     // Format all fields in the update query.
-    if (uu.$set) {
-      uu.$set = await this.formatDocument<T>(uu.$set as Document<T>);
+    if (sanitizedUpdate.$set) {
+      sanitizedUpdate.$set = await this.formatDocument<T>(sanitizedUpdate.$set as Document<T>);
     }
 
     // In the case of an upsert, we need to preprocess the query as if this was
@@ -1074,21 +1072,21 @@ abstract class Model {
     // query.
     if (options.upsert === true) {
       // Make a copy of the query in case it is manipulated by the hooks.
-      const beforeInsert = await this.beforeInsert<T>(_.cloneDeep(qq), { ...options, strict: false });
+      const beforeInsert = await this.beforeInsert<T>(_.cloneDeep(sanitizedQuery), { ...options, strict: false });
       const setOnInsert = _.omit({
-        ...uu.$setOnInsert || {},
+        ...sanitizedUpdate.$setOnInsert || {},
         ...beforeInsert as object,
-      }, Object.keys(uu.$set || {}));
+      }, Object.keys(sanitizedUpdate.$set || {}));
 
       if (!is.emptyObject(setOnInsert)) {
-        uu.$setOnInsert = setOnInsert;
+        sanitizedUpdate.$setOnInsert = setOnInsert;
       }
     }
 
     // Validate all fields in the update query.
-    await this.validateDocument<T>(uu.$set as DocumentFragment<T>, { ignoreUniqueIndex: true, ...options });
+    await this.validateDocument<T>(sanitizedUpdate.$set as DocumentFragment<T>, { ignoreUniqueIndex: true, ...options });
 
-    return [qq, uu];
+    return [sanitizedQuery, sanitizedUpdate];
   }
 
   /**

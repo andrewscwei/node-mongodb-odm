@@ -21,6 +21,9 @@ export default function sanitizeDocument<T = {}>(schema: Schema, doc: { [field: 
     if ((schema.timestamps !== true) && (key === 'updatedAt')) continue;
     if ((key !== '_id') && !schema.fields.hasOwnProperty(key)) continue;
 
+    // Ignore undefined fields.
+    if (doc[key] === undefined) continue;
+
     o[key as keyof T] = doc[key];
   }
 

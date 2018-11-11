@@ -297,4 +297,10 @@ describe('core/Model', () => {
     assert(!is.nullOrUndefined(doc));
     assert(doc!.aString === t);
   });
+
+  it('foo', async () => {
+    const s = Faker.random.alphaNumeric(10);
+    const baz = await Baz.insertOneStrict<BazProps>({ aString: s });
+    await Baz.updateOneStrict(baz._id, { aNumber: null, aBoolean: false });
+  });
 });
