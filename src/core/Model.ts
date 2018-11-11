@@ -860,7 +860,7 @@ abstract class Model {
       const fieldSpecs = fields[key];
 
       if (!validateFieldValue(val, fieldSpecs)) {
-        throw new Error(`Error validating field '${key}' with value [${val}] of type [${typeof val}], constraints: ${JSON.stringify(fieldSpecs, null, 0)}, doc: ${JSON.stringify(doc, null, 0)}`);
+        throw new Error(`Error validating field '${key}' with value [${JSON.stringify(val, undefined, 0)}] of type [${typeof val}], constraints: ${JSON.stringify(fieldSpecs, null, 0)}, doc: ${JSON.stringify(doc, null, 0)}`);
       }
     }
 
