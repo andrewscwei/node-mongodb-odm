@@ -4,7 +4,7 @@ import { CollectionAggregationOptions, CollectionInsertManyOptions, CollectionIn
 /**
  * Full structure of a document.
  */
-export type Document<T = {}> = T & { _id: ObjectID; createdAt?: Date; updatedAt?: Date; } & { [field: string]: FieldValue; };
+export type Document<T = {}> = T & { _id: ObjectID; createdAt?: Date; updatedAt?: Date; };
 
 /**
  * Structure that represents parts of a document.
@@ -19,9 +19,7 @@ export type Query<T = {}> = string | ObjectID | FilterQuery<T>;
 /**
  * Update document descriptor.
  */
-export type Update<T = {}> = UpdateQuery<DocumentFragment<T>> | {
-  [K in keyof DocumentFragment<T>]: DocumentFragment<T>[K] | null;
-};
+export type Update<T = {}> = UpdateQuery<DocumentFragment<T>> | Partial<{ [K in keyof Document<T>]: Document<T>[K] | null }>;
 
 /**
  * Data type for all field types.

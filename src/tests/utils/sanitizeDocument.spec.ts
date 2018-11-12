@@ -6,14 +6,14 @@ import Baz, { BazProps } from '../models/Baz';
 
 describe('utils/sanitizeDocument', () => {
   it('can remove extraneous fields from a document fragment', () => {
-    const t: DocumentFragment<BazProps> = {
+    const t: any = {
       aString: 'foo',
       extraneous: 'foo',
     };
 
     const o = sanitizeDocument<BazProps>(Baz.schema, t);
 
-    assert(!o.extraneous);
+    assert(!o.hasOwnProperty('extraneous'));
   });
 
   it('can remove undefined fields in a document fragment', () => {

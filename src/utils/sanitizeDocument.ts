@@ -23,9 +23,9 @@ export default function sanitizeDocument<T = {}>(schema: Schema, doc: DocumentFr
     if ((key !== '_id') && !schema.fields.hasOwnProperty(key)) continue;
 
     // Ignore undefined and null fields.
-    if (is.nullOrUndefined(doc[key])) continue;
+    if (is.nullOrUndefined((doc as any)[key])) continue;
 
-    o[key as keyof T] = doc[key];
+    o[key as keyof T] = (doc as any)[key];
   }
 
   return o;

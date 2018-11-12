@@ -70,7 +70,7 @@ abstract class Model {
       if (!includeOptionals && !fieldSpecs.required) continue;
 
       // Use provided random function if provided in the schema.
-      if (fieldSpecs.random) o[key as keyof T] = fieldSpecs.random();
+      if (fieldSpecs.random) o[key as keyof T] = fieldSpecs.random() as any;
     }
 
     for (const key in fixedFields) {
@@ -799,13 +799,13 @@ abstract class Model {
       // If the schema has a certain formatting function defined for this field,
       // apply it.
       if (is.function_(fieldSpecs.format)) {
-        const formattedValue = await fieldSpecs.format(formattedDoc[key as keyof T]);
-        formattedDoc[key as keyof T] = formattedValue;
+        const formattedValue = await fieldSpecs.format(formattedDoc[key as keyof T] as any);
+        formattedDoc[key as keyof T] = formattedValue as any;
       }
 
       // If the schema indicates that this field is encrypted, encrypt it.
       if (fieldSpecs.encrypted === true) {
-        formattedDoc[key as keyof T] = await bcrypt.hash(`${formattedDoc[key as keyof T]}`, 10);
+        formattedDoc[key as keyof T] = await bcrypt.hash(`${formattedDoc[key as keyof T]}`, 10) as any;
       }
     }
 
@@ -995,7 +995,7 @@ abstract class Model {
       // apply it.
       if (is.undefined(fieldSpecs.default)) continue;
 
-      o[key as keyof T] = (is.function_(fieldSpecs.default)) ? fieldSpecs.default() : fieldSpecs.default;
+      o[key as keyof T] = (is.function_(fieldSpecs.default)) ? fieldSpecs.default() as any : fieldSpecs.default as any;
     }
 
     // Apply format function defined in the schema if applicable.
@@ -1041,7 +1041,7 @@ abstract class Model {
 
     // Sanitize all update queries. Remap `null` values to `$unset`.
     if (sanitizedUpdate.$set) {
-      const obj = sanitizedUpdate.$set;
+      const obj: { [key: string]: any } = sanitizedUpdate.$set;
       const nulls = Object.keys(obj).filter(v => (obj[v] === null));
       const n = nulls.length;
 
@@ -1051,7 +1051,7 @@ abstract class Model {
         sanitizedUpdate.$unset = {};
 
         for (let i = 0; i < n; i++) {
-          sanitizedUpdate.$unset[nulls[i]] = '';
+          (sanitizedUpdate.$unset as any)[nulls[i]] = '';
         }
       }
     }

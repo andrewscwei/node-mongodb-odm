@@ -301,8 +301,8 @@ describe('core/Model', () => {
   it('can remove a property of a doc by updating it to `null`', async () => {
     const baz = await Baz.insertOneStrict<BazProps>();
     assert(baz.aNumber);
-    await Baz.updateOneStrict(baz._id, { aNumber: null });
-    const res = await Baz.findOneStrict(baz._id);
+    await Baz.updateOneStrict<BazProps>(baz._id, { aNumber: null });
+    const res = await Baz.findOneStrict<BazProps>(baz._id);
     assert(res.aNumber === undefined);
   });
 
