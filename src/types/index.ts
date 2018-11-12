@@ -19,7 +19,9 @@ export type Query<T = {}> = string | ObjectID | FilterQuery<T>;
 /**
  * Update document descriptor.
  */
-export type Update<T = {}> = UpdateQuery<DocumentFragment<T>> | DocumentFragment<T>;
+export type Update<T = {}> = UpdateQuery<DocumentFragment<T>> | {
+  [K in keyof DocumentFragment<T>]: DocumentFragment<T>[K] | null;
+};
 
 /**
  * Data type for all field types.

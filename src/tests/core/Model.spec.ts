@@ -301,7 +301,7 @@ describe('core/Model', () => {
   it('can remove a property of a doc by updating it to `null`', async () => {
     const baz = await Baz.insertOneStrict<BazProps>();
     assert(baz.aNumber);
-    await Baz.updateOneStrict(baz._id, { aNumber: null } as any);
+    await Baz.updateOneStrict(baz._id, { aNumber: null });
     const res = await Baz.findOneStrict(baz._id);
     assert(res.aNumber === undefined);
   });
@@ -310,7 +310,7 @@ describe('core/Model', () => {
     const t = Faker.random.alphaNumeric(10);
     const exists = await Baz.exists({ aString: t });
     assert(!exists);
-    const baz = await Baz.updateOneStrict<BazProps>({ aString: t }, { aNumber: null } as any, { upsert: true, returnDoc: true });
+    const baz = await Baz.updateOneStrict<BazProps>({ aString: t }, { aNumber: null }, { upsert: true, returnDoc: true });
     assert(baz);
     assert((baz as Document<BazProps>).aNumber === undefined);
   });
