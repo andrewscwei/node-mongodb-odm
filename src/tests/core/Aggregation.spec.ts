@@ -7,6 +7,7 @@ import { describe } from 'mocha';
 import { ObjectID } from 'mongodb';
 import * as db from '../../';
 import Aggregation from '../../core/Aggregation';
+import Model from '../../core/Model';
 import { AggregationStageDescriptor, typeIsValidObjectID } from '../../types';
 import Bar, { BarSchema } from '../models/Bar';
 import Baz from '../models/Baz';

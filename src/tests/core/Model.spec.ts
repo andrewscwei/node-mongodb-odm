@@ -44,9 +44,9 @@ describe('core/Model', () => {
   it('can find multiple documents', async () => {
     const s = Faker.random.alphaNumeric(10);
 
-    await Baz.insertOne<BazProps>({ aString: s });
-    await Baz.insertOne<BazProps>({ aString: s });
-    await Baz.insertOne<BazProps>({ aString: s });
+    await Baz.insertOne({ aString: s });
+    await Baz.insertOne({ aString: s });
+    await Baz.insertOne({ aString: s });
 
     const docs = await Baz.findMany({ aString: s });
 
@@ -61,9 +61,9 @@ describe('core/Model', () => {
   it('can count the total number of documents in the collection', async () => {
     const s = Faker.random.alphaNumeric(10);
 
-    await Baz.insertOne<BazProps>({ aString: s });
-    await Baz.insertOne<BazProps>({ aString: s });
-    await Baz.insertOne<BazProps>({ aString: s });
+    await Baz.insertOne({ aString: s });
+    await Baz.insertOne({ aString: s });
+    await Baz.insertOne({ aString: s });
 
     const count = await Baz.count({ aString: s });
 
@@ -71,13 +71,13 @@ describe('core/Model', () => {
   });
 
   it('can generate random required fields', async () => {
-    const res = await Baz.randomFields<BazProps>();
+    const res = await Baz.randomFields();
     assert(is.string(res.aString));
   });
 
   it('can insert a new document', async () => {
     const t: DocumentFragment<BazProps> = { aString: Faker.random.alphaNumeric(10) };
-    const doc = await Baz.insertOne<BazProps>(t);
+    const doc = await Baz.insertOne(t);
 
     assert(doc);
     assert(ObjectID.isValid(doc!._id!));
@@ -86,7 +86,7 @@ describe('core/Model', () => {
 
   it('can insert multiple documents', async () => {
     const t: DocumentFragment<BazProps>[] = [{ aString: Faker.random.alphaNumeric(10) }, { aString: Faker.random.alphaNumeric(10) }, { aString: Faker.random.alphaNumeric(10) }];
-    const docs = await Baz.insertMany<BazProps>(t);
+    const docs = await Baz.insertMany(t);
 
     assert(docs);
     assert(docs!.reduce((prev, curr) => prev && ObjectID.isValid(curr._id!), true));
@@ -98,7 +98,7 @@ describe('core/Model', () => {
     let didThrow = true;
 
     try {
-      await Baz.insertOneStrict<BazProps>({ aNumber: 6 }).catch(err => { throw err; });
+      await Baz.insertOneStrict({ aNumber: 6 }).catch(err => { throw err; });
       didThrow = false;
     }
     catch (err) {}
@@ -115,14 +115,14 @@ describe('core/Model', () => {
   it('can encrypt document fields according to the schema', async () => {
     const s = Faker.random.alphaNumeric(10);
     const t: DocumentFragment<BazProps> = { anEncryptedString: s };
-    const res = await Baz.formatDocument<BazProps>(t);
+    const res = await Baz.formatDocument(t);
 
     assert(await bcrypt.compare(s, res.anEncryptedString!));
   });
 
   it('should automatically generate default values on insert', async () => {
     const t: DocumentFragment<BazProps> = { aString: Faker.random.alphaNumeric(10) };
-    const res = await Baz.insertOne<BazProps>(t);
+    const res = await Baz.insertOne(t);
     assert(res!.aBoolean === Baz.schema.fields.aBoolean.default);
   });
 
@@ -149,18 +149,18 @@ describe('core/Model', () => {
 
     await Baz.updateOne(t, { aFormattedString: Faker.random.alphaNumeric(10) }, { upsert: true });
 
-    const doc = await Baz.findOne<BazProps>({ aString: s });
+    const doc = await Baz.findOne({ aString: s });
 
     assert(doc);
   });
 
   it('should return false if update fails and returnDoc is false', async () => {
-    const res = await Baz.updateOne<BazProps>(new ObjectID(), { aString: Faker.random.alphaNumeric(10) });
+    const res = await Baz.updateOne(new ObjectID(), { aString: Faker.random.alphaNumeric(10) });
     assert(res === false);
   });
 
   it('should return null if update fails and returnDoc is true', async () => {
-    const res = await Baz.updateOne<BazProps>(new ObjectID(), { aString: Faker.random.alphaNumeric(10) }, { returnDoc: true });
+    const res = await Baz.updateOne(new ObjectID(), { aString: Faker.random.alphaNumeric(10) }, { returnDoc: true });
     assert(is.null_(res));
   });
 
@@ -168,8 +168,8 @@ describe('core/Model', () => {
     const s = Faker.random.alphaNumeric(10);
     const t = Faker.random.alphaNumeric(10);
 
-    await Baz.insertOne<BazProps>({ aString: s });
-    const res = await Baz.updateOne<BazProps>({ aString: s }, { aFormattedString: t }, { returnDoc: true });
+    await Baz.insertOne({ aString: s });
+    const res = await Baz.updateOne({ aString: s }, { aFormattedString: t }, { returnDoc: true });
 
     assert(!is.nullOrUndefined(res));
     assert((res as Document<BazProps>).aFormattedString !== t);
@@ -178,7 +178,7 @@ describe('core/Model', () => {
 
   it('should automatically format values on upsert according to the schema', async () => {
     const s = Faker.random.alphaNumeric(10);
-    const res = await Baz.updateOne<BazProps>({ aString: Faker.random.alphaNumeric(10) }, { aFormattedString: s }, { upsert: true, returnDoc: true });
+    const res = await Baz.updateOne({ aString: Faker.random.alphaNumeric(10) }, { aFormattedString: s }, { upsert: true, returnDoc: true });
 
     assert(!is.nullOrUndefined(res));
     assert(!is.boolean(res));
@@ -190,12 +190,12 @@ describe('core/Model', () => {
     const s = Faker.random.alphaNumeric(10);
     const t = Faker.random.alphaNumeric(10);
     const q: DocumentFragment<BazProps>[] = [{ aString: s }, { aString: s }, { aString: s }];
-    const docs = await Baz.insertMany<BazProps>(q);
+    const docs = await Baz.insertMany(q);
 
     assert(docs);
     assert(docs!.reduce((prev, curr) => prev && ObjectID.isValid(curr._id!), true));
 
-    const res = await Baz.updateMany<BazProps>({ aString: s }, { aString: t }, { returnDocs: true }) as Document<BazProps>[];
+    const res = await Baz.updateMany({ aString: s }, { aString: t }, { returnDocs: true }) as Document<BazProps>[];
 
     assert(res.length === docs.length);
     assert(res.reduce((o, v) => o && (v.aString === t), true));
@@ -205,58 +205,58 @@ describe('core/Model', () => {
     const s = Faker.random.alphaNumeric(10);
     const t = Faker.random.alphaNumeric(10);
 
-    const res = await Baz.updateMany<BazProps>({ aString: s }, { aFormattedString: t }, { returnDocs: true, upsert: true }) as Document<BazProps>[];
+    const res = await Baz.updateMany({ aString: s }, { aFormattedString: t }, { returnDocs: true, upsert: true }) as Document<BazProps>[];
 
     assert(res.length === 1);
-    assert(!is.nullOrUndefined(await Baz.findOne<BazProps>({ aString: s })));
+    assert(!is.nullOrUndefined(await Baz.findOne({ aString: s })));
   });
 
   it('can upsert a doc in an updateMany op while `returnDocs` is false', async () => {
     const s = Faker.random.alphaNumeric(10);
     const t = Faker.random.alphaNumeric(10);
 
-    const res = await Baz.updateMany<BazProps>({ aString: s }, { aFormattedString: t }, { upsert: true }) as boolean;
+    const res = await Baz.updateMany({ aString: s }, { aFormattedString: t }, { upsert: true }) as boolean;
 
     assert(res === true);
-    assert(!is.nullOrUndefined(await Baz.findOne<BazProps>({ aString: s })));
+    assert(!is.nullOrUndefined(await Baz.findOne({ aString: s })));
   });
 
   it('can delete a doc', async () => {
     const s = Faker.random.alphaNumeric(10);
 
-    await Baz.insertOne<BazProps>({ aString: s });
+    await Baz.insertOne({ aString: s });
 
-    assert(!is.null_(await Baz.findOne<BazProps>({ aString: s })));
+    assert(!is.null_(await Baz.findOne({ aString: s })));
 
-    const res = await Baz.deleteOne<BazProps>({ aString: s });
+    const res = await Baz.deleteOne({ aString: s });
 
     assert(res === true);
-    assert(is.null_(await Baz.findOne<BazProps>({ aString: s })));
+    assert(is.null_(await Baz.findOne({ aString: s })));
   });
 
   it('can delete a doc and return the deleted doc', async () => {
     const s = Faker.random.alphaNumeric(10);
-    const doc = await Baz.insertOne<BazProps>({ aString: s });
+    const doc = await Baz.insertOne({ aString: s });
 
-    assert(!is.null_(await Baz.findOne<BazProps>({ aString: s })));
+    assert(!is.null_(await Baz.findOne({ aString: s })));
 
     const objectId = doc!._id!;
 
-    const res = await Baz.deleteOne<BazProps>({ aString: s }, { returnDoc: true });
+    const res = await Baz.deleteOne({ aString: s }, { returnDoc: true });
 
     assert(!is.null_(res));
     assert((res as Document<BazProps>)._id!.equals(objectId));
-    assert(is.null_(await Baz.findOne<BazProps>({ aString: s })));
+    assert(is.null_(await Baz.findOne({ aString: s })));
   });
 
   it('can delete multiple docs', async () => {
     const s = Faker.random.alphaNumeric(10);
 
-    await Baz.insertMany<BazProps>([{ aString: s }, { aString: s }, { aString: s }]);
+    await Baz.insertMany([{ aString: s }, { aString: s }, { aString: s }]);
 
     assert((await Baz.count({ aString: s })) === 3);
 
-    await Baz.deleteMany<BazProps>({ aString: s });
+    await Baz.deleteMany({ aString: s });
 
     assert((await Baz.count({ aString: s })) === 0);
   });
@@ -264,11 +264,11 @@ describe('core/Model', () => {
   it('can delete multiple docs and return the deleted docs', async () => {
     const s = Faker.random.alphaNumeric(10);
 
-    await Baz.insertMany<BazProps>([{ aString: s }, { aString: s }, { aString: s }]);
+    await Baz.insertMany([{ aString: s }, { aString: s }, { aString: s }]);
 
     assert((await Baz.count({ aString: s })) === 3);
 
-    const res = await Baz.deleteMany<BazProps>({ aString: s }, { returnDocs: true });
+    const res = await Baz.deleteMany({ aString: s }, { returnDocs: true });
 
     assert(is.array(res));
     assert((res as Document<BazProps>[]).length === 3);
@@ -278,9 +278,9 @@ describe('core/Model', () => {
     const s = Faker.random.alphaNumeric(10);
     const t = Faker.random.alphaNumeric(10);
 
-    await Baz.insertOne<BazProps>({ aString: s });
+    await Baz.insertOne({ aString: s });
 
-    const doc = await Baz.findAndReplaceOne<BazProps>({ aString: s }, { aString: t }, { returnOriginal: true });
+    const doc = await Baz.findAndReplaceOne({ aString: s }, { aString: t }, { returnOriginal: true });
 
     assert(!is.nullOrUndefined(doc));
     assert(doc!.aString === s);
@@ -290,19 +290,19 @@ describe('core/Model', () => {
     const s = Faker.random.alphaNumeric(10);
     const t = Faker.random.alphaNumeric(10);
 
-    await Baz.insertOne<BazProps>({ aString: s });
+    await Baz.insertOne({ aString: s });
 
-    const doc = await Baz.findAndReplaceOne<BazProps>({ aString: s }, { aString: t }, { returnOriginal: false });
+    const doc = await Baz.findAndReplaceOne({ aString: s }, { aString: t }, { returnOriginal: false });
 
     assert(!is.nullOrUndefined(doc));
     assert(doc!.aString === t);
   });
 
   it('can remove a property of a doc by updating it to `null`', async () => {
-    const baz = await Baz.insertOneStrict<BazProps>();
+    const baz = await Baz.insertOneStrict();
     assert(baz.aNumber);
-    await Baz.updateOneStrict<BazProps>(baz._id, { aNumber: null });
-    const res = await Baz.findOneStrict<BazProps>(baz._id);
+    await Baz.updateOneStrict(baz._id, { aNumber: null });
+    const res = await Baz.findOneStrict(baz._id);
     assert(res.aNumber === undefined);
   });
 
@@ -310,7 +310,7 @@ describe('core/Model', () => {
     const t = Faker.random.alphaNumeric(10);
     const exists = await Baz.exists({ aString: t });
     assert(!exists);
-    const baz = await Baz.updateOneStrict<BazProps>({ aString: t }, { aNumber: null }, { upsert: true, returnDoc: true });
+    const baz = await Baz.updateOneStrict({ aString: t }, { aNumber: null }, { upsert: true, returnDoc: true });
     assert(baz);
     assert((baz as Document<BazProps>).aNumber === undefined);
   });

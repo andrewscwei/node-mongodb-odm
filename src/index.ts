@@ -16,7 +16,7 @@ export interface Configuration {
   name: string;
   username?: string;
   password?: string;
-  models?: { [modelName: string]: typeof Model};
+  models?: { [modelName: string]: any };
 }
 
 /**
@@ -152,7 +152,7 @@ export async function getDbInstance(): Promise<Db> {
  * @throws {Error} There are no models registered with the ODM.
  * @throws {Error} No model found with the provided name.
  */
-export function getModel(modelOrCollectionName: string): typeof Model {
+export function getModel(modelOrCollectionName: string): ReturnType<typeof Model> {
   const models = config.models;
 
   if (is.nullOrUndefined(models)) throw new Error('You must register models using the configureDb() function');
@@ -189,7 +189,7 @@ export async function getCollection(modelOrCollectionName: string): Promise<Coll
     return collections[modelOrCollectionName];
   }
 
-  let ModelClass: typeof Model | undefined;
+  let ModelClass: ReturnType<typeof Model> | undefined;
 
   for (const key in models) {
     if (!models.hasOwnProperty(key)) continue;

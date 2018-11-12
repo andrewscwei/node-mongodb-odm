@@ -26,6 +26,4 @@ export const BazSchema: Schema<BazProps> = {
   }],
 };
 
-export default class Baz extends Model {
-  static schema = BazSchema;
-}
+export default class Baz extends Model(BazSchema) {}

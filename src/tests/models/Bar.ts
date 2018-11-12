@@ -57,6 +57,4 @@ export const BarSchema: Schema<BarProps> = {
   },
 };
 
-export default class Bar extends Model {
-  static schema = BarSchema;
-}
+export default class Bar extends Model(BarSchema) {}

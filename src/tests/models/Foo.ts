@@ -41,6 +41,4 @@ export const FooSchema: Schema<FooProps> = {
   }],
 };
 
-export default class Foo extends Model {
-  static schema = FooSchema;
-}
+export default class Foo extends Model(FooSchema) {}
