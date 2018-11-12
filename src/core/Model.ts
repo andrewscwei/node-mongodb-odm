@@ -30,7 +30,7 @@ export default <T = {}>(schema: Schema<T>) => class {
    * Schema of this model. This property must be overridden in the derived
    * class.
    */
-  static schema = schema;
+  static readonly schema = schema;
 
   /**
    * Gets the MongoDB collection associated with this model.
@@ -911,7 +911,7 @@ export default <T = {}>(schema: Schema<T>) => class {
    *
    * @returns The document to be inserted.
    */
-  static async willInsertDocument(doc: DocumentFragment<T>): Promise<DocumentFragment<T>> {
+  protected static async willInsertDocument(doc: DocumentFragment<T>): Promise<DocumentFragment<T>> {
     return doc;
   }
 
@@ -920,7 +920,7 @@ export default <T = {}>(schema: Schema<T>) => class {
    *
    * @param doc - The inserted document.
    */
-  static async didInsertDocument<R = T>(doc: Document<R>): Promise<void> {}
+  protected static async didInsertDocument<R = T>(doc: Document<R>): Promise<void> {}
 
   /**
    * Handler called before an attempted update operation. This method must
@@ -931,7 +931,7 @@ export default <T = {}>(schema: Schema<T>) => class {
    *
    * @returns A tuple of the query and the update descriptor.
    */
-  static async willUpdateDocument(query: Query<T>, update: Update<T>): Promise<[Query, Update<T>]> {
+  protected static async willUpdateDocument(query: Query<T>, update: Update<T>): Promise<[Query, Update<T>]> {
     return [query, update];
   }
 
@@ -944,7 +944,7 @@ export default <T = {}>(schema: Schema<T>) => class {
    * @param newDocs - The updated document(s). This is only available if
    *                  `returnDoc` or `returnDocs` was enabled.
    */
-  static async didUpdateDocument(prevDoc?: Document<T>, newDocs?: Document<T> | Document<T>[]): Promise<void> {}
+  protected static async didUpdateDocument(prevDoc?: Document<T>, newDocs?: Document<T> | Document<T>[]): Promise<void> {}
 
   /**
    * Handler called before an attempt to delete a document.
@@ -953,7 +953,7 @@ export default <T = {}>(schema: Schema<T>) => class {
    *
    * @returns The document to be deleted.
    */
-  static async willDeleteDocument(query: Query<T>): Promise<Query<T>> {
+  protected static async willDeleteDocument(query: Query<T>): Promise<Query<T>> {
     return query;
   }
 
@@ -963,7 +963,7 @@ export default <T = {}>(schema: Schema<T>) => class {
    *
    * @param docs - The deleted document(s) if available.
    */
-  static async didDeleteDocument(docs?: Document<T> | Document<T>[]): Promise<void> {}
+  protected static async didDeleteDocument(docs?: Document<T> | Document<T>[]): Promise<void> {}
 
   /**
    * Processes a document before it is inserted. This is also used during an
