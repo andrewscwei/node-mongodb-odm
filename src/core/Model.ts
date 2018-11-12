@@ -276,7 +276,7 @@ export default <T = {}>(schema: Schema<T>) => class {
     const o = results.ops[0];
 
     // Apply after insert handler.
-    await this.afterInsert<T>(o);
+    await this.afterInsert(o);
 
     return o;
   }
@@ -343,7 +343,7 @@ export default <T = {}>(schema: Schema<T>) => class {
     const m = o.length;
 
     for (let i = 0; i < m; i++) {
-      await this.afterInsert<T>(o[i]);
+      await this.afterInsert(o[i]);
     }
 
     return o;
@@ -727,7 +727,7 @@ export default <T = {}>(schema: Schema<T>) => class {
     }
 
     await this.afterDelete(results.value);
-    await this.afterInsert<T>(newDoc);
+    await this.afterInsert(newDoc);
 
     return (options.returnOriginal === true) ? oldDoc : newDoc;
   }
@@ -920,7 +920,7 @@ export default <T = {}>(schema: Schema<T>) => class {
    *
    * @param doc - The inserted document.
    */
-  protected static async didInsertDocument<R = T>(doc: Document<R>): Promise<void> {}
+  protected static async didInsertDocument(doc: Document<T>): Promise<void> {}
 
   /**
    * Handler called before an attempted update operation. This method must
@@ -1017,8 +1017,8 @@ export default <T = {}>(schema: Schema<T>) => class {
    *
    * @param doc - The inserted document.
    */
-  private static async afterInsert<R>(doc: Document<R>): Promise<void> {
-    await this.didInsertDocument<R>(doc);
+  private static async afterInsert(doc: Document<T>): Promise<void> {
+    await this.didInsertDocument(doc);
   }
 
   /**
