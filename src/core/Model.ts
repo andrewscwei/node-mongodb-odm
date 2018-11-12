@@ -37,7 +37,7 @@ abstract class Model {
    * @throws {Error} Model class has no static property `schema` defined.
    */
   static async getCollection(): Promise<Collection> {
-    if (!this.schema) throw new Error('This model has no schema, you must define this static proerty in the derived class');
+    if (!this.schema) throw new Error('This model has no schema, you must define this static property in the derived class');
 
     return getCollection(this.schema.collection);
   }
