@@ -6,7 +6,7 @@ import { describe, it } from 'mocha';
 import { ObjectID } from 'mongodb';
 import * as db from '../..';
 import { Document, DocumentFragment } from '../../types';
-import Bar from '../models/Bar';
+import Bar, { BarProps } from '../models/Bar';
 import Baz, { BazProps } from '../models/Baz';
 import Foo from '../models/Foo';
 
@@ -298,9 +298,20 @@ describe('core/Model', () => {
     assert(doc!.aString === t);
   });
 
-  it('foo', async () => {
-    const s = Faker.random.alphaNumeric(10);
-    const baz = await Baz.insertOneStrict<BazProps>({ aString: s });
-    await Baz.updateOneStrict(baz._id, { aNumber: null, aBoolean: false });
+  it('can remove a property of a doc by updating it to `null`', async () => {
+    const baz = await Baz.insertOneStrict<BazProps>();
+    assert(baz.aNumber);
+    await Baz.updateOneStrict(baz._id, { aNumber: null } as any);
+    const res = await Baz.findOneStrict(baz._id);
+    assert(res.aNumber === undefined);
+  });
+
+  it('can upsert a document while setting an update field to `null`', async () => {
+    const t = Faker.random.alphaNumeric(10);
+    const exists = await Baz.exists({ aString: t });
+    assert(!exists);
+    const baz = await Baz.updateOneStrict<BazProps>({ aString: t }, { aNumber: null } as any, { upsert: true, returnDoc: true });
+    assert(baz);
+    assert((baz as Document<BazProps>).aNumber === undefined);
   });
 });

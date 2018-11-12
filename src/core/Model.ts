@@ -10,9 +10,9 @@ import assert from 'assert';
 import bcrypt from 'bcrypt';
 import debug from 'debug';
 import _ from 'lodash';
-import { Collection, FilterQuery, ObjectID } from 'mongodb';
+import { Collection, FilterQuery, ObjectID, UpdateQuery } from 'mongodb';
 import { getCollection, getModel } from '..';
-import { AggregationPipeline, Document, DocumentFragment, FieldSpecs, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOptions, PipelineFactorySpecs, Query, Schema, typeIsUpdate, typeIsValidObjectID, Update } from '../types';
+import { AggregationPipeline, Document, DocumentFragment, FieldSpecs, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOptions, PipelineFactorySpecs, Query, Schema, typeIsUpdateQuery, typeIsValidObjectID, Update } from '../types';
 import sanitizeDocument from '../utils/sanitizeDocument';
 import sanitizeQuery from '../utils/sanitizeQuery';
 import validateFieldValue from '../utils/validateFieldValue';
@@ -368,7 +368,7 @@ abstract class Model {
    *                 hooks being skipped.
    * @throws {Error} A doc is updated but it cannot be found.
    */
-  static async updateOneStrict<T = {}>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options: ModelUpdateOneOptions = {}): Promise<void | Document<T>> {
+  static async updateOneStrict<T = {}>(query: Query<T>, update: Update<T>, options: ModelUpdateOneOptions = {}): Promise<void | Document<T>> {
     if (this.schema.noUpdates === true) throw new Error('Updates are disallowed for this model');
 
     const collection = await this.getCollection();
@@ -448,7 +448,7 @@ abstract class Model {
    *
    * @see Model.updateOneStrict
    */
-  static async updateOne<T = {}>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options: ModelUpdateOneOptions = {}): Promise<boolean | null | Document<T>> {
+  static async updateOne<T = {}>(query: Query<T>, update: Update<T>, options: ModelUpdateOneOptions = {}): Promise<boolean | null | Document<T>> {
     try {
       const o = await this.updateOneStrict<T>(query, update, options);
 
@@ -481,7 +481,7 @@ abstract class Model {
    *                 updates are disabled in the schema.
    * @throws {Error} One of the updated docs are not returned.
    */
-  static async updateMany<T = {}>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options: ModelUpdateManyOptions = {}): Promise<Document<T>[] | boolean> {
+  static async updateMany<T = {}>(query: Query<T>, update: Update<T>, options: ModelUpdateManyOptions = {}): Promise<Document<T>[] | boolean> {
     if ((this.schema.noUpdates === true) || (this.schema.noUpdateMany === true)) throw new Error('Multiple updates are disallowed for this model');
 
     const [q, u] = await this.beforeUpdate<T>(query, update, options);
@@ -926,7 +926,7 @@ abstract class Model {
    *
    * @returns A tuple of the query and the update descriptor.
    */
-  static async willUpdateDocument<T>(query: Query<T>, update: DocumentFragment<T> | Update<T>): Promise<[Query, DocumentFragment<T> | Update<T>]> {
+  static async willUpdateDocument<T>(query: Query<T>, update: Update<T>): Promise<[Query, Update<T>]> {
     return [query, update];
   }
 
@@ -1029,7 +1029,7 @@ abstract class Model {
    * @throws {Error} Attempting to upsert even though upserts are disabled in
    *                 the schema.
    */
-  private static async beforeUpdate<T>(query: Query<T>, update: DocumentFragment<T> | Update<T>, options: ModelUpdateOneOptions | ModelUpdateManyOptions = {}): Promise<[DocumentFragment<T>, Update<T>]> {
+  private static async beforeUpdate<T>(query: Query<T>, update: Update<T>, options: ModelUpdateOneOptions | ModelUpdateManyOptions = {}): Promise<[DocumentFragment<T>, UpdateQuery<DocumentFragment<T>>]> {
     if ((options.upsert === true) && (this.schema.allowUpserts !== true)) throw new Error('Attempting to upsert a document while upserting is disallowed in the schema');
 
     const [q, u] = await this.willUpdateDocument<T>(query, update);
@@ -1037,23 +1037,28 @@ abstract class Model {
     // First sanitize the inputs. We want to be able to make sure the query is
     // valid and that the update object is a proper update query.
     const sanitizedQuery = sanitizeQuery<T>(this.schema, q) as DocumentFragment<T>;
-    let sanitizedUpdate: Update<T>;
+    const sanitizedUpdate: UpdateQuery<DocumentFragment<T>> = typeIsUpdateQuery<T>(u) ? { ...u } : { $set: u };
 
-    if (typeIsUpdate<T>(u)) {
-      sanitizedUpdate = {
-        ...u,
-      };
+    // Sanitize all update queries. Remap `null` values to `$unset`.
+    if (sanitizedUpdate.$set) {
+      const obj = sanitizedUpdate.$set;
+      const nulls = Object.keys(obj).filter(v => (obj[v] === null));
+      const n = nulls.length;
 
-      if (sanitizedUpdate.$set) sanitizedUpdate.$set = sanitizeDocument<T>(this.schema, sanitizedUpdate.$set);
-      if (sanitizedUpdate.$setOnInsert) sanitizedUpdate.$setOnInsert = sanitizeDocument<T>(this.schema, sanitizedUpdate.$setOnInsert);
-      if (sanitizedUpdate.$addToSet) sanitizedUpdate.$addToSet = sanitizeDocument<T>(this.schema, sanitizedUpdate.$addToSet);
-      if (sanitizedUpdate.$push) sanitizedUpdate.$push = sanitizeDocument<T>(this.schema, sanitizedUpdate.$push);
+      sanitizedUpdate.$set = sanitizeDocument<T>(this.schema, sanitizedUpdate.$set);
+
+      if (n > 0) {
+        sanitizedUpdate.$unset = {};
+
+        for (let i = 0; i < n; i++) {
+          sanitizedUpdate.$unset[nulls[i]] = '';
+        }
+      }
     }
-    else {
-      sanitizedUpdate = {
-        $set: sanitizeDocument<T>(this.schema, u),
-      };
-    }
+
+    if (sanitizedUpdate.$setOnInsert) sanitizedUpdate.$setOnInsert = sanitizeDocument<T>(this.schema, sanitizedUpdate.$setOnInsert);
+    if (sanitizedUpdate.$addToSet) sanitizedUpdate.$addToSet = sanitizeDocument<T>(this.schema, sanitizedUpdate.$addToSet);
+    if (sanitizedUpdate.$push) sanitizedUpdate.$push = sanitizeDocument<T>(this.schema, sanitizedUpdate.$push);
 
     // Add updated timestamps if applicable.
     if ((this.schema.timestamps === true) && (options.ignoreTimestamps !== true)) {
@@ -1076,7 +1081,10 @@ abstract class Model {
       const setOnInsert = _.omit({
         ...sanitizedUpdate.$setOnInsert || {},
         ...beforeInsert as object,
-      }, Object.keys(sanitizedUpdate.$set || {}));
+      }, [
+        ...Object.keys(sanitizedUpdate.$set || {}),
+        ...Object.keys(sanitizedUpdate.$unset || {}),
+      ]);
 
       if (!is.emptyObject(setOnInsert)) {
         sanitizedUpdate.$setOnInsert = setOnInsert;
@@ -1084,9 +1092,21 @@ abstract class Model {
     }
 
     // Validate all fields in the update query.
-    await this.validateDocument<T>(sanitizedUpdate.$set as DocumentFragment<T>, { ignoreUniqueIndex: true, ...options });
+    if (sanitizedUpdate.$set && !is.emptyObject(sanitizedUpdate.$set)) {
+      await this.validateDocument<T>(sanitizedUpdate.$set as DocumentFragment<T>, { ignoreUniqueIndex: true, ...options });
+    }
 
-    return [sanitizedQuery, sanitizedUpdate];
+    // Strip empty objects.
+    const { $set, $setOnInsert, $addToSet, $push, ...rest } = sanitizedUpdate;
+    const finalizedUpdate = {
+      ...rest,
+      ...(is.nullOrUndefined($set) || is.emptyObject($set)) ? {} : { $set },
+      ...(is.nullOrUndefined($setOnInsert) || is.emptyObject($setOnInsert)) ? {} : { $setOnInsert },
+      ...(is.nullOrUndefined($addToSet) || is.emptyObject($addToSet)) ? {} : { $addToSet },
+      ...(is.nullOrUndefined($push) || is.emptyObject($push)) ? {} : { $push },
+    };
+
+    return [sanitizedQuery, finalizedUpdate];
   }
 
   /**

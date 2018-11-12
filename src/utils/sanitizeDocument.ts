@@ -1,4 +1,5 @@
-import { DocumentFragment, FieldValue, Schema } from '../types';
+import is from '@sindresorhus/is';
+import { DocumentFragment, Schema } from '../types';
 
 /**
  * Sanitizes a partial document by removing all extraneous fields from it
@@ -13,7 +14,7 @@ import { DocumentFragment, FieldValue, Schema } from '../types';
  * // Returns { a: 'b', b: 'c' }
  * sanitizeDocument(schema, { a: 'b', b: 'c', garbage: 'garbage' })
  */
-export default function sanitizeDocument<T = {}>(schema: Schema, doc: { [field: string]: FieldValue }): DocumentFragment<T> {
+export default function sanitizeDocument<T = {}>(schema: Schema, doc: DocumentFragment): DocumentFragment<T> {
   const o: DocumentFragment<T> = {};
 
   for (const key in doc) {
@@ -21,8 +22,8 @@ export default function sanitizeDocument<T = {}>(schema: Schema, doc: { [field: 
     if ((schema.timestamps !== true) && (key === 'updatedAt')) continue;
     if ((key !== '_id') && !schema.fields.hasOwnProperty(key)) continue;
 
-    // Ignore undefined fields.
-    if (doc[key] === undefined) continue;
+    // Ignore undefined and null fields.
+    if (is.nullOrUndefined(doc[key])) continue;
 
     o[key as keyof T] = doc[key];
   }

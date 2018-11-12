@@ -17,9 +17,9 @@ export type DocumentFragment<T = {}> = Partial<Document<T>>;
 export type Query<T = {}> = string | ObjectID | FilterQuery<T>;
 
 /**
- * Document update descriptor.
+ * Update document descriptor.
  */
-export type Update<T = {}> = UpdateQuery<DocumentFragment<T>>;
+export type Update<T = {}> = UpdateQuery<DocumentFragment<T>> | DocumentFragment<T>;
 
 /**
  * Data type for all field types.
@@ -385,7 +385,7 @@ type FieldBasicType = typeof String | typeof Number | typeof Boolean | typeof Da
 /**
  * Data type for basic field value.
  */
-type FieldBasicValue = null | ObjectID | string | number | boolean | Date;
+type FieldBasicValue = ObjectID | string | number | boolean | Date;
 
 /**
  * Function for formatting field values, in which the value to be formatted will
@@ -442,23 +442,23 @@ interface SchemaIndex {
 }
 
 /**
- * Checks if a value is an Update.
+ * Checks if a value is an UpdateQuery.
  *
  * @param value - Value to check.
  *
  * @returns `true` if value is an Update, `false` otherwise.
  */
-export function typeIsUpdate<T = {}>(value: any): value is Update<T> {
+export function typeIsUpdateQuery<T = {}>(value: any): value is UpdateQuery<DocumentFragment<T>> {
   if (!is.plainObject(value)) return false;
   return Object.keys(value).some(val => val.startsWith('$'));
 }
 
 /**
- * Checks if a value is an identifiable Document.
+ * Checks if a value is an identifiable document.
  *
  * @param value - Value to check.
  *
- * @returns `true` if value is an identifiable Document, `false` otherwise.
+ * @returns `true` if value is an identifiable document, `false` otherwise.
  */
 export function typeIsIdentifiableDocument(value: any): value is { _id: ObjectID } & { [field: string]: FieldValue; } {
   if (is.nullOrUndefined(value)) return false;
