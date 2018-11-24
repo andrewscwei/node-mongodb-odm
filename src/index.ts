@@ -14,6 +14,7 @@ const log = debug('mongodb-odm');
 export interface Configuration {
   host: string;
   name: string;
+  replicaSet?: string;
   username?: string;
   password?: string;
   models?: { [modelName: string]: any };
@@ -59,7 +60,7 @@ export async function connectToDb(): Promise<void> {
   const authentication = (config.username && config.password) ? `${config.username}:${config.password}` : undefined;
 
   // Database client URL.
-  const url = `mongodb://${authentication ? `${authentication}@` : ''}${config.host}/${config.name}`;
+  const url = `mongodb://${authentication ? `${authentication}@` : ''}${config.host}/${config.name}${config.replicaSet ? `?replicaSet=${config.replicaSet}` : ''}`;
 
   client = await MongoClient.connect(url, {
     useNewUrlParser: true,
