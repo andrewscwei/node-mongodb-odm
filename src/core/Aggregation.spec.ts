@@ -5,13 +5,12 @@ import assert from 'assert';
 import _ from 'lodash';
 import { describe } from 'mocha';
 import { ObjectID } from 'mongodb';
-import * as db from '../../';
-import Aggregation from '../../core/Aggregation';
-import Model from '../../core/Model';
-import { AggregationStageDescriptor, typeIsValidObjectID } from '../../types';
+import * as db from '../';
+import Aggregation from '../core/Aggregation';
 import Bar, { BarSchema } from '../models/Bar';
 import Baz from '../models/Baz';
 import Foo, { FooSchema } from '../models/Foo';
+import { AggregationStageDescriptor, typeIsValidObjectID } from '../types';
 
 describe('core/Aggregation', () => {
   before(async () => {

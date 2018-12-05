@@ -4,11 +4,11 @@ import bcrypt from 'bcrypt';
 import Faker from 'faker';
 import { describe, it } from 'mocha';
 import { ObjectID } from 'mongodb';
-import * as db from '../..';
-import { Document, DocumentFragment } from '../../types';
-import Bar, { BarProps } from '../models/Bar';
+import * as db from '../';
+import Bar from '../models/Bar';
 import Baz, { BazProps } from '../models/Baz';
 import Foo from '../models/Foo';
+import { Document, DocumentFragment } from '../types';
 
 db.configureDb({
   host: 'localhost:27017',

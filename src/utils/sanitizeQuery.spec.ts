@@ -1,9 +1,9 @@
 import assert from 'assert';
 import { describe, it } from 'mocha';
 import { ObjectID } from 'mongodb';
-import { DocumentFragment } from '../../types';
-import sanitizeQuery from '../../utils/sanitizeQuery';
 import Baz, { BazProps } from '../models/Baz';
+import { DocumentFragment } from '../types';
+import sanitizeQuery from '../utils/sanitizeQuery';
 
 describe('utils/sanitizeQuery', () => {
   it('can generate valid queries based on an Object ID string', () => {

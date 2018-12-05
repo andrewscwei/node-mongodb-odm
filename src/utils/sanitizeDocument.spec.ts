@@ -1,8 +1,8 @@
 import assert from 'assert';
 import { describe, it } from 'mocha';
-import { DocumentFragment } from '../../types';
-import sanitizeDocument from '../../utils/sanitizeDocument';
 import Baz, { BazProps } from '../models/Baz';
+import { DocumentFragment } from '../types';
+import sanitizeDocument from '../utils/sanitizeDocument';
 
 describe('utils/sanitizeDocument', () => {
   it('can remove extraneous fields from a document fragment', () => {

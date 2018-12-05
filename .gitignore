@@ -84,6 +84,7 @@ jspm_packages
 *.sql
 *.sqlite
 .mongodb
+.data
 dump.rdb
 
 # Terraform temporary files

@@ -1,6 +1,6 @@
 import Faker from 'faker';
-import Model from '../../core/Model';
-import { Schema } from '../../types';
+import Model from '../core/Model';
+import { Schema } from '../types';
 
 export interface BazProps {
   aString: string;
