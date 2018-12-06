@@ -1,13 +1,14 @@
 import is from '@sindresorhus/is';
 import assert from 'assert';
 import { ObjectID } from 'mongodb';
-import { FieldSpecs, FieldType, typeIsValidObjectID } from '../types';
+import { FieldSpecs, FieldType, FieldValidationStrategy, FieldValue, typeIsValidObjectID } from '../types';
 
 /**
  * Checks a value against field properties definied in a schema.
  *
  * @param value - The value to check.
  * @param specs - @see FieldSpecs
+ * @param strategy - @see FieldValidationStrategy
  *
  * @throws {TypeError} Value is marked as required in the specs but it is null
  *                     or undefined.
@@ -69,7 +70,7 @@ import { FieldSpecs, FieldType, typeIsValidObjectID } from '../types';
  * @throws {TypeError} Value fails custom validation function (only if validator
  *                     is a function).
  */
-export default function validateFieldValue(value: any, specs: FieldSpecs) {
+export default function validateFieldValue<T = FieldValue>(value: any, specs: FieldSpecs<T>, strategy?: FieldValidationStrategy<T>) {
   // Check if value is undefined or null, then respond accordingly depending on
   // whether or not it is a required value.
   if (is.nullOrUndefined(value)) {
@@ -85,55 +86,55 @@ export default function validateFieldValue(value: any, specs: FieldSpecs) {
   case String:
     assert(is.string(value), new TypeError(`The value "${value}" is expected to be a string but instead it is a(n) ${is(value)}`));
 
-    if (is.regExp(specs.validate)) {
-      assert(specs.validate.test(value), new TypeError(`The string value does not conform to the RegEx validator: ${specs.validate}`));
+    if (is.regExp(strategy)) {
+      assert(strategy.test(value), new TypeError(`The string value does not conform to the RegEx validator: ${strategy}`));
     }
-    else if (is.number(specs.validate)) {
-      assert(value.length <= specs.validate, new TypeError(`The length of the string value "${value}" must be less than or equal to ${specs.validate}`));
+    else if (is.number(strategy)) {
+      assert(value.length <= strategy, new TypeError(`The length of the string value "${value}" must be less than or equal to ${strategy}`));
     }
-    else if (is.array(specs.validate)) {
-      assert(specs.validate.indexOf(value) > -1, new TypeError(`The string value "${value}" is not an element of ${specs.validate}`));
+    else if (is.array(strategy)) {
+      assert(strategy.indexOf(value) > -1, new TypeError(`The string value "${value}" is not an element of ${strategy}`));
     }
 
     break;
   case Number:
     assert(is.number(value), new TypeError(`The value "${value}" is expected to be a number but instead it is a(n) ${is(value)}`));
 
-    if (is.regExp(specs.validate)) {
+    if (is.regExp(strategy)) {
       throw new TypeError('The RegExp validation method is not supported for number values');
     }
-    else if (is.number(specs.validate)) {
-      assert(value <= specs.validate, new TypeError(`The number value "${value}" must be less than or equal to ${specs.validate}`));
+    else if (is.number(strategy)) {
+      assert(value <= strategy, new TypeError(`The number value "${value}" must be less than or equal to ${strategy}`));
     }
-    else if (is.array(specs.validate)) {
-      assert(specs.validate.indexOf(value) > -1, new TypeError(`The number value "${value}" is not an element of ${specs.validate}`));
+    else if (is.array(strategy)) {
+      assert(strategy.indexOf(value) > -1, new TypeError(`The number value "${value}" is not an element of ${strategy}`));
     }
 
     break;
   case Boolean:
     assert(is.boolean(value), new TypeError(`The value "${value}" is expected to be a boolean but instead it is a(n) ${is(value)}`));
 
-    if (is.regExp(specs.validate)) {
+    if (is.regExp(strategy)) {
       throw new TypeError('The RegExp validation method is not supported for boolean values');
     }
-    else if (is.number(specs.validate)) {
+    else if (is.number(strategy)) {
       throw new TypeError('The number validation method is not supported for boolean vlaues');
     }
-    else if (is.array(specs.validate)) {
-      assert(specs.validate.indexOf(value) > -1, new TypeError(`The boolean value "${value}" is not an element of ${specs.validate}`));
+    else if (is.array(strategy)) {
+      assert(strategy.indexOf(value) > -1, new TypeError(`The boolean value "${value}" is not an element of ${strategy}`));
     }
 
     break;
   case Date:
     assert(is.date(value), new TypeError(`The value "${value}" is expected to be a date but instead it is a(n) ${is(value)}`));
 
-    if (is.regExp(specs.validate)) {
+    if (is.regExp(strategy)) {
       throw new TypeError('The RegExp validation method is not supported for date values');
     }
-    else if (is.number(specs.validate)) {
+    else if (is.number(strategy)) {
       throw new TypeError('The number validation method is not supported for date values');
     }
-    else if (is.array(specs.validate)) {
+    else if (is.array(strategy)) {
       throw new TypeError('The array validation method is not supported for date values');
     }
 
@@ -141,13 +142,13 @@ export default function validateFieldValue(value: any, specs: FieldSpecs) {
   case Array:
     assert(is.array(value), new TypeError(`The value "${value}" is expected to be an array but instead it is a(n) ${is(value)}`));
 
-    if (is.regExp(specs.validate)) {
+    if (is.regExp(strategy)) {
       throw new TypeError('The RegExp validation method is not supported for array values');
     }
-    else if (is.number(specs.validate)) {
+    else if (is.number(strategy)) {
       throw new TypeError('The number validation method is not supported for array values');
     }
-    else if (is.array(specs.validate)) {
+    else if (is.array(strategy)) {
       throw new TypeError('The array validation method is not supported for array values');
     }
 
@@ -155,13 +156,13 @@ export default function validateFieldValue(value: any, specs: FieldSpecs) {
   case ObjectID:
     assert(typeIsValidObjectID(value), new TypeError(`The value "${value}" is expected to be an ObjectID but instead it is a(n) ${is(value)}`));
 
-    if (is.regExp(specs.validate)) {
+    if (is.regExp(strategy)) {
       throw new TypeError('The RegExp validation method is not supported for ObjectID values');
     }
-    else if (is.number(specs.validate)) {
+    else if (is.number(strategy)) {
       throw new TypeError('The number validation method is not supported for ObjectID values');
     }
-    else if (is.array(specs.validate)) {
+    else if (is.array(strategy)) {
       throw new TypeError('The array validation method is not supported for ObjectID values');
     }
 
@@ -185,13 +186,13 @@ export default function validateFieldValue(value: any, specs: FieldSpecs) {
     else if (is.plainObject(specs.type)) {
       assert(is.plainObject(value), new TypeError(`The value "${value}" is expected to be an object but instead it is a(n) ${is(value)}`));
 
-      if (is.regExp(specs.validate)) {
+      if (is.regExp(strategy)) {
         throw new TypeError('The RegExp validation method is not supported for object values');
       }
-      else if (is.number(specs.validate)) {
+      else if (is.number(strategy)) {
         throw new TypeError('The number validation method is not supported for object values');
       }
-      else if (is.array(specs.validate)) {
+      else if (is.array(strategy)) {
         throw new TypeError('The array validation method is not supported for object values');
       }
 
@@ -203,7 +204,7 @@ export default function validateFieldValue(value: any, specs: FieldSpecs) {
     }
   }
 
-  if (is.function_(specs.validate)) {
-    assert(specs.validate(value), new TypeError(`The value "${value}" failed to pass custom validation function`));
+  if (is.function_(strategy)) {
+    assert(strategy(value), new TypeError(`The value "${value}" failed to pass custom validation function`));
   }
 }

@@ -17,14 +17,10 @@ export const FooSchema: Schema<FooProps> = {
     aString: {
       type: String,
       required: true,
-      format: (value: string): string => (value.trim()),
     },
     aNumber: {
       type: Number,
       required: true,
-      default: 100,
-      validate: (value: number) => ((value >= 0 && value <= 1000)),
-      random: () => (Math.floor(Math.random() * 1000) + 0),
     },
     aBar: {
       type: ObjectID,
@@ -41,4 +37,20 @@ export const FooSchema: Schema<FooProps> = {
   }],
 };
 
-export default class Foo extends Model(FooSchema) {}
+export default class Foo extends Model(FooSchema) {
+  static randomProps = {
+    aNumber: () => (Math.floor(Math.random() * 1000) + 0),
+  };
+
+  static formatProps = {
+    aString: (value: string): string => (value.trim()),
+  };
+
+  static validateProps = {
+    aNumber: (value: number) => ((value >= 0 && value <= 1000)),
+  };
+
+  static defaultProps = {
+    aNumber: 100,
+  };
+}

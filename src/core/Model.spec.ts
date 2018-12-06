@@ -31,14 +31,13 @@ describe('core/Model', () => {
 
   it('can find a document', async () => {
     const t: DocumentFragment<BazProps> = { aString: Faker.random.alphaNumeric(10) };
-    const res = await Baz.insertOne(t);
+    const res = await Baz.insertOneStrict(t);
 
     assert(res);
 
-    const doc = await Baz.findOne(res!._id);
+    const doc = await Baz.findOneStrict(res._id);
 
-    assert(doc);
-    assert(doc!._id!.equals(res!._id!));
+    assert(doc._id.equals(res._id));
   });
 
   it('can find multiple documents', async () => {
@@ -77,11 +76,10 @@ describe('core/Model', () => {
 
   it('can insert a new document', async () => {
     const t: DocumentFragment<BazProps> = { aString: Faker.random.alphaNumeric(10) };
-    const doc = await Baz.insertOne(t);
+    const doc = await Baz.insertOneStrict(t);
 
-    assert(doc);
-    assert(ObjectID.isValid(doc!._id!));
-    assert(doc!.aString === t.aString);
+    assert(ObjectID.isValid(doc._id));
+    assert(doc.aString === t.aString);
   });
 
   it('can insert multiple documents', async () => {
@@ -89,7 +87,7 @@ describe('core/Model', () => {
     const docs = await Baz.insertMany(t);
 
     assert(docs);
-    assert(docs!.reduce((prev, curr) => prev && ObjectID.isValid(curr._id!), true));
+    assert(docs!.reduce((prev, curr) => prev && ObjectID.isValid(curr._id), true));
 
     docs!.forEach((doc, i) => assert(doc.aString === t[i].aString));
   });
@@ -109,7 +107,7 @@ describe('core/Model', () => {
   it('can format documents according to the schema', async () => {
     const t: DocumentFragment<BazProps> = { aFormattedString: Faker.random.alphaNumeric(10) };
     const res = await Baz.formatDocument(t);
-    assert(Baz.schema.fields.aFormattedString.format!(t.aFormattedString!) === res.aFormattedString);
+    assert(Baz.formatProps.aFormattedString(t.aFormattedString!) === res.aFormattedString);
   });
 
   it('can encrypt document fields according to the schema', async () => {
@@ -122,14 +120,14 @@ describe('core/Model', () => {
 
   it('should automatically generate default values on insert', async () => {
     const t: DocumentFragment<BazProps> = { aString: Faker.random.alphaNumeric(10) };
-    const res = await Baz.insertOne(t);
-    assert(res!.aBoolean === Baz.schema.fields.aBoolean.default);
+    const res = await Baz.insertOneStrict(t);
+    assert(res.aBoolean === Baz.defaultProps.aBoolean);
   });
 
   it('should automatically format values on insert according to the schema', async () => {
     const t: DocumentFragment<BazProps> = { aString: Faker.random.alphaNumeric(10), aFormattedString: Faker.random.alphaNumeric(10) };
-    const res = await Baz.insertOne(t);
-    assert(Baz.schema.fields.aFormattedString.format!(t.aFormattedString!) === res!.aFormattedString);
+    const res = await Baz.insertOneStrict(t);
+    assert(Baz.formatProps.aFormattedString(t.aFormattedString!) === res.aFormattedString);
   });
 
   it('can update an existing doc', async () => {
@@ -138,9 +136,9 @@ describe('core/Model', () => {
 
     await Baz.insertOne(t);
 
-    const updated = await Baz.updateOne(t, { aString: s }, { returnDoc: true });
+    const updated = await Baz.updateOneStrict(t, { aString: s }, { returnDoc: true });
 
-    assert((updated! as Document<BazProps>).aString === s);
+    assert((updated as Document<BazProps>).aString === s);
   });
 
   it('can upsert a doc if it does not already exist', async () => {
@@ -173,7 +171,7 @@ describe('core/Model', () => {
 
     assert(!is.nullOrUndefined(res));
     assert((res as Document<BazProps>).aFormattedString !== t);
-    assert((res as Document<BazProps>).aFormattedString === Baz.schema.fields.aFormattedString.format!(t));
+    assert((res as Document<BazProps>).aFormattedString === Baz.formatProps.aFormattedString(t));
   });
 
   it('should automatically format values on upsert according to the schema', async () => {
@@ -183,7 +181,7 @@ describe('core/Model', () => {
     assert(!is.nullOrUndefined(res));
     assert(!is.boolean(res));
     assert((res as Document<BazProps>).aFormattedString !== s);
-    assert((res as Document<BazProps>).aFormattedString === Baz.schema.fields.aFormattedString.format!(s));
+    assert((res as Document<BazProps>).aFormattedString === Baz.formatProps.aFormattedString(s));
   });
 
   it('can update multiple existing docs', async () => {
@@ -193,7 +191,7 @@ describe('core/Model', () => {
     const docs = await Baz.insertMany(q);
 
     assert(docs);
-    assert(docs!.reduce((prev, curr) => prev && ObjectID.isValid(curr._id!), true));
+    assert(docs!.reduce((prev, curr) => prev && ObjectID.isValid(curr._id), true));
 
     const res = await Baz.updateMany({ aString: s }, { aString: t }, { returnDocs: true }) as Document<BazProps>[];
 
@@ -236,16 +234,16 @@ describe('core/Model', () => {
 
   it('can delete a doc and return the deleted doc', async () => {
     const s = Faker.random.alphaNumeric(10);
-    const doc = await Baz.insertOne({ aString: s });
+    const doc = await Baz.insertOneStrict({ aString: s });
 
     assert(!is.null_(await Baz.findOne({ aString: s })));
 
-    const objectId = doc!._id!;
+    const objectId = doc._id;
 
     const res = await Baz.deleteOne({ aString: s }, { returnDoc: true });
 
     assert(!is.null_(res));
-    assert((res as Document<BazProps>)._id!.equals(objectId));
+    assert((res as Document<BazProps>)._id.equals(objectId));
     assert(is.null_(await Baz.findOne({ aString: s })));
   });
 
@@ -280,10 +278,10 @@ describe('core/Model', () => {
 
     await Baz.insertOne({ aString: s });
 
-    const doc = await Baz.findAndReplaceOne({ aString: s }, { aString: t }, { returnOriginal: true });
+    const doc = await Baz.findAndReplaceOneStrict({ aString: s }, { aString: t }, { returnOriginal: true });
 
     assert(!is.nullOrUndefined(doc));
-    assert(doc!.aString === s);
+    assert(doc.aString === s);
   });
 
   it('can replace an existing doc and return the new doc', async () => {
@@ -292,10 +290,10 @@ describe('core/Model', () => {
 
     await Baz.insertOne({ aString: s });
 
-    const doc = await Baz.findAndReplaceOne({ aString: s }, { aString: t }, { returnOriginal: false });
+    const doc = await Baz.findAndReplaceOneStrict({ aString: s }, { aString: t }, { returnOriginal: false });
 
     assert(!is.nullOrUndefined(doc));
-    assert(doc!.aString === t);
+    assert(doc.aString === t);
   });
 
   it('can remove a property of a doc by updating it to `null`', async () => {

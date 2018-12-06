@@ -15,10 +15,10 @@ export const BazSchema: Schema<BazProps> = {
   collection: 'bazs',
   allowUpserts: true,
   fields: {
-    aString: { type: String, required: true, random: () => Faker.random.alphaNumeric(10) },
-    aNumber: { type: Number, default: () => Faker.random.number() },
-    aBoolean: { type: Boolean, default: true },
-    aFormattedString: { type: String, format: (v: string) => v.toUpperCase() },
+    aString: { type: String, required: true },
+    aNumber: { type: Number },
+    aBoolean: { type: Boolean },
+    aFormattedString: { type: String },
     anEncryptedString: { type: String, encrypted: true },
   },
   indexes: [{
@@ -26,4 +26,17 @@ export const BazSchema: Schema<BazProps> = {
   }],
 };
 
-export default class Baz extends Model(BazSchema) {}
+export default class Baz extends Model(BazSchema) {
+  static randomProps = {
+    aString: () => Faker.random.alphaNumeric(10),
+  };
+
+  static defaultProps = {
+    aNumber: () => Faker.random.number(),
+    aBoolean: true,
+  };
+
+  static formatProps = {
+    aFormattedString: (v: string) => v.toUpperCase(),
+  };
+}

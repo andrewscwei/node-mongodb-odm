@@ -62,26 +62,6 @@ export interface FieldSpecs<T = FieldValue> {
    * Specifies if this field should be encrypted.
    */
   encrypted?: boolean;
-
-  /**
-   * Default value of the field.
-   */
-  default?: T | FieldDefaultValueFunction<T>;
-
-  /**
-   * @see FieldFormatFunction
-   */
-  format?: FieldFormatFunction<T>;
-
-  /**
-   * @see FieldValidationStrategy
-   */
-  validate?: FieldValidationStrategy<T>;
-
-  /**
-   * @see FieldRandomValueFunction
-   */
-  random?: FieldRandomValueFunction<T>;
 }
 
 export interface Schema<T = any> {
@@ -380,18 +360,18 @@ export interface ProjectStageFactoryOptionsPopulate {
 /**
  * Data type for basic field types.
  */
-type FieldBasicType = typeof String | typeof Number | typeof Boolean | typeof Date | typeof ObjectID | typeof Array;
+export type FieldBasicType = typeof String | typeof Number | typeof Boolean | typeof Date | typeof ObjectID | typeof Array;
 
 /**
  * Data type for basic field value.
  */
-type FieldBasicValue = ObjectID | string | number | boolean | Date;
+export type FieldBasicValue = ObjectID | string | number | boolean | Date;
 
 /**
  * Function for formatting field values, in which the value to be formatted will
  * be passed into this function as its only paramenter.
  */
-type FieldFormatFunction<T = FieldValue> = (value: T) => T;
+export type FieldFormatFunction<T = FieldValue> = (value: T) => T;
 
 /**
  * The validation strategy can be one of several types. The behavior per type is
@@ -404,28 +384,28 @@ type FieldFormatFunction<T = FieldValue> = (value: T) => T;
  *   4. Function: The value to be validated will be passed into this function
  *                and it must return `true`.
  */
-type FieldValidationStrategy<T = FieldValue> = RegExp | number | any[] | FieldValidationFunction<T>;
+export type FieldValidationStrategy<T = FieldValue> = RegExp | number | any[] | FieldValidationFunction<T>;
 
 /**
  * Function for validating field values, in which the value to be validated
  * is passed into the function as its only argument.
  */
-type FieldValidationFunction<T = FieldValue> = (value: T) => boolean;
+export type FieldValidationFunction<T = FieldValue> = (value: T) => boolean;
 
 /**
  * Function for generating a random value for the associated field.
  */
-type FieldRandomValueFunction<T = FieldValue> = () => T;
+export type FieldRandomValueFunction<T = FieldValue> = () => T;
 
 /**
  * Function for generating a default value for the associated field.
  */
-type FieldDefaultValueFunction<T = FieldValue> = () => T;
+export type FieldDefaultValueFunction<T = FieldValue> = () => T;
 
 /**
  * Describes the indexes to be created in the associated collection.
  */
-interface SchemaIndex {
+export interface SchemaIndex {
   /**
    * Spec to be passed to Collection#createIndex.
    *

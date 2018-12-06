@@ -12,7 +12,7 @@ import debug from 'debug';
 import _ from 'lodash';
 import { Collection, FilterQuery, ObjectID, UpdateQuery } from 'mongodb';
 import { getCollection, getModel } from '..';
-import { AggregationPipeline, Document, DocumentFragment, FieldSpecs, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOptions, PipelineFactorySpecs, Query, Schema, typeIsUpdateQuery, typeIsValidObjectID, Update } from '../types';
+import { AggregationPipeline, Document, DocumentFragment, FieldDefaultValueFunction, FieldFormatFunction, FieldRandomValueFunction, FieldSpecs, FieldValidationStrategy, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOptions, PipelineFactorySpecs, Query, Schema, typeIsUpdateQuery, typeIsValidObjectID, Update } from '../types';
 import sanitizeDocument from '../utils/sanitizeDocument';
 import sanitizeQuery from '../utils/sanitizeQuery';
 import validateFieldValue from '../utils/validateFieldValue';
@@ -31,6 +31,26 @@ export default <T = {}>(schema: Schema<T>) => class {
    * class.
    */
   static readonly schema = schema;
+
+  /**
+   * Dictionary of random value generators for this model's props.
+   */
+  static readonly randomProps: { [K in keyof T]?: FieldRandomValueFunction<NonNullable<T[K]>> } = {};
+
+  /**
+   * Dictionary of default value generators for this model's props.
+   */
+  static readonly defaultProps: { [K in keyof T]?: NonNullable<T[K]> | FieldDefaultValueFunction<NonNullable<T[K]>> } = {};
+
+  /**
+   * Dictionary of value formatters for this model's props.
+   */
+  static readonly formatProps: { [K in keyof T]?: FieldFormatFunction<NonNullable<T[K]>> } = {};
+
+  /**
+   * Dictionary of value validators for this model's props.
+   */
+  static readonly validateProps: { [K in keyof T]?: FieldValidationStrategy<NonNullable<T[K]>> } = {};
 
   /**
    * Gets the MongoDB collection associated with this model.
@@ -61,21 +81,21 @@ export default <T = {}>(schema: Schema<T>) => class {
    */
   static async randomFields(fixedFields: DocumentFragment<T> = {}, { includeOptionals = false }: ModelRandomFieldsOptions = {}): Promise<DocumentFragment<T>> {
     const o: DocumentFragment<T> = {};
+
     const fields = this.schema.fields;
 
-    for (const key in fields) {
+    for (const key in this.randomProps) {
       if (!fields.hasOwnProperty(key)) continue;
 
-      // If key is already present in the fixed fields, omit.
-      if (o.hasOwnProperty(key)) continue;
-
-      const fieldSpecs = fields[key];
-
       // If `includeOptionals` is not set, skip all the optional fields.
-      if (!includeOptionals && !fieldSpecs.required) continue;
+      if (!includeOptionals && !fields[key].required) continue;
+
+      const func = this.randomProps[key];
+
+      if (!is.function_(func)) throw new Error(`Property "${key}" in randomProps must be a function`);
 
       // Use provided random function if provided in the schema.
-      if (fieldSpecs.random) o[key as keyof T] = fieldSpecs.random() as any;
+      o[key] = func() as any;
     }
 
     for (const key in fixedFields) {
@@ -798,13 +818,14 @@ export default <T = {}>(schema: Schema<T>) => class {
       if (!formattedDoc.hasOwnProperty(key)) continue;
 
       const fieldSpecs = fields[key];
+      const formatter = this.formatProps[key];
 
       assert(fieldSpecs, new Error(`Field ${key} not found in schema`));
 
       // If the schema has a certain formatting function defined for this field,
       // apply it.
-      if (is.function_(fieldSpecs.format)) {
-        const formattedValue = await fieldSpecs.format(formattedDoc[key] as any);
+      if (is.function_(formatter)) {
+        const formattedValue = await formatter(formattedDoc[key] as any);
         formattedDoc[key] = formattedValue as any;
       }
 
@@ -862,9 +883,10 @@ export default <T = {}>(schema: Schema<T>) => class {
       }
 
       // #2 Check if field value conforms to its defined specs.
-      const fieldSpecs = fields[key as keyof T] as any;
+      const fieldSpecs = fields[key as keyof T];
+      const validationStrategy = this.validateProps[key as keyof T];
 
-      validateFieldValue(val, fieldSpecs);
+      validateFieldValue(val, fieldSpecs, validationStrategy);
     }
 
     // #3 Check for unique fields only if `ignoreUniqueIndex` is not `true`.
@@ -892,7 +914,7 @@ export default <T = {}>(schema: Schema<T>) => class {
 
         const field = fields[key];
 
-        if (!field.required || field.default) continue;
+        if (!field.required || this.defaultProps.hasOwnProperty(key)) continue;
         if (!doc.hasOwnProperty(key)) throw new Error(`Missing required field '${key}'`);
       }
     }
@@ -994,13 +1016,13 @@ export default <T = {}>(schema: Schema<T>) => class {
       if (!this.schema.fields.hasOwnProperty(key)) continue;
       if (o.hasOwnProperty(key)) continue;
 
-      const fieldSpecs = fields[key];
+      const defaultValue = this.defaultProps[key];
 
       // Check if the field has a default value defined in the schema. If so,
       // apply it.
-      if (is.undefined(fieldSpecs.default)) continue;
+      if (is.undefined(defaultValue)) continue;
 
-      o[key as keyof T] = (is.function_(fieldSpecs.default)) ? fieldSpecs.default() as any : fieldSpecs.default as any;
+      o[key as keyof T] = (is.function_(defaultValue)) ? defaultValue() as any : defaultValue as any;
     }
 
     // Apply format function defined in the schema if applicable.

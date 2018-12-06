@@ -28,12 +28,10 @@ export const BarSchema: Schema<BarProps> = {
     aString: {
       type: String,
       required: true,
-      validate: 100,
     },
     aDate: {
       type: Date,
       required: true,
-      default: () => (new Date()),
     },
     anObject: {
       type: {
@@ -46,15 +44,26 @@ export const BarSchema: Schema<BarProps> = {
     aNumber: {
       type: Number,
       required: true,
-      default: 100,
-      validate: (value: number) => ((value >= 0 && value <= 1000)),
-      random: () => (Math.floor(Math.random() * 1000) + 0),
     },
     aBoolean: {
       type: Boolean,
-      default: false,
     },
   },
 };
 
-export default class Bar extends Model(BarSchema) {}
+export default class Bar extends Model(BarSchema) {
+  static randomProps = {
+    aNumber: () => (Math.floor(Math.random() * 1000) + 0),
+  };
+
+  static defaultProps = {
+    aDate: () => new Date(),
+    aNumber: 100,
+    aBoolean: false,
+  };
+
+  static validateProps = {
+    aString: 100,
+    aNumber: (value: number) => ((value >= 0 && value <= 1000)),
+  };
+}

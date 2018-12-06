@@ -7,44 +7,44 @@ import validateFieldValue from '../utils/validateFieldValue';
 describe('utils/validate', () => {
   it('can validate string length', () => {
     const i = 'Hello, world!';
-    assert.doesNotThrow(() => validateFieldValue(i, { type: String, validate: 13 }));
-    assert.throws(() => validateFieldValue(i, { type: String, validate: 12 }));
+    assert.doesNotThrow(() => validateFieldValue(i, { type: String }, 13));
+    assert.throws(() => validateFieldValue(i, { type: String }, 12));
   });
 
   it('can validate string regex', () => {
     const i = 'Hello, world!';
-    assert.doesNotThrow(() => validateFieldValue(i, { type: String, validate: /^Hello.*$/ }));
-    assert.throws(() => validateFieldValue(i, { type: String, validate: /^hello.*$/ }));
+    assert.doesNotThrow(() => validateFieldValue(i, { type: String }, /^Hello.*$/));
+    assert.throws(() => validateFieldValue(i, { type: String }, /^hello.*$/));
   });
 
   it('can validate string from list', () => {
     const i = 'Hello, world!';
-    assert.doesNotThrow(() => validateFieldValue(i, { type: String, validate: [i] }));
-    assert.throws(() => validateFieldValue(i, { type: String, validate: [] }));
+    assert.doesNotThrow(() => validateFieldValue(i, { type: String }, [i]));
+    assert.throws(() => validateFieldValue(i, { type: String }, []));
   });
 
   it('can validate string with custom method', () => {
     const i = 'Hello, world!';
-    assert.doesNotThrow(() => validateFieldValue(i, { type: String, validate: (v: string): boolean => (v === i) } as FieldSpecs<any>));
-    assert.throws(() => validateFieldValue(i, { type: String, validate: (v: string): boolean => (v !== i) } as FieldSpecs<any>));
+    assert.doesNotThrow(() => validateFieldValue(i, { type: String }, (v: string): boolean => (v === i)));
+    assert.throws(() => validateFieldValue(i, { type: String }, (v: string): boolean => (v !== i)));
   });
 
   it('can validate numbers with inclusive maximum', () => {
     const i = 6;
-    assert.doesNotThrow(() => validateFieldValue(i, { type: Number, validate: 6 }));
-    assert.throws(() => validateFieldValue(i, { type: Number, validate: 5 }));
+    assert.doesNotThrow(() => validateFieldValue(i, { type: Number }, 6));
+    assert.throws(() => validateFieldValue(i, { type: Number }, 5));
   });
 
   it('can validate numbers from list', () => {
     const i = 6;
-    assert.doesNotThrow(() => validateFieldValue(i, { type: Number, validate: [6] }));
-    assert.throws(() => validateFieldValue(i, { type: Number, validate: [] }));
+    assert.doesNotThrow(() => validateFieldValue(i, { type: Number }, [6]));
+    assert.throws(() => validateFieldValue(i, { type: Number }, []));
   });
 
   it('can validate numbers from custom method', () => {
     const i = 6;
-    assert.doesNotThrow(() => validateFieldValue(i, { type: Number, validate: (v: number): boolean => (v > 5 && v < 7) } as FieldSpecs<any>));
-    assert.throws(() => validateFieldValue(i, { type: Number, validate: (v: number): boolean => (v < 5) } as FieldSpecs<any>));
+    assert.doesNotThrow(() => validateFieldValue(i, { type: Number }, (v: number): boolean => (v > 5 && v < 7)));
+    assert.throws(() => validateFieldValue(i, { type: Number }, (v: number): boolean => (v < 5)));
   });
 
   it('can validate booleans', () => {
