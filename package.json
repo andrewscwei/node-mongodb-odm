@@ -5,7 +5,7 @@
   "main": "build/index.js",
   "scripts": {
     "clean": "rimraf build",
-    "build": "npm run clean && tsc",
+    "build": "npm run clean && NODE_OPTIONS=--max-old-space-size=4096 tsc",
     "test:ts": "NODE_ENV=test DEBUG=mongodb-odm* mocha --require ts-node/register --timeout 10000 --reporter spec --full-trace --colors --recursive --bail --exit \"src/**/*.spec.ts\"",
     "test": "NODE_ENV=test DEBUG=mongodb-odm* mocha --require dotenv/config --timeout 10000 --reporter spec --full-trace --colors --recursive --bail --exit $([ -z \"$npm_config_path\" ] && echo build/**/*.spec.js || echo $npm_config_path)",
     "db": "docker run --name node-mongodb-odm-db -d --rm -p 27017:27017 -v ${PWD}/.data/db:/data/db mongo:4.0.4",

@@ -41,11 +41,15 @@ jobs:
     environment:
       - MONGO_URL: "mongodb://localhost:27017"
     steps:
+      - checkout
       - attach_workspace:
           at: .
       - run:
           name: Test
-          command: npm test
+          command: |
+            sed -i '/"\*\*\/\*\.spec\.ts"/d' ./tsconfig.json
+            npm run build
+            npm test
   deploy:
     working_directory: ~/repo
     docker:
