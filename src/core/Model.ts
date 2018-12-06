@@ -6,7 +6,6 @@
  */
 
 import is from '@sindresorhus/is';
-import assert from 'assert';
 import bcrypt from 'bcrypt';
 import debug from 'debug';
 import _ from 'lodash';
@@ -288,9 +287,8 @@ export default <T = {}>(schema: Schema<T>) => class {
 
     log(`${this.schema.model}.insertOne results:`, JSON.stringify(results, null, 0));
 
-    assert(results.result.ok === 1);
-    assert(results.ops.length <= 1, new Error('Somehow insertOne() op inserted more than 1 document'));
-
+    if (results.result.ok !== 1) throw new Error('Unable to insert document');
+    if (results.ops.length > 1) throw new Error('Somehow insertOne() op inserted more than 1 document');
     if (results.ops.length < 1) throw new Error('Unable to insert document');
 
     const o = results.ops[0];
@@ -357,7 +355,7 @@ export default <T = {}>(schema: Schema<T>) => class {
 
     log(`${this.schema.model}.insertMany results:`, JSON.stringify(results, null, 0));
 
-    assert(results.result.ok === 1);
+    if (results.result.ok !== 1) throw new Error('Unable to insert many documents');
 
     const o = results.ops as Document<T>[];
     const m = o.length;
@@ -411,7 +409,7 @@ export default <T = {}>(schema: Schema<T>) => class {
 
       log(`${this.schema.model}.updateOne results:`, JSON.stringify(res, null, 0), JSON.stringify(options, null, 0));
 
-      assert(res.ok === 1, new Error('Update failed'));
+      if (res.ok !== 1) throw new Error('Update failed');
 
       let oldDoc;
       let newDoc;
@@ -447,8 +445,7 @@ export default <T = {}>(schema: Schema<T>) => class {
 
       log(`${this.schema.model}.updateOne results:`, JSON.stringify(res, null, 0));
 
-      assert(res.result.ok === 1);
-
+      if (res.result.ok !== 1) throw new Error('Unable to update the document');
       if (res.result.n <= 0) throw new Error('Unable to update the document');
 
       if (options.skipHooks !== true) {
@@ -533,8 +530,8 @@ export default <T = {}>(schema: Schema<T>) => class {
           const doc = docs[i];
           const result = await collection.findOneAndUpdate({ _id: doc._id }, u, { returnOriginal: false, ...options });
 
-          assert(result.ok === 1);
-          assert(result.value);
+          if (result.ok !== 1) throw new Error('Unable to update many documents');
+          if (!result.value) throw new Error('Unable to update many documents');
 
           results.push(result.value);
         }
@@ -551,7 +548,7 @@ export default <T = {}>(schema: Schema<T>) => class {
 
       log(`${this.schema.model}.updateMany results:`, JSON.stringify(results, null, 0));
 
-      assert(results.result.ok === 1);
+      if (results.result.ok !== 1) throw new Error('Unable to update many documents');
 
       if (results.result.n <= 0) return false;
 
@@ -593,8 +590,7 @@ export default <T = {}>(schema: Schema<T>) => class {
 
       log(`${this.schema.model}.deleteOne results:`, JSON.stringify(results, null, 0));
 
-      assert(results.ok === 1);
-
+      if (results.ok !== 1) throw new Error('Unable to delete document');
       if (!results.value) throw new Error('Unable to return deleted document');
 
       await this.afterDelete(results.value);
@@ -606,8 +602,7 @@ export default <T = {}>(schema: Schema<T>) => class {
 
       log(`${this.schema.model}.deleteOne results:`, JSON.stringify(results, null, 0));
 
-      assert(results.result.ok === 1, new Error('Unable to delete document'));
-
+      if (results.result.ok !== 1) throw new Error('Unable to delete document');
       if (!is.number(results.result.n) || (results.result.n <= 0)) throw new Error('Unable to delete document');
 
       await this.afterDelete();
@@ -676,7 +671,7 @@ export default <T = {}>(schema: Schema<T>) => class {
         const doc = docs[i];
         const result = await collection.findOneAndDelete({ _id: doc._id });
 
-        assert(result.ok === 1);
+        if (result.ok !== 1) throw new Error('Unable to delete documents');
 
         if (result.value) {
           results.push(result.value);
@@ -696,7 +691,7 @@ export default <T = {}>(schema: Schema<T>) => class {
 
       log(`${this.schema.model}.deleteMany results:`, JSON.stringify(results, null, 0));
 
-      assert(results.result.ok === 1);
+      if (results.result.ok !== 1) throw new Error('Unable to delete documents');
 
       if (!is.number(results.result.n) || (results.result.n <= 0)) return false;
 
@@ -734,7 +729,7 @@ export default <T = {}>(schema: Schema<T>) => class {
 
     log(`${this.schema.model}.replaceOne results:`, JSON.stringify(results, null, 0));
 
-    assert(results.ok === 1);
+    if (results.ok !== 1) throw new Error('Unable to find and replace document');
 
     const oldDoc = results.value;
 
@@ -820,7 +815,7 @@ export default <T = {}>(schema: Schema<T>) => class {
       const fieldSpecs = fields[key];
       const formatter = this.formatProps[key];
 
-      assert(fieldSpecs, new Error(`Field ${key} not found in schema`));
+      if (!fieldSpecs) throw new Error(`Field ${key} not found in schema`);
 
       // If the schema has a certain formatting function defined for this field,
       // apply it.
@@ -1200,7 +1195,7 @@ export default <T = {}>(schema: Schema<T>) => class {
       const ModelClass = getModel(modelName);
       const fields: { [fieldName: string]: FieldSpecs } = ModelClass.schema.fields;
 
-      assert(ModelClass, `Trying to cascade delete from model ${modelName} but model is not found`);
+      if (!ModelClass) throw new Error(`Trying to cascade delete from model ${modelName} but model is not found`);
 
       for (const key in ModelClass.schema.fields) {
         if (!ModelClass.schema.fields.hasOwnProperty(key)) continue;

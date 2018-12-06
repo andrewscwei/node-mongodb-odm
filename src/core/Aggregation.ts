@@ -4,7 +4,6 @@
  */
 
 import is from '@sindresorhus/is';
-import assert from 'assert';
 import { isNullOrUndefined } from 'util';
 import { getModel } from '..';
 import { AggregationPipeline, AggregationStageDescriptor, FieldSpecs, GroupStageFactorySpecs, LookupStageFactoryOptions, LookupStageFactorySpecs, MatchStageFactoryOptions, MatchStageFactorySpecs, PipelineFactoryOptions, PipelineFactorySpecs, ProjectStageFactoryOptions, Schema, SortStageFactorySpecs } from '../types';
@@ -23,13 +22,13 @@ export default abstract class Aggregation {
    * @returns The generated aggregate pipeline.
    */
   static pipelineFactory(schema: Schema, { $lookup, $match, $prune, $group, $sort }: PipelineFactorySpecs = {}, { prefix = '', pipeline = [] }: PipelineFactoryOptions = {}): AggregationPipeline {
-    assert(is.undefined($match) || is.object($match) || is.string($match));
-    assert(is.undefined($lookup) || is.object($lookup));
-    assert(is.undefined($prune) || is.object($prune) || is.string($prune));
-    assert(is.undefined($group) || is.object($group) || is.string($group));
-    assert(is.undefined($sort) || is.object($sort));
-    assert(is.string(prefix));
-    assert(is.array(pipeline));
+    if (!(is.undefined($match) || is.object($match) || is.string($match))) throw new Error('Bad $match descriptor provided');
+    if (!(is.undefined($lookup) || is.object($lookup))) throw new Error('Bad $lookup descriptor provided');
+    if (!(is.undefined($prune) || is.object($prune) || is.string($prune))) throw new Error('Bad $prune descriptor provided');
+    if (!(is.undefined($group) || is.object($group) || is.string($group))) throw new Error('Bad $group descriptor provided');
+    if (!(is.undefined($sort) || is.object($sort))) throw new Error('Bad $sort descriptor provided');
+    if (!(is.string(prefix))) throw new Error('Bad prefix provided');
+    if (!(is.array(pipeline))) throw new Error('Bad pipeline provided');
 
     // If lookup stage is specified, add it to beginning of the pipeline.
     if ($lookup) pipeline = Aggregation.lookupStageFactory(schema, $lookup, { fromPrefix: prefix, toPrefix: prefix }).concat(pipeline);
@@ -124,13 +123,13 @@ export default abstract class Aggregation {
       if (!specs.hasOwnProperty(key)) continue;
 
       const val = specs[key];
-      assert((val === true) || (typeof val === 'object'), new Error(`[lookup(${schema}, ${specs}, ${{ fromPrefix, toPrefix }})] Invalid populate properties.`));
+      if (!((val === true) || (typeof val === 'object'))) throw new Error(`[lookup(${schema}, ${specs}, ${{ fromPrefix, toPrefix }})] Invalid populate properties.`);
 
       const ref = fields[key] && fields[key].ref;
-      assert(ref, new Error(`[lookup(${schema}, ${specs}, ${{ fromPrefix, toPrefix }})] The field to populate does not have a reference model specified in the schema.`));
+      if (!ref) throw new Error(`[lookup(${schema}, ${specs}, ${{ fromPrefix, toPrefix }})] The field to populate does not have a reference model specified in the schema.`);
 
       const schemaRef = getModel(ref!).schema;
-      assert(schemaRef, new Error(`[lookup(${schema}, ${specs}, ${{ fromPrefix, toPrefix }})] Unable to find the model schema corresponding to the field to populate.`));
+      if (!schemaRef) throw new Error(`[lookup(${schema}, ${specs}, ${{ fromPrefix, toPrefix }})] Unable to find the model schema corresponding to the field to populate.`);
 
       pipe.push({
         $lookup: {

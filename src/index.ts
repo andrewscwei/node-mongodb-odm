@@ -4,7 +4,6 @@
  */
 
 import is from '@sindresorhus/is';
-import assert from 'assert';
 import debug from 'debug';
 import { Collection, Db, MongoClient, MongoError, ObjectID } from 'mongodb';
 import Model from './core/Model';
@@ -184,7 +183,7 @@ export function getModel(modelOrCollectionName: string): ReturnType<typeof Model
 export async function getCollection(modelOrCollectionName: string): Promise<Collection> {
   const models = config.models!;
 
-  assert(!is.nullOrUndefined(models), new Error('You must register models using the configureDb() function'));
+  if (is.nullOrUndefined(models)) throw new Error('You must register models using the configureDb() function');
 
   if (!is.nullOrUndefined(collections[modelOrCollectionName])) {
     return collections[modelOrCollectionName];
@@ -201,7 +200,7 @@ export async function getCollection(modelOrCollectionName: string): Promise<Coll
     }
   }
 
-  assert(!is.nullOrUndefined(ModelClass), 'Unable to find collection with given model or collection name, is the model registered?');
+  if (is.nullOrUndefined(ModelClass)) throw new Error('Unable to find collection with given model or collection name, is the model registered?');
 
   const dbInstance = await getDbInstance();
   const schema = ModelClass!.schema;
@@ -234,3 +233,4 @@ export { default as sanitizeQuery } from './utils/sanitizeQuery';
 export { default as validateFieldValue } from './utils/validateFieldValue';
 export { Model };
 export { ObjectID };
+
