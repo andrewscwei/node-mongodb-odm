@@ -39,7 +39,7 @@ export type GeoCoordinate = [number, number];
 /**
  * Specification for defining a field in the MongoDB collection.
  */
-export interface FieldSpecs<T = FieldValue> {
+export interface FieldSpecs {
   /**
    * @see FieldType
    */
@@ -133,7 +133,7 @@ export interface Schema<T = any> {
    * @see FieldSpecs
    */
   fields: {
-    [K in keyof Required<T>]: FieldSpecs<NonNullable<T[K]>>;
+    [K in keyof Required<T>]: FieldSpecs;
   };
 
   /**

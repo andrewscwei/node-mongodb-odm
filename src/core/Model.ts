@@ -7,17 +7,16 @@
 
 import is from '@sindresorhus/is';
 import bcrypt from 'bcrypt';
-import debug from 'debug';
 import _ from 'lodash';
 import { Collection, FilterQuery, ObjectID, UpdateQuery } from 'mongodb';
-import { getCollection, getModel } from '..';
+import * as db from '..';
 import { AggregationPipeline, Document, DocumentFragment, FieldDefaultValueFunction, FieldFormatFunction, FieldRandomValueFunction, FieldSpecs, FieldValidationStrategy, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOptions, PipelineFactorySpecs, Query, Schema, typeIsUpdateQuery, typeIsValidObjectID, Update } from '../types';
 import sanitizeDocument from '../utils/sanitizeDocument';
 import sanitizeQuery from '../utils/sanitizeQuery';
 import validateFieldValue from '../utils/validateFieldValue';
 import Aggregation from './Aggregation';
 
-const log = debug('mongodb-odm:model');
+const log = require('debug')('mongodb-odm:model');
 
 /**
  * Creates a static model class with the provided schema.
@@ -63,7 +62,7 @@ export default <T = {}>(schema: Schema<T>) => class {
   static async getCollection(): Promise<Collection> {
     if (!this.schema) throw new Error('This model has no schema, you must define this static property in the derived class');
 
-    return getCollection(this.schema.collection);
+    return db.getCollection(this.schema.collection);
   }
 
   /**
@@ -1192,7 +1191,7 @@ export default <T = {}>(schema: Schema<T>) => class {
     if (!is.array(cascadeModelNames)) throw new Error('Invalid definition of cascade in schema');
 
     for (const modelName of cascadeModelNames) {
-      const ModelClass = getModel(modelName);
+      const ModelClass = db.getModel(modelName);
       const fields: { [fieldName: string]: FieldSpecs } = ModelClass.schema.fields;
 
       if (!ModelClass) throw new Error(`Trying to cascade delete from model ${modelName} but model is not found`);

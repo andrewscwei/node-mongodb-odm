@@ -69,7 +69,7 @@ import { FieldSpecs, FieldType, FieldValidationStrategy, FieldValue, typeIsValid
  * @throws {TypeError} Value fails custom validation function (only if validator
  *                     is a function).
  */
-export default function validateFieldValue<T = FieldValue>(value: any, specs: FieldSpecs<T>, strategy?: FieldValidationStrategy<T>) {
+export default function validateFieldValue<T = FieldValue>(value: any, specs: FieldSpecs, strategy?: FieldValidationStrategy<T>) {
   // Check if value is undefined or null, then respond accordingly depending on
   // whether or not it is a required value.
   if (is.nullOrUndefined(value)) {
