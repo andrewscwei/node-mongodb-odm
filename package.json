@@ -1,6 +1,6 @@
 {
   "name": "@andrewscwei/mongodb-odm",
-  "version": "0.35.0",
+  "version": "0.36.0",
   "description": "ODM for MongoDB",
   "main": "build/index.js",
   "scripts": {
@@ -28,7 +28,8 @@
   },
   "homepage": "https://github.com/andrewscwei/node-mongodb-odm#readme",
   "files": [
-    "build"
+    "build",
+    "index.d.ts"
   ],
   "dependencies": {
     "@sindresorhus/is": "^0.13.0",
