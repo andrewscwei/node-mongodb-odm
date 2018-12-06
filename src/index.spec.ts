@@ -3,7 +3,7 @@ import assert from 'assert';
 import { before, describe, it } from 'mocha';
 import { configureDb, connectToDb, disconnectFromDb, getDbInstance, isDbConnected } from '.';
 
-describe('can connect to database', () => {
+describe('can connect to a database', () => {
   before(async () => {
     configureDb({
       host: 'localhost:27017',
