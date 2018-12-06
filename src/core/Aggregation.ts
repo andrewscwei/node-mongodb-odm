@@ -4,8 +4,7 @@
  */
 
 import is from '@sindresorhus/is';
-import { isNullOrUndefined } from 'util';
-import { getModel } from '..';
+import { getModel } from '../index';
 import { AggregationPipeline, AggregationStageDescriptor, FieldSpecs, GroupStageFactorySpecs, LookupStageFactoryOptions, LookupStageFactorySpecs, MatchStageFactoryOptions, MatchStageFactorySpecs, PipelineFactoryOptions, PipelineFactorySpecs, ProjectStageFactoryOptions, Schema, SortStageFactorySpecs } from '../types';
 import sanitizeQuery from '../utils/sanitizeQuery';
 
@@ -249,7 +248,7 @@ export default abstract class Aggregation {
       if (populateOpts === false) continue;
 
       const populateRef = fields[key].ref;
-      const populateSchema = (!is.nullOrUndefined(populateOpts) && !isNullOrUndefined(populateRef)) ? getModel(populateRef).schema : undefined;
+      const populateSchema = (!is.nullOrUndefined(populateOpts) && !is.nullOrUndefined(populateRef)) ? getModel(populateRef).schema : undefined;
 
       out[`${toPrefix}${key}`] = is.nullOrUndefined(populateSchema) ? `$${fromPrefix}${key}` : (Aggregation.projectStageFactory(populateSchema, populateOpts === true ? undefined : populateOpts) as AggregationStageDescriptor[])[0]['$project'];
     }
