@@ -33,7 +33,6 @@ jobs:
             - build/
             - node_modules/
             - package.json
-            - index.d.ts
   test:
     working_directory: ~/repo
     docker:

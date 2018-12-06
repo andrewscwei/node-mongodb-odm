@@ -1,6 +1,6 @@
 {
   "name": "@andrewscwei/mongodb-odm",
-  "version": "0.37.0",
+  "version": "0.38.0",
   "description": "ODM for MongoDB",
   "main": "build/index.js",
   "scripts": {
@@ -53,6 +53,5 @@
     "ts-node": "^7.0.1",
     "tslint": "^5.11.0",
     "typescript": "^3.2.1"
-  },
-  "types": "index.d.ts"
+  }
 }
