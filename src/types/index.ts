@@ -456,7 +456,7 @@ export function typeIsIdentifiableDocument(value: any): value is { _id: ObjectID
  */
 export function typeIsValidObjectID(value: any): value is ObjectID {
   if (is.nullOrUndefined(value)) return false;
-  if (!is.directInstanceOf(value, ObjectID)) return true;
+  if (!is.directInstanceOf(value, ObjectID)) return false;
   if (!ObjectID.isValid(value)) return false;
 
   return true;
