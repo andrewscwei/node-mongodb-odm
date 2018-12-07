@@ -458,6 +458,7 @@ export function typeIsValidObjectID(value: any): value is ObjectID {
   if (is.nullOrUndefined(value)) return false;
   if (!is.directInstanceOf(value, ObjectID)) return false;
   if (!ObjectID.isValid(value)) return false;
+
   return true;
 }
 
@@ -506,4 +507,40 @@ export function GeoCoordinateMake({ longitude, latitude }: { longitude: string |
   if (!typeIsGeoCoordinate(coord)) throw new Error('Invalid parameters provided');
 
   return coord;
+}
+
+/**
+ * Makes an ObjectID from a value.
+ *
+ * @param value - Value to make the ObjectID from.
+ *
+ * @returns If successful, a new ObjectID instance will be returned. If not,
+ *          `undefined` will be returned.
+ */
+export function ObjectIDMake(value: any): ObjectID | undefined {
+  if (!valueIsValidObjectID(value)) return undefined;
+  return new ObjectID(value);
+}
+
+/**
+ * Checks if a value can be used to create a valid ObjectID.
+ *
+ * @param value - The value to check.
+ *
+ * @returns `true` or `false`.
+ */
+export function valueIsValidObjectID(value: any): boolean {
+  if (is.nullOrUndefined(value)) return false;
+  if (!ObjectID.isValid(value)) return false;
+  if (is.directInstanceOf(value, ObjectID)) return true;
+
+  try {
+    const objectId = new ObjectID(value);
+    if (objectId.toHexString() !== String(value)) return false;
+  }
+  catch (err) {
+    return false;
+  }
+
+  return true;
 }
