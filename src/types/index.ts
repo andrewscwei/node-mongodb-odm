@@ -1,6 +1,5 @@
 import is from '@sindresorhus/is';
 import { CollectionAggregationOptions, CollectionInsertManyOptions, CollectionInsertOneOptions, CommonOptions, FilterQuery, FindOneAndReplaceOption, IndexOptions, ObjectID, ReplaceOneOptions, UpdateQuery } from 'mongodb';
-import bson from 'bson';
 
 /**
  * Full structure of a document.
@@ -457,8 +456,7 @@ export function typeIsIdentifiableDocument(value: any): value is { _id: ObjectID
  */
 export function typeIsValidObjectID(value: any): value is ObjectID {
   if (is.nullOrUndefined(value)) return false;
-  if (is.directInstanceOf(value, ObjectID)) return true;
-  if (is.directInstanceOf(value, bson.ObjectID)) return true;
+  if (!is.directInstanceOf(value, ObjectID)) return true;
   if (!ObjectID.isValid(value)) return false;
 
   return true;
