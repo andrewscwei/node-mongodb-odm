@@ -32,11 +32,6 @@ export type FieldType = FieldBasicType | FieldBasicType[] | { [field: string]: F
 export type FieldValue = undefined | FieldBasicValue | FieldBasicValue[] | { [subfield: string]: FieldValue };
 
 /**
- * Geo coordinate type in the format of [longitude, latitude].
- */
-export type GeoCoordinate = [number, number];
-
-/**
  * Specification for defining a field in the MongoDB collection.
  */
 export interface FieldSpecs {
@@ -460,53 +455,6 @@ export function typeIsValidObjectID(value: any): value is ObjectID {
   if (!ObjectID.isValid(value)) return false;
 
   return true;
-}
-
-/**
- * Checks if a value is a GeoCoordinate. Also ensures the longitude and latitude
- * ranges, throws if out of range for either value.
- *
- * @param value - Value to check.
- *
- * @returns `true` if value is a GeoCoordinate, `false` otherwise.
- *
- * @throws {Error} Longitude is less than -180.
- * @throws {Error} Longitude is greather than 180.
- * @throws {Error} Latitude is less than -90.
- * @throws {Error} Latitude is greater than 90.
- */
-export function typeIsGeoCoordinate(value: any): value is GeoCoordinate {
-  if (!is.array(value)) return false;
-  if (value.length !== 2) return false;
-  if (!is.number(value[0])) return false;
-  if (!is.number(value[1])) return false;
-
-  const [longitude, latitude] = value;
-
-  if (longitude < -180) throw new Error('Longitude value must not be less than -180 degrees');
-  if (longitude > 180) throw new Error('Longitude value must not be greater than 180 degrees');
-  if (latitude < -90) throw new Error('Longitude value must not be less than -90 degrees');
-  if (latitude > 90) throw new Error('Longitude value must not be greater than 90 degrees');
-
-  return true;
-}
-
-/**
- * Makes a geo coordinate based on the provided params.
- *
- * @param longitude - Longitude.
- * @param latitude - Latitude.
- *
- * @returns The geo coordinate.
- *
- * @throws {Error} Params are invalid.
- */
-export function GeoCoordinateMake({ longitude, latitude }: { longitude: string | number, latitude: string | number }): GeoCoordinate {
-  const coord = [Number(longitude), Number(latitude)];
-
-  if (!typeIsGeoCoordinate(coord)) throw new Error('Invalid parameters provided');
-
-  return coord;
 }
 
 /**
