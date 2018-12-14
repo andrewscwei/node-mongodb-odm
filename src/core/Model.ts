@@ -60,7 +60,7 @@ export default <T = {}>(schema: Schema<T>) => class {
    * @throws {Error} Model class has no static property `schema` defined.
    */
   static async getCollection(): Promise<Collection> {
-    if (!this.schema) throw new Error('This model has no schema, you must define this static property in the derived class');
+    if (!this.schema) throw new Error(`[${this.constructor.name}] This model has no schema, you must define this static property in the derived class`);
 
     return db.getCollection(this.schema.collection);
   }
@@ -90,7 +90,7 @@ export default <T = {}>(schema: Schema<T>) => class {
 
       const func = this.randomProps[key];
 
-      if (!is.function_(func)) throw new Error(`Property "${key}" in randomProps must be a function`);
+      if (!is.function_(func)) throw new Error(`[${this.schema.model}] Property "${key}" in randomProps must be a function`);
 
       // Use provided random function if provided in the schema.
       o[key] = func() as any;
@@ -117,7 +117,7 @@ export default <T = {}>(schema: Schema<T>) => class {
    * @throws {Error} Model class has no static property `schema` defined.
    */
   static pipeline(queryOrSpecs?: Query<T> | PipelineFactorySpecs, options?: PipelineFactoryOptions): AggregationPipeline {
-    if (!this.schema) throw new Error('This model has no schema, you must define this static proerty in the derived class');
+    if (!this.schema) throw new Error(`[${this.constructor.name}] This model has no schema, you must define this static proerty in the derived class`);
 
     // Check if the argument conforms to aggregation factory specs.
     if (queryOrSpecs && Object.keys(queryOrSpecs).some(val => val.startsWith('$'))) {
@@ -143,8 +143,8 @@ export default <T = {}>(schema: Schema<T>) => class {
   static async identifyOneStrict(query: Query): Promise<ObjectID> {
     const result = await this.findOne(query);
 
-    if (is.nullOrUndefined(result)) throw new Error(`No results found while identifying this ${this.schema.model} using the query ${JSON.stringify(query, null, 0)}`);
-    if (!ObjectID.isValid(result._id)) throw new Error(`ID of ${result} is not a valid ObjectID`);
+    if (is.nullOrUndefined(result)) throw new Error(`[${this.schema.model}] No results found while identifying this ${this.schema.model} using the query ${JSON.stringify(query, null, 0)}`);
+    if (!ObjectID.isValid(result._id)) throw new Error(`[${this.schema.model}] ID of ${result} is not a valid ObjectID`);
 
     return result._id;
   }
@@ -208,14 +208,14 @@ export default <T = {}>(schema: Schema<T>) => class {
       const collection = await this.getCollection();
       const results = await collection.aggregate(this.pipeline(query).concat([{ $sample: { size: 1 } }])).toArray();
 
-      if (results.length !== 1) throw new Error('More or less than 1 random document found even though only 1 was supposed to be found.');
+      if (results.length !== 1) throw new Error(`[${this.schema.model}] More or less than 1 random document found even though only 1 was supposed to be found.`);
 
       return results[0];
     }
     else {
       const results = await this.findMany<R>(query, options);
 
-      if (results.length === 0) throw new Error('No document found with provided query');
+      if (results.length === 0) throw new Error(`[${this.schema.model}] No document found with provided query`);
 
       return results[0];
     }
@@ -274,7 +274,7 @@ export default <T = {}>(schema: Schema<T>) => class {
    * @throws {MongoError} collection#insertOne failed.
    */
   static async insertOneStrict(doc?: DocumentFragment<T>, options?: ModelInsertOneOptions): Promise<Document<T>> {
-    if (this.schema.noInserts === true) throw new Error('Insertions are disallowed for this model');
+    if (this.schema.noInserts === true) throw new Error(`[${this.schema.model}] Insertions are disallowed for this model`);
 
     // Apply before insert handler.
     const t = await this.beforeInsert(doc || (await this.randomFields()), { strict: true, ...options });
@@ -286,9 +286,9 @@ export default <T = {}>(schema: Schema<T>) => class {
 
     log(`${this.schema.model}.insertOne results:`, JSON.stringify(results, null, 0));
 
-    if (results.result.ok !== 1) throw new Error('Unable to insert document');
-    if (results.ops.length > 1) throw new Error('Somehow insertOne() op inserted more than 1 document');
-    if (results.ops.length < 1) throw new Error('Unable to insert document');
+    if (results.result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to insert document`);
+    if (results.ops.length > 1) throw new Error(`[${this.schema.model}] Somehow insertOne() op inserted more than 1 document`);
+    if (results.ops.length < 1) throw new Error(`[${this.schema.model}] Unable to insert document`);
 
     const o = results.ops[0];
 
@@ -337,7 +337,7 @@ export default <T = {}>(schema: Schema<T>) => class {
    *                 insertions are disabled in the schema.
    */
   static async insertMany(docs: DocumentFragment<T>[], options: ModelInsertManyOptions = {}): Promise<Document<T>[]> {
-    if ((this.schema.noInserts === true) || (this.schema.noInsertMany === true)) throw new Error('Multiple insertions are disallowed for this model');
+    if ((this.schema.noInserts === true) || (this.schema.noInsertMany === true)) throw new Error(`[${this.schema.model}] Multiple insertions are disallowed for this model`);
 
     const n = docs.length;
     const t: typeof docs = new Array(n);
@@ -354,7 +354,7 @@ export default <T = {}>(schema: Schema<T>) => class {
 
     log(`${this.schema.model}.insertMany results:`, JSON.stringify(results, null, 0));
 
-    if (results.result.ok !== 1) throw new Error('Unable to insert many documents');
+    if (results.result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to insert many documents`);
 
     const o = results.ops as Document<T>[];
     const m = o.length;
@@ -391,7 +391,7 @@ export default <T = {}>(schema: Schema<T>) => class {
    * @throws {Error} A doc is updated but it cannot be found.
    */
   static async updateOneStrict(query: Query<T>, update: Update<T>, options: ModelUpdateOneOptions = {}): Promise<void | Document<T>> {
-    if (this.schema.noUpdates === true) throw new Error('Updates are disallowed for this model');
+    if (this.schema.noUpdates === true) throw new Error(`[${this.schema.model}] Updates are disallowed for this model`);
 
     const collection = await this.getCollection();
     const [q, u] = (options.skipHooks === true) ? [query, update] : await this.beforeUpdate(query, update, options);
@@ -400,7 +400,7 @@ export default <T = {}>(schema: Schema<T>) => class {
 
     if (options.returnDoc === true) {
       if (!is.plainObject(q)) {
-        throw new Error('Invalid query, maybe it is not sanitized? This could happen if you enabled skipHooks in the options, in which case you will need to sanitize the query yourself');
+        throw new Error(`[${this.schema.model}] Invalid query, maybe it is not sanitized? This could happen if you enabled skipHooks in the options, in which case you will need to sanitize the query yourself`);
       }
 
       // Need to keep the original doc for the didUpdateDocument() hook.
@@ -408,7 +408,7 @@ export default <T = {}>(schema: Schema<T>) => class {
 
       log(`${this.schema.model}.updateOne results:`, JSON.stringify(res, null, 0), JSON.stringify(options, null, 0));
 
-      if (res.ok !== 1) throw new Error('Update failed');
+      if (res.ok !== 1) throw new Error(`[${this.schema.model}] Update failed`);
 
       let oldDoc;
       let newDoc;
@@ -417,7 +417,7 @@ export default <T = {}>(schema: Schema<T>) => class {
       if (is.nullOrUndefined(res.lastErrorObject.upserted)) {
         oldDoc = res.value;
 
-        if (is.nullOrUndefined(oldDoc)) throw new Error('Unable to return the old document before the update');
+        if (is.nullOrUndefined(oldDoc)) throw new Error(`[${this.schema.model}] Unable to return the old document before the update`);
 
         newDoc = await this.findOne<T>(oldDoc._id);
       }
@@ -426,7 +426,7 @@ export default <T = {}>(schema: Schema<T>) => class {
       }
 
       if (is.nullOrUndefined(newDoc)) {
-        throw new Error('Unable to find the updated doc');
+        throw new Error(`[${this.schema.model}] Unable to find the updated doc`);
       }
 
       if (options.skipHooks !== true) {
@@ -437,15 +437,15 @@ export default <T = {}>(schema: Schema<T>) => class {
     }
     else {
       if (!is.plainObject(q)) {
-        throw new Error('Invalid query, maybe it is not sanitized? This could happen if you enabled skipHooks in the options, in which case you will need to sanitize the query yourself');
+        throw new Error(`[${this.schema.model}] Invalid query, maybe it is not sanitized? This could happen if you enabled skipHooks in the options, in which case you will need to sanitize the query yourself`);
       }
 
       const res = await collection.updateOne(q as { [key: string]: any }, u, options);
 
       log(`${this.schema.model}.updateOne results:`, JSON.stringify(res, null, 0));
 
-      if (res.result.ok !== 1) throw new Error('Unable to update the document');
-      if (res.result.n <= 0) throw new Error('Unable to update the document');
+      if (res.result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to update the document`);
+      if (res.result.n <= 0) throw new Error(`[${this.schema.model}] Unable to update the document`);
 
       if (options.skipHooks !== true) {
         await this.afterUpdate();
@@ -503,7 +503,7 @@ export default <T = {}>(schema: Schema<T>) => class {
    * @throws {Error} One of the updated docs are not returned.
    */
   static async updateMany(query: Query<T>, update: Update<T>, options: ModelUpdateManyOptions = {}): Promise<Document<T>[] | boolean> {
-    if ((this.schema.noUpdates === true) || (this.schema.noUpdateMany === true)) throw new Error('Multiple updates are disallowed for this model');
+    if ((this.schema.noUpdates === true) || (this.schema.noUpdateMany === true)) throw new Error(`[${this.schema.model}] Multiple updates are disallowed for this model`);
 
     const [q, u] = await this.beforeUpdate(query, update, options);
     const collection = await this.getCollection();
@@ -519,7 +519,7 @@ export default <T = {}>(schema: Schema<T>) => class {
         const res = await this.updateOne(q, u, { ...options, returnDoc: true, skipHooks: true });
 
         if (is.boolean(res) || is.nullOrUndefined(res)) {
-          throw new Error('Error upserting document during an updateMany operation');
+          throw new Error(`[${this.schema.model}] Error upserting document during an updateMany operation`);
         }
 
         results.push(res);
@@ -529,8 +529,8 @@ export default <T = {}>(schema: Schema<T>) => class {
           const doc = docs[i];
           const result = await collection.findOneAndUpdate({ _id: doc._id }, u, { returnOriginal: false, ...options });
 
-          if (result.ok !== 1) throw new Error('Unable to update many documents');
-          if (!result.value) throw new Error('Unable to update many documents');
+          if (result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to update many documents`);
+          if (!result.value) throw new Error(`[${this.schema.model}] Unable to update many documents`);
 
           results.push(result.value);
         }
@@ -547,7 +547,7 @@ export default <T = {}>(schema: Schema<T>) => class {
 
       log(`${this.schema.model}.updateMany results:`, JSON.stringify(results, null, 0));
 
-      if (results.result.ok !== 1) throw new Error('Unable to update many documents');
+      if (results.result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to update many documents`);
 
       if (results.result.n <= 0) return false;
 
@@ -576,7 +576,7 @@ export default <T = {}>(schema: Schema<T>) => class {
    * @throws {Error} Unable to delete document.
    */
   static async deleteOneStrict(query: Query<T>, options: ModelDeleteOneOptions = {}): Promise<Document<T> | void> {
-    if (this.schema.noDeletes === true) throw new Error('Deletions are disallowed for this model');
+    if (this.schema.noDeletes === true) throw new Error(`[${this.schema.model}] Deletions are disallowed for this model`);
 
     const q = await this.beforeDelete(query, options);
 
@@ -589,8 +589,8 @@ export default <T = {}>(schema: Schema<T>) => class {
 
       log(`${this.schema.model}.deleteOne results:`, JSON.stringify(results, null, 0));
 
-      if (results.ok !== 1) throw new Error('Unable to delete document');
-      if (!results.value) throw new Error('Unable to return deleted document');
+      if (results.ok !== 1) throw new Error(`[${this.schema.model}] Unable to delete document`);
+      if (!results.value) throw new Error(`[${this.schema.model}] Unable to return deleted document`);
 
       await this.afterDelete(results.value);
 
@@ -601,8 +601,8 @@ export default <T = {}>(schema: Schema<T>) => class {
 
       log(`${this.schema.model}.deleteOne results:`, JSON.stringify(results, null, 0));
 
-      if (results.result.ok !== 1) throw new Error('Unable to delete document');
-      if (!is.number(results.result.n) || (results.result.n <= 0)) throw new Error('Unable to delete document');
+      if (results.result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to delete document`);
+      if (!is.number(results.result.n) || (results.result.n <= 0)) throw new Error(`[${this.schema.model}] Unable to delete document`);
 
       await this.afterDelete();
     }
@@ -653,7 +653,7 @@ export default <T = {}>(schema: Schema<T>) => class {
    *                 deletions are disabled in the schema.
    */
   static async deleteMany(query: Query<T>, options: ModelDeleteManyOptions = {}): Promise<boolean | Document<T>[]> {
-    if ((this.schema.noDeletes === true) || (this.schema.noDeleteMany === true)) throw new Error('Multiple deletions are disallowed for this model');
+    if ((this.schema.noDeletes === true) || (this.schema.noDeleteMany === true)) throw new Error(`[${this.schema.model}] Multiple deletions are disallowed for this model`);
 
     const q = await this.beforeDelete(query, options);
 
@@ -670,7 +670,7 @@ export default <T = {}>(schema: Schema<T>) => class {
         const doc = docs[i];
         const result = await collection.findOneAndDelete({ _id: doc._id });
 
-        if (result.ok !== 1) throw new Error('Unable to delete documents');
+        if (result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to delete documents`);
 
         if (result.value) {
           results.push(result.value);
@@ -690,7 +690,7 @@ export default <T = {}>(schema: Schema<T>) => class {
 
       log(`${this.schema.model}.deleteMany results:`, JSON.stringify(results, null, 0));
 
-      if (results.result.ok !== 1) throw new Error('Unable to delete documents');
+      if (results.result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to delete documents`);
 
       if (!is.number(results.result.n) || (results.result.n <= 0)) return false;
 
@@ -728,16 +728,16 @@ export default <T = {}>(schema: Schema<T>) => class {
 
     log(`${this.schema.model}.replaceOne results:`, JSON.stringify(results, null, 0));
 
-    if (results.ok !== 1) throw new Error('Unable to find and replace document');
+    if (results.ok !== 1) throw new Error(`[${this.schema.model}] Unable to find and replace document`);
 
     const oldDoc = results.value;
 
-    if (is.nullOrUndefined(oldDoc)) throw new Error('Unable to return the old document');
+    if (is.nullOrUndefined(oldDoc)) throw new Error(`[${this.schema.model}] Unable to return the old document`);
 
     const newDoc = await this.findOne<T>(r);
 
     if (is.null_(newDoc)) {
-      throw new Error('Document is replaced but unable to find the new document in the database');
+      throw new Error(`[${this.schema.model}] Document is replaced but unable to find the new document in the database`);
     }
 
     await this.afterDelete(results.value);
@@ -814,7 +814,7 @@ export default <T = {}>(schema: Schema<T>) => class {
       const fieldSpecs = fields[key];
       const formatter = this.formatProps[key];
 
-      if (!fieldSpecs) throw new Error(`Field ${key} not found in schema`);
+      if (!fieldSpecs) throw new Error(`[${this.schema.model}] Field ${key} not found in schema`);
 
       // If the schema has a certain formatting function defined for this field,
       // apply it.
@@ -857,8 +857,8 @@ export default <T = {}>(schema: Schema<T>) => class {
    * @throws {Error} Some required fields in the document are missing.
    */
   static async validateDocument(doc: DocumentFragment<T>, options: ModelValidateDocumentOptions = {}): Promise<boolean> {
-    if (!is.plainObject(doc)) throw new Error('Invalid document provided');
-    if (is.emptyObject(doc)) throw new Error('Empty objects are not permitted');
+    if (!is.plainObject(doc)) throw new Error(`[${this.schema.model}] Invalid document provided`);
+    if (is.emptyObject(doc)) throw new Error(`[${this.schema.model}] Empty objects are not permitted`);
 
     const fields = this.schema.fields;
 
@@ -873,7 +873,7 @@ export default <T = {}>(schema: Schema<T>) => class {
 
       // #1 Check if field is defined in the schema.
       if (!this.schema.fields.hasOwnProperty(key)) {
-        throw new Error(`The field '${key}' is not defined in the schema`);
+        throw new Error(`[${this.schema.model}] The field '${key}' is not defined in the schema`);
       }
 
       // #2 Check if field value conforms to its defined specs.
@@ -897,7 +897,7 @@ export default <T = {}>(schema: Schema<T>) => class {
 
         const uniqueQuery = _.pick(doc, Object.keys(index.spec));
 
-        if (await this.findOne(uniqueQuery)) throw new Error(`Another document already exists with ${JSON.stringify(uniqueQuery, null, 0)}`);
+        if (await this.findOne(uniqueQuery)) throw new Error(`[${this.schema.model}] Another document already exists with ${JSON.stringify(uniqueQuery, null, 0)}`);
       }
     }
 
@@ -909,7 +909,7 @@ export default <T = {}>(schema: Schema<T>) => class {
         const field = fields[key];
 
         if (!field.required || this.defaultProps.hasOwnProperty(key)) continue;
-        if (!doc.hasOwnProperty(key)) throw new Error(`Missing required field '${key}'`);
+        if (!doc.hasOwnProperty(key)) throw new Error(`[${this.schema.model}] Missing required field '${key}'`);
       }
     }
 
@@ -1051,7 +1051,7 @@ export default <T = {}>(schema: Schema<T>) => class {
    *                 the schema.
    */
   private static async beforeUpdate(query: Query<T>, update: Update<T>, options: ModelUpdateOneOptions | ModelUpdateManyOptions = {}): Promise<[DocumentFragment<T>, UpdateQuery<DocumentFragment<T>>]> {
-    if ((options.upsert === true) && (this.schema.allowUpserts !== true)) throw new Error('Attempting to upsert a document while upserting is disallowed in the schema');
+    if ((options.upsert === true) && (this.schema.allowUpserts !== true)) throw new Error(`[${this.schema.model}] Attempting to upsert a document while upserting is disallowed in the schema`);
 
     const [q, u] = await this.willUpdateDocument(query, update);
 
@@ -1188,13 +1188,13 @@ export default <T = {}>(schema: Schema<T>) => class {
 
     if (is.nullOrUndefined(cascadeModelNames)) return;
 
-    if (!is.array(cascadeModelNames)) throw new Error('Invalid definition of cascade in schema');
+    if (!is.array(cascadeModelNames)) throw new Error(`[${this.schema.model}] Invalid definition of cascade in schema`);
 
     for (const modelName of cascadeModelNames) {
       const ModelClass = db.getModel(modelName);
       const fields: { [fieldName: string]: FieldSpecs } = ModelClass.schema.fields;
 
-      if (!ModelClass) throw new Error(`Trying to cascade delete from model ${modelName} but model is not found`);
+      if (!ModelClass) throw new Error(`[${this.schema.model}] Trying to cascade delete from model ${modelName} but model is not found`);
 
       for (const key in ModelClass.schema.fields) {
         if (!ModelClass.schema.fields.hasOwnProperty(key)) continue;
