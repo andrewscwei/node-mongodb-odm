@@ -4,11 +4,10 @@
  */
 
 import is from '@sindresorhus/is';
-import debug from 'debug';
 import { Collection, Db, MongoClient, MongoError, ObjectID } from 'mongodb';
 import Model from './core/Model';
 
-const log = debug('mongodb-odm');
+const debug = require('debug')('mongodb-odm');
 
 export interface Configuration {
   host: string;
@@ -38,7 +37,7 @@ let collections: { [collectionName: string]: Collection } = {};
 process.on('SIGINT', async () => {
   if (client) {
     await disconnectFromDb();
-    log('MongoDB client disconnected due to app termination');
+    debug('MongoDB client disconnected due to app termination');
   }
 
   process.exit(0);
@@ -67,34 +66,34 @@ export async function connectToDb(): Promise<void> {
 
   const connection = client.db(config.name);
 
-  log('MongoDB client is open:', url);
+  debug('MongoDB client is open:', url);
 
   connection.on('authenticated', () => {
-    log('MongoDB servers authenticated');
+    debug('MongoDB servers authenticated');
   });
 
   connection.on('close', (err: MongoError) => {
-    log('MongoDB client closed because:', err);
+    debug('MongoDB client closed because:', err);
   });
 
   connection.on('error', (err: MongoError) => {
-    log('MongoDB client error:', err);
+    debug('MongoDB client error:', err);
   });
 
   connection.on('fullsetup', () => {
-    log('MongoDB full setup complete');
+    debug('MongoDB full setup complete');
   });
 
   connection.on('parseError', (err: MongoError) => {
-    log('MongoDB parse error:', err);
+    debug('MongoDB parse error:', err);
   });
 
   connection.on('reconnect', () => {
-    log('MongoDB reconnected');
+    debug('MongoDB reconnected');
   });
 
   connection.on('timeout', (err: MongoError) => {
-    log('MongoDB client timed out:', err);
+    debug('MongoDB client timed out:', err);
   });
 }
 
@@ -135,7 +134,7 @@ export function configureDb(options: Configuration) {
 export async function getDbInstance(): Promise<Db> {
   if (client) return client.db(config.name);
 
-  log('There is no MongoDB client, establishing one now...');
+  debug('There is no MongoDB client, establishing one now...');
 
   await connectToDb();
 

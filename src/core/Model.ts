@@ -16,7 +16,7 @@ import sanitizeQuery from '../utils/sanitizeQuery';
 import validateFieldValue from '../utils/validateFieldValue';
 import Aggregation from './Aggregation';
 
-const log = require('debug')('mongodb-odm:model');
+const debug = require('debug')('mongodb-odm:model');
 
 /**
  * Creates a static model class with the provided schema.
@@ -279,12 +279,12 @@ export default <T = {}>(schema: Schema<T>) => class {
     // Apply before insert handler.
     const t = await this.beforeInsert(doc || (await this.randomFields()), { strict: true, ...options });
 
-    log(`${this.schema.model}.insertOne:`, JSON.stringify(t, null, 0));
+    debug(`${this.schema.model}.insertOne:`, JSON.stringify(t, null, 0));
 
     const collection = await this.getCollection();
     const results = await collection.insertOne(t, options).catch(error => { throw error; });
 
-    log(`${this.schema.model}.insertOne results:`, JSON.stringify(results, null, 0));
+    debug(`${this.schema.model}.insertOne results:`, JSON.stringify(results, null, 0));
 
     if (results.result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to insert document`);
     if (results.ops.length > 1) throw new Error(`[${this.schema.model}] Somehow insertOne() op inserted more than 1 document`);
@@ -347,12 +347,12 @@ export default <T = {}>(schema: Schema<T>) => class {
       t[i] = await this.beforeInsert(docs[i]);
     }
 
-    log(`${this.schema.model}.insertMany:`, JSON.stringify(t, null, 0));
+    debug(`${this.schema.model}.insertMany:`, JSON.stringify(t, null, 0));
 
     const collection = await this.getCollection();
     const results = await collection.insertMany(t, options);
 
-    log(`${this.schema.model}.insertMany results:`, JSON.stringify(results, null, 0));
+    debug(`${this.schema.model}.insertMany results:`, JSON.stringify(results, null, 0));
 
     if (results.result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to insert many documents`);
 
@@ -396,7 +396,7 @@ export default <T = {}>(schema: Schema<T>) => class {
     const collection = await this.getCollection();
     const [q, u] = (options.skipHooks === true) ? [query, update] : await this.beforeUpdate(query, update, options);
 
-    log(`${this.schema.model}.updateOne:`, JSON.stringify(q, null, 0), JSON.stringify(u, null, 0), JSON.stringify(options, null, 0));
+    debug(`${this.schema.model}.updateOne:`, JSON.stringify(q, null, 0), JSON.stringify(u, null, 0), JSON.stringify(options, null, 0));
 
     if (options.returnDoc === true) {
       if (!is.plainObject(q)) {
@@ -406,7 +406,7 @@ export default <T = {}>(schema: Schema<T>) => class {
       // Need to keep the original doc for the didUpdateDocument() hook.
       const res = await collection.findOneAndUpdate(q as { [key: string]: any }, u, { ...options, returnOriginal: true });
 
-      log(`${this.schema.model}.updateOne results:`, JSON.stringify(res, null, 0), JSON.stringify(options, null, 0));
+      debug(`${this.schema.model}.updateOne results:`, JSON.stringify(res, null, 0), JSON.stringify(options, null, 0));
 
       if (res.ok !== 1) throw new Error(`[${this.schema.model}] Update failed`);
 
@@ -442,7 +442,7 @@ export default <T = {}>(schema: Schema<T>) => class {
 
       const res = await collection.updateOne(q as { [key: string]: any }, u, options);
 
-      log(`${this.schema.model}.updateOne results:`, JSON.stringify(res, null, 0));
+      debug(`${this.schema.model}.updateOne results:`, JSON.stringify(res, null, 0));
 
       if (res.result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to update the document`);
       if (res.result.n <= 0) throw new Error(`[${this.schema.model}] Unable to update the document`);
@@ -508,7 +508,7 @@ export default <T = {}>(schema: Schema<T>) => class {
     const [q, u] = await this.beforeUpdate(query, update, options);
     const collection = await this.getCollection();
 
-    log(`${this.schema.model}.updateMany:`, JSON.stringify(q, null, 0), JSON.stringify(u, null, 0), JSON.stringify(options, null, 0));
+    debug(`${this.schema.model}.updateMany:`, JSON.stringify(q, null, 0), JSON.stringify(u, null, 0), JSON.stringify(options, null, 0));
 
     if (options.returnDocs === true) {
       const docs = await this.findMany<T>(q);
@@ -535,7 +535,7 @@ export default <T = {}>(schema: Schema<T>) => class {
           results.push(result.value);
         }
 
-        log(`${this.schema.model}.updateMany results:`, JSON.stringify(results, null, 0));
+        debug(`${this.schema.model}.updateMany results:`, JSON.stringify(results, null, 0));
       }
 
       await this.afterUpdate(undefined, results);
@@ -545,7 +545,7 @@ export default <T = {}>(schema: Schema<T>) => class {
     else {
       const results = await collection.updateMany(q, u, options);
 
-      log(`${this.schema.model}.updateMany results:`, JSON.stringify(results, null, 0));
+      debug(`${this.schema.model}.updateMany results:`, JSON.stringify(results, null, 0));
 
       if (results.result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to update many documents`);
 
@@ -580,14 +580,14 @@ export default <T = {}>(schema: Schema<T>) => class {
 
     const q = await this.beforeDelete(query, options);
 
-    log(`${this.schema.model}.deleteOne:`, JSON.stringify(query, null, 0));
+    debug(`${this.schema.model}.deleteOne:`, JSON.stringify(query, null, 0));
 
     const collection = await this.getCollection();
 
     if (options.returnDoc === true) {
       const results = await collection.findOneAndDelete(q);
 
-      log(`${this.schema.model}.deleteOne results:`, JSON.stringify(results, null, 0));
+      debug(`${this.schema.model}.deleteOne results:`, JSON.stringify(results, null, 0));
 
       if (results.ok !== 1) throw new Error(`[${this.schema.model}] Unable to delete document`);
       if (!results.value) throw new Error(`[${this.schema.model}] Unable to return deleted document`);
@@ -599,7 +599,7 @@ export default <T = {}>(schema: Schema<T>) => class {
     else {
       const results = await collection.deleteOne(q, options);
 
-      log(`${this.schema.model}.deleteOne results:`, JSON.stringify(results, null, 0));
+      debug(`${this.schema.model}.deleteOne results:`, JSON.stringify(results, null, 0));
 
       if (results.result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to delete document`);
       if (!is.number(results.result.n) || (results.result.n <= 0)) throw new Error(`[${this.schema.model}] Unable to delete document`);
@@ -657,7 +657,7 @@ export default <T = {}>(schema: Schema<T>) => class {
 
     const q = await this.beforeDelete(query, options);
 
-    log(`${this.schema.model}.deleteMany:`, JSON.stringify(q, null, 0));
+    debug(`${this.schema.model}.deleteMany:`, JSON.stringify(q, null, 0));
 
     const collection = await this.getCollection();
 
@@ -677,7 +677,7 @@ export default <T = {}>(schema: Schema<T>) => class {
         }
       }
 
-      log(`${this.schema.model}.deleteMany results:`, JSON.stringify(results, null, 0));
+      debug(`${this.schema.model}.deleteMany results:`, JSON.stringify(results, null, 0));
 
       const m = results.length;
 
@@ -688,7 +688,7 @@ export default <T = {}>(schema: Schema<T>) => class {
     else {
       const results = await collection.deleteMany(q, { ...options });
 
-      log(`${this.schema.model}.deleteMany results:`, JSON.stringify(results, null, 0));
+      debug(`${this.schema.model}.deleteMany results:`, JSON.stringify(results, null, 0));
 
       if (results.result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to delete documents`);
 
@@ -721,12 +721,12 @@ export default <T = {}>(schema: Schema<T>) => class {
     const q = await this.beforeDelete(query, options);
     const r = await this.beforeInsert(replacement || (await this.randomFields()), options);
 
-    log(`${this.schema.model}.replaceOne:`, JSON.stringify(q, null, 0), JSON.stringify(r, null, 0));
+    debug(`${this.schema.model}.replaceOne:`, JSON.stringify(q, null, 0), JSON.stringify(r, null, 0));
 
     const collection = await this.getCollection();
     const results = await collection.findOneAndReplace(q, r, { ...options, returnOriginal: true });
 
-    log(`${this.schema.model}.replaceOne results:`, JSON.stringify(results, null, 0));
+    debug(`${this.schema.model}.replaceOne results:`, JSON.stringify(results, null, 0));
 
     if (results.ok !== 1) throw new Error(`[${this.schema.model}] Unable to find and replace document`);
 
@@ -880,7 +880,11 @@ export default <T = {}>(schema: Schema<T>) => class {
       const fieldSpecs = fields[key as keyof T];
       const validationStrategy = this.validateProps[key as keyof T];
 
+      debug(`[${this.schema.model}] Validating value "${val}" for field <${key}>...`);
+
       validateFieldValue(val, fieldSpecs, validationStrategy);
+
+      debug(`[${this.schema.model}] Validating value "${val}" for field <${key}>... OK`);
     }
 
     // #3 Check for unique fields only if `ignoreUniqueIndex` is not `true`.
@@ -1202,7 +1206,7 @@ export default <T = {}>(schema: Schema<T>) => class {
         const field = fields[key];
 
         if (field.ref === this.schema.model) {
-          log(`Cascade deleting all ${modelName} documents whose "${key}" field is ${docId}`);
+          debug(`Cascade deleting all ${modelName} documents whose "${key}" field is ${docId}`);
 
           await ModelClass.deleteMany({ [`${key}`]: docId });
         }
