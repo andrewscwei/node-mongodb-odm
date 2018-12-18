@@ -184,9 +184,10 @@ export async function getCollection(modelOrCollectionName: string): Promise<Coll
 
   if (is.nullOrUndefined(models)) throw new Error('You must register models using the configureDb() function');
 
-  if (!is.nullOrUndefined(collections[modelOrCollectionName])) {
-    return collections[modelOrCollectionName];
-  }
+  // TODO: Indexes are lost somehow, comment this out temporarily.
+  // if (!is.nullOrUndefined(collections[modelOrCollectionName])) {
+  //   return collections[modelOrCollectionName];
+  // }
 
   let ModelClass: ReturnType<typeof Model> | undefined;
 
