@@ -206,7 +206,7 @@ export default <T = {}>(schema: Schema<T>) => class {
   static async findOneStrict<R = T>(query?: Query<T>, options?: ModelFindOneOptions): Promise<Document<R>> {
     if (is.nullOrUndefined(query)) {
       const collection = await this.getCollection();
-      const results = await collection.aggregate(this.pipeline(query).concat([{ $sample: { size: 1 } }])).toArray();
+      const results = await collection.aggregate(this.pipeline().concat([{ $sample: { size: 1 } }])).toArray();
 
       if (results.length !== 1) throw new Error(`[${this.schema.model}] More or less than 1 random document found even though only 1 was supposed to be found.`);
 
