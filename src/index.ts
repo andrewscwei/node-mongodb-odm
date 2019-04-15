@@ -37,7 +37,7 @@ let collections: { [collectionName: string]: Collection } = {};
 process.on('SIGINT', async () => {
   if (client) {
     await disconnectFromDb();
-    debug('MongoDB client disconnected due to app termination');
+    debug('Handling SIGINT error...', 'OK', 'MongoDB client disconnected due to app termination');
   }
 
   process.exit(0);
@@ -66,34 +66,34 @@ export async function connectToDb(): Promise<void> {
 
   const connection = client.db(config.name);
 
-  debug('MongoDB client is open:', url);
+  debug('Establishing MongoDB client connection...', 'OK', url);
 
   connection.on('authenticated', () => {
-    debug('MongoDB servers authenticated');
+    debug('Authenticating MongoDB servers...', 'OK');
   });
 
   connection.on('close', (err: MongoError) => {
-    debug('MongoDB client closed because:', err);
+    debug('Terminating MongoDB client...', 'OK', err);
   });
 
   connection.on('error', (err: MongoError) => {
-    debug('MongoDB client error:', err);
+    debug('Handling client error...', 'OK', err);
   });
 
   connection.on('fullsetup', () => {
-    debug('MongoDB full setup complete');
+    debug('Completing full setup of connection...', 'OK');
   });
 
   connection.on('parseError', (err: MongoError) => {
-    debug('MongoDB parse error:', err);
+    debug('Handling parse error...', 'OK', err);
   });
 
   connection.on('reconnect', () => {
-    debug('MongoDB reconnected');
+    debug('Reconnecting to MongoDB client...', 'OK');
   });
 
   connection.on('timeout', (err: MongoError) => {
-    debug('MongoDB client timed out:', err);
+    debug('Receiving MongoDB client timeout...', 'OK', err);
   });
 }
 
@@ -134,7 +134,7 @@ export function configureDb(options: Configuration) {
 export async function getDbInstance(): Promise<Db> {
   if (client) return client.db(config.name);
 
-  debug('There is no MongoDB client, establishing one now...');
+  debug('No MongoDB client, reinitiating connection...', 'OK');
 
   await connectToDb();
 

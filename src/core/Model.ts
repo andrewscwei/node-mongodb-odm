@@ -279,13 +279,10 @@ export default <T = {}>(schema: Schema<T>) => class {
     // Apply before insert handler.
     const t = await this.beforeInsert(doc || (await this.randomFields()), { strict: true, ...options });
 
-    debug(`[${this.schema.model}] Inserting new document...`, JSON.stringify(t, null, 0));
-
     const collection = await this.getCollection();
     const results = await collection.insertOne(t, options).catch(error => { throw error; });
 
-    debug(`[${this.schema.model}] Inserting new document...`, 'OK');
-    debug(`[${this.schema.model}] Document insertion result:`, JSON.stringify(results, null, 0));
+    debug(`[${this.schema.model}] Inserting new document...`, 'OK', JSON.stringify(t, null, 0), JSON.stringify(results, null, 0));
 
     if (results.result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to insert document`);
     if (results.ops.length > 1) throw new Error(`[${this.schema.model}] Somehow insertOne() op inserted more than 1 document`);
@@ -348,13 +345,10 @@ export default <T = {}>(schema: Schema<T>) => class {
       t[i] = await this.beforeInsert(docs[i]);
     }
 
-    debug(`[${this.schema.model}] Inserting multiple documents...`, JSON.stringify(t, null, 0));
-
     const collection = await this.getCollection();
     const results = await collection.insertMany(t, options);
 
-    debug(`[${this.schema.model}] Inserting multiple documents...`, 'OK');
-    debug(`[${this.schema.model}] Multiple insertion result:`, JSON.stringify(results, null, 0));
+    debug(`[${this.schema.model}] Inserting multiple documents...`, 'OK', JSON.stringify(t, null, 0), JSON.stringify(results, null, 0));
 
     if (results.result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to insert many documents`);
 
@@ -398,8 +392,6 @@ export default <T = {}>(schema: Schema<T>) => class {
     const collection = await this.getCollection();
     const [q, u] = (options.skipHooks === true) ? [query, update] : await this.beforeUpdate(query, update, options);
 
-    debug(`[${this.schema.model}] Updating an existing document...`, JSON.stringify(q, null, 0), JSON.stringify(u, null, 0), JSON.stringify(options, null, 0));
-
     if (options.returnDoc === true) {
       if (!is.plainObject(q)) {
         throw new Error(`[${this.schema.model}] Invalid query, maybe it is not sanitized? This could happen if you enabled skipHooks in the options, in which case you will need to sanitize the query yourself`);
@@ -408,8 +400,7 @@ export default <T = {}>(schema: Schema<T>) => class {
       // Need to keep the original doc for the didUpdateDocument() hook.
       const res = await collection.findOneAndUpdate(q as { [key: string]: any }, u, { ...options, returnOriginal: true });
 
-      debug(`[${this.schema.model}] Updating an existing document...`, 'OK');
-      debug(`[${this.schema.model}] Single document update result:`, JSON.stringify(res, null, 0), JSON.stringify(options, null, 0));
+      debug(`[${this.schema.model}] Updating an existing document...`, 'OK', JSON.stringify(q, null, 0), JSON.stringify(u, null, 0), JSON.stringify(options, null, 0), JSON.stringify(res, null, 0));
 
       if (res.ok !== 1) throw new Error(`[${this.schema.model}] Update failed`);
 
@@ -445,8 +436,7 @@ export default <T = {}>(schema: Schema<T>) => class {
 
       const res = await collection.updateOne(q as { [key: string]: any }, u, options);
 
-      debug(`[${this.schema.model}] Updating an existing document...`, 'OK');
-      debug(`[${this.schema.model}] Single document update result:`, JSON.stringify(res, null, 0));
+      debug(`[${this.schema.model}] Updating an existing document...`, 'OK', JSON.stringify(q, null, 0), JSON.stringify(u, null, 0), JSON.stringify(options, null, 0), JSON.stringify(res, null, 0));
 
       if (res.result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to update the document`);
       if (res.result.n <= 0) throw new Error(`[${this.schema.model}] Unable to update the document`);
@@ -512,8 +502,6 @@ export default <T = {}>(schema: Schema<T>) => class {
     const [q, u] = await this.beforeUpdate(query, update, options);
     const collection = await this.getCollection();
 
-    debug(`[${this.schema.model}] Updating multiple existing documents...`, JSON.stringify(q, null, 0), JSON.stringify(u, null, 0), JSON.stringify(options, null, 0));
-
     if (options.returnDocs === true) {
       const docs = await this.findMany<T>(q);
       const n = docs.length;
@@ -539,8 +527,7 @@ export default <T = {}>(schema: Schema<T>) => class {
           results.push(result.value);
         }
 
-        debug(`[${this.schema.model}] Updating multiple existing documents...`, 'OK');
-        debug(`[${this.schema.model}] Multiple document update result:`, JSON.stringify(results, null, 0));
+        debug(`[${this.schema.model}] Updating multiple existing documents...`, 'OK', JSON.stringify(q, null, 0), JSON.stringify(u, null, 0), JSON.stringify(options, null, 0), JSON.stringify(results, null, 0));
       }
 
       await this.afterUpdate(undefined, results);
@@ -550,8 +537,7 @@ export default <T = {}>(schema: Schema<T>) => class {
     else {
       const results = await collection.updateMany(q, u, options);
 
-      debug(`[${this.schema.model}] Updating multiple existing documents...`, 'OK');
-      debug(`[${this.schema.model}] Multiple document update result:`, JSON.stringify(results, null, 0));
+      debug(`[${this.schema.model}] Updating multiple existing documents...`, 'OK', JSON.stringify(q, null, 0), JSON.stringify(u, null, 0), JSON.stringify(options, null, 0), JSON.stringify(results, null, 0));
 
       if (results.result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to update many documents`);
 
@@ -586,15 +572,12 @@ export default <T = {}>(schema: Schema<T>) => class {
 
     const q = await this.beforeDelete(query, options);
 
-    debug(`[${this.schema.model}] Deleting an existing document...`, JSON.stringify(query, null, 0));
-
     const collection = await this.getCollection();
 
     if (options.returnDoc === true) {
       const results = await collection.findOneAndDelete(q);
 
-      debug(`[${this.schema.model}] Deleting an existing document...`, 'OK');
-      debug(`[${this.schema.model}] Single document deletion result:`, JSON.stringify(results, null, 0));
+      debug(`[${this.schema.model}] Deleting an existing document...`, 'OK', JSON.stringify(query, null, 0), JSON.stringify(results, null, 0));
 
       if (results.ok !== 1) throw new Error(`[${this.schema.model}] Unable to delete document`);
       if (!results.value) throw new Error(`[${this.schema.model}] Unable to return deleted document`);
@@ -606,8 +589,7 @@ export default <T = {}>(schema: Schema<T>) => class {
     else {
       const results = await collection.deleteOne(q, options);
 
-      debug(`[${this.schema.model}] Deleting an existing document...`, 'OK');
-      debug(`[${this.schema.model}] Single document deletion result:`, JSON.stringify(results, null, 0));
+      debug(`[${this.schema.model}] Deleting an existing document...`, 'OK', JSON.stringify(query, null, 0), JSON.stringify(results, null, 0));
 
       if (results.result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to delete document`);
       if (!is.number(results.result.n) || (results.result.n <= 0)) throw new Error(`[${this.schema.model}] Unable to delete document`);
@@ -665,8 +647,6 @@ export default <T = {}>(schema: Schema<T>) => class {
 
     const q = await this.beforeDelete(query, options);
 
-    debug(`[${this.schema.model}] Deleting multiple existing documents...:`, JSON.stringify(q, null, 0));
-
     const collection = await this.getCollection();
 
     if (options.returnDocs === true) {
@@ -685,8 +665,7 @@ export default <T = {}>(schema: Schema<T>) => class {
         }
       }
 
-      debug(`[${this.schema.model}] Deleting multiple existing documents...:`, 'OK');
-      debug(`[${this.schema.model}] Multiple document deletion result:`, JSON.stringify(results, null, 0));
+      debug(`[${this.schema.model}] Deleting multiple existing documents...:`, 'OK', JSON.stringify(q, null, 0), JSON.stringify(results, null, 0));
 
       const m = results.length;
 
@@ -697,8 +676,7 @@ export default <T = {}>(schema: Schema<T>) => class {
     else {
       const results = await collection.deleteMany(q, { ...options });
 
-      debug(`[${this.schema.model}] Deleting multiple existing documents...:`, 'OK');
-      debug(`[${this.schema.model}] Multiple document deletion result:`, JSON.stringify(results, null, 0));
+      debug(`[${this.schema.model}] Deleting multiple existing documents...:`, 'OK', JSON.stringify(q, null, 0), JSON.stringify(results, null, 0));
 
       if (results.result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to delete documents`);
 
@@ -731,13 +709,10 @@ export default <T = {}>(schema: Schema<T>) => class {
     const q = await this.beforeDelete(query, options);
     const r = await this.beforeInsert(replacement || (await this.randomFields()), options);
 
-    debug(`[${this.schema.model}] Replacing an existing document...`, JSON.stringify(q, null, 0), JSON.stringify(r, null, 0));
-
     const collection = await this.getCollection();
     const results = await collection.findOneAndReplace(q, r, { ...options, returnOriginal: true });
 
-    debug(`[${this.schema.model}] Replacing an existing document...`, 'OK');
-    debug(`[${this.schema.model}] Document replacement result:`, JSON.stringify(results, null, 0));
+    debug(`[${this.schema.model}] Replacing an existing document...`, 'OK', JSON.stringify(q, null, 0), JSON.stringify(r, null, 0), JSON.stringify(results, null, 0));
 
     if (results.ok !== 1) throw new Error(`[${this.schema.model}] Unable to find and replace document`);
 
@@ -890,8 +865,6 @@ export default <T = {}>(schema: Schema<T>) => class {
       // #2 Check if field value conforms to its defined specs.
       const fieldSpecs = fields[key as keyof T];
       const validationStrategy = this.validateProps[key as keyof T];
-
-      debug(`[${this.schema.model}] Validating value "${val}" for field <${key}>...`);
 
       validateFieldValue(val, fieldSpecs, validationStrategy);
 
@@ -1217,9 +1190,9 @@ export default <T = {}>(schema: Schema<T>) => class {
         const field = fields[key];
 
         if (field.ref === this.schema.model) {
-          debug(`[${this.schema.model}] Cascade deleting all ${modelName} documents whose <${key}> field is <${docId}>`);
-
           await ModelClass.deleteMany({ [`${key}`]: docId });
+
+          debug(`[${this.schema.model}] Cascade deleting all ${modelName} documents whose <${key}> field is <${docId}>... OK`);
         }
       }
     }
