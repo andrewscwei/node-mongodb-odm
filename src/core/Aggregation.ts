@@ -5,7 +5,7 @@
 
 import is from '@sindresorhus/is';
 import * as db from '..';
-import { AggregationPipeline, AggregationStageDescriptor, FieldSpec, GroupStageFactorySpec, LookupStageFactoryOptions, LookupStageFactorySpec, MatchStageFactoryOptions, MatchStageFactorySpec, PipelineFactoryOptions, PipelineFactorySpecs, ProjectStageFactoryOptions, Schema, SortStageFactorySpec } from '../types';
+import { AggregationPipeline, AggregationStageDescriptor, FieldSpec, GroupStageFactorySpec, LookupStageFactoryOptions, LookupStageFactorySpec, MatchStageFactoryOptions, MatchStageFactorySpec, PipelineFactoryOptions, PipelineFactoryOperators, ProjectStageFactoryOptions, Schema, SortStageFactorySpec } from '../types';
 import sanitizeQuery from '../utils/sanitizeQuery';
 
 export default abstract class Aggregation {
@@ -13,14 +13,12 @@ export default abstract class Aggregation {
    * Generates a pipeline to pass into the aggregation framework.
    *
    * @param {Schema} schema - The collection schema.
-   * @param specs - Specs for customizing the pipeline.
-   * @param {Object|string} [specs.$group] - Group stage spec appended to end of
-   *                                         the pipeline.
-   * @param options - Additional options.
+   * @param operators - @see PipelineFactoryOperators
+   * @param options - @see PipelineFactoryOptions
    *
    * @returns The generated aggregate pipeline.
    */
-  static pipelineFactory(schema: Schema, { $lookup, $match, $prune, $group, $sort }: PipelineFactorySpecs = {}, { prefix = '', pipeline = [] }: PipelineFactoryOptions = {}): AggregationPipeline {
+  static pipelineFactory(schema: Schema, { $lookup, $match, $prune, $group, $sort }: PipelineFactoryOperators = {}, { prefix = '', pipeline = [] }: PipelineFactoryOptions = {}): AggregationPipeline {
     if (!(is.undefined($match) || is.object($match) || is.string($match))) throw new Error('Bad $match descriptor provided');
     if (!(is.undefined($lookup) || is.object($lookup))) throw new Error('Bad $lookup descriptor provided');
     if (!(is.undefined($prune) || is.object($prune) || is.string($prune))) throw new Error('Bad $prune descriptor provided');
@@ -51,7 +49,7 @@ export default abstract class Aggregation {
    * Generates the $match stage of the aggregation pipeline.
    *
    * @param schema - The schema of the database collection.
-   * @param spec - Specs (aka query in this case) that defines the match.
+   * @param spec - Spec (aka query in this case) that defines the match.
    * @param options - Additional options.
    *
    * @returns The aggregation pipeline that handles the generated $match stage.
@@ -86,7 +84,7 @@ export default abstract class Aggregation {
    * Generates the $lookup stage of the aggregation pipeline.
    *
    * @param schema - The schema of the database collection.
-   * @param spec - Specs that defines the $lookup stage, supports looking up
+   * @param spec - Spec that defines the $lookup stage, supports looking up
    *                nested foreign keys.
    * @param options - Additional options.
    *
@@ -161,7 +159,7 @@ export default abstract class Aggregation {
    * Generates the $group stage of the aggregation pipeline.
    *
    * @param schema - The schema of the database collection.
-   * @param spec - Specs that define the $group stage.
+   * @param spec - Spec that define the $group stage.
    *
    * @returns The aggregation pipeline that handles the generated $group stage.
    *
@@ -192,7 +190,7 @@ export default abstract class Aggregation {
    * Generates the $sort stage of the aggregation pipeline.
    *
    * @param schema - The schema of the database collection.
-   * @param spec - Specs that define the $sort stage.
+   * @param spec - Spec that define the $sort stage.
    *
    * @returns The aggregation pipeline that handles the generated $sort stage.
    *

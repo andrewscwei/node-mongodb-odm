@@ -10,7 +10,7 @@ import bcrypt from 'bcrypt';
 import _ from 'lodash';
 import { Collection, FilterQuery, ObjectID, UpdateQuery } from 'mongodb';
 import * as db from '..';
-import { AggregationPipeline, Document, DocumentFragment, FieldDefaultValueFunction, FieldFormatFunction, FieldRandomValueFunction, FieldSpec, FieldValidationStrategy, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOptions, PipelineFactorySpecs, Query, Schema, typeIsUpdateQuery, typeIsValidObjectID, Update, FieldDescriptor, typeIsFieldDescriptor } from '../types';
+import { AggregationPipeline, Document, DocumentFragment, FieldDefaultValueFunction, FieldFormatFunction, FieldRandomValueFunction, FieldSpec, FieldValidationStrategy, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOptions, PipelineFactoryOperators, Query, Schema, typeIsUpdateQuery, typeIsValidObjectID, Update, FieldDescriptor, typeIsFieldDescriptor } from '../types';
 import getFieldSpecByKey from '../utils/getFieldSpecByKey';
 import sanitizeDocument from '../utils/sanitizeDocument';
 import sanitizeQuery from '../utils/sanitizeQuery';
@@ -110,24 +110,24 @@ export default <T = {}>(schema: Schema<T>) => {
      * Generates an aggregation pipeline specifically for the schema associated
      * with this schema.
      *
-     * @param queryOrSpecs - This is either a query for the $match stage or specs
-     *                       for the aggregation factory function.
+     * @param queryOrOperators - This is either a query for the $match stage or
+     *                           operators for the aggregation factory function.
      * @param options - @see PipelineFactoryOptions
      *
      * @returns Aggregation pipeline.
      *
      * @throws {Error} Model class has no static property `schema` defined.
      */
-    static pipeline(queryOrSpecs?: Query<T> | PipelineFactorySpecs, options?: PipelineFactoryOptions): AggregationPipeline {
+    static pipeline(queryOrOperators?: Query<T> | PipelineFactoryOperators, options?: PipelineFactoryOptions): AggregationPipeline {
       if (!this.schema) throw new Error(`[${this.constructor.name}] This model has no schema, you must define this static proerty in the derived class`);
 
-      // Check if the argument conforms to aggregation factory specs.
-      if (queryOrSpecs && Object.keys(queryOrSpecs).some(val => val.startsWith('$'))) {
-        return Aggregation.pipelineFactory(this.schema, queryOrSpecs as PipelineFactorySpecs, options);
+      // Check if the argument conforms to aggregation factory operators.
+      if (queryOrOperators && Object.keys(queryOrOperators).some(val => val.startsWith('$'))) {
+        return Aggregation.pipelineFactory(this.schema, queryOrOperators as PipelineFactoryOperators, options);
       }
       // Otherwise the argument is a query for the $match stage.
       else {
-        return Aggregation.pipelineFactory(this.schema, { $match: queryOrSpecs as Query }, options);
+        return Aggregation.pipelineFactory(this.schema, { $match: queryOrOperators as Query }, options);
       }
     }
 

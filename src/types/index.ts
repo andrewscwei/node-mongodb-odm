@@ -263,7 +263,7 @@ export interface PipelineFactoryOptions {
   pipeline?: AggregationPipeline;
 }
 
-export interface PipelineFactorySpecs {
+export interface PipelineFactoryOperators {
   /**
    * Lookup stage spec.
    */
@@ -303,7 +303,7 @@ export interface MatchStageFactoryOptions {
  * the keys are `true` or another object for recursive lookup of the reference
  * model's foreign keys. If the value is simply `true`, lookup will only be
  * performed on the immediate foreign key, all of its subsequent foreign keys
- * will be ignored. Specs can be nested objects. `$unwind` is immediately
+ * will be ignored. Spec can be nested objects. `$unwind` is immediately
  * followed after the generated  `$lookup`.
  */
 export interface LookupStageFactorySpec {
@@ -323,7 +323,7 @@ export interface LookupStageFactoryOptions {
 }
 
 /**
- * Specs that define the $group stage. If this is a string, a simple $group
+ * Spec that define the $group stage. If this is a string, a simple $group
  * stage will be generated with `_id` equal this string.
  */
 export type GroupStageFactorySpec = string | { [key: string]: any };
