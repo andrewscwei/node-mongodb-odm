@@ -1,6 +1,6 @@
 import is from '@sindresorhus/is';
 import { ObjectID } from 'mongodb';
-import { valueIsValidObjectID } from '../types';
+import { valueIsCompatibleObjectID } from '../types';
 
 export default function mapValuesToObjectIDs(val: any): any {
   if (is.array(val)) {
@@ -16,7 +16,7 @@ export default function mapValuesToObjectIDs(val: any): any {
 
     return out;
   }
-  else if (valueIsValidObjectID(val)) {
+  else if (valueIsCompatibleObjectID(val)) {
     return new ObjectID(val);
   }
   else {

@@ -34,7 +34,7 @@ export type FieldValue = undefined | FieldBasicValue | FieldBasicValue[] | { [su
 /**
  * Data type for field descriptors.
  */
-export type FieldDescriptors<T = { [key: string]: any }> = { [K in keyof T]: FieldSpecs };
+export type FieldDescriptor<T = { [key: string]: any }> = { [K in keyof T]: FieldSpecs };
 
 /**
  * Specification for defining a field in the MongoDB collection.
@@ -43,7 +43,7 @@ export interface FieldSpecs {
   /**
    * @see FieldType
    */
-  type: FieldType | FieldDescriptors;
+  type: FieldType | FieldDescriptor;
 
   /**
    * When the type is an ObjectID, that means th is field is a foreign key to
@@ -132,7 +132,7 @@ export interface Schema<T = any> {
    *
    * @see FieldSpecs
    */
-  fields: FieldDescriptors<Required<T>>;
+  fields: FieldDescriptor<Required<T>>;
 
   /**
    * Defines the indexes of this collection.
@@ -468,13 +468,13 @@ export function typeIsValidObjectID(value: any): value is ObjectID {
 }
 
 /**
- * Checks if a value is a FieldDescriptors object.
+ * Checks if a value is a FieldDescriptor object.
  *
  * @param value
  *
  * @returns `true` or `false`.
  */
-export function typeIsFieldDescriptors(value: any): value is FieldDescriptors {
+export function typeIsFieldDescriptor(value: any): value is FieldDescriptor {
   if (!is.plainObject(value)) return false;
 
   return true;
@@ -489,8 +489,23 @@ export function typeIsFieldDescriptors(value: any): value is FieldDescriptors {
  *          `undefined` will be returned.
  */
 export function ObjectIDMake(value: any): ObjectID | undefined {
-  if (!valueIsValidObjectID(value)) return undefined;
+  if (!valueIsCompatibleObjectID(value)) return undefined;
   return new ObjectID(value);
+}
+
+/**
+ * Checks to see if a value is a valid ObjectID and returns it if it is. If not,
+ * this method will check if the value is an identifiable document, and if it is
+ * it will return the `_id` of the document.
+ *
+ * @param value - Value to check.
+ *
+ * @returns ObjectID or `undefined` if none are found.
+ */
+export function ObjectIDGet(value: any): ObjectID | undefined {
+  if (valueIsCompatibleObjectID(value)) return value;
+  if (typeIsIdentifiableDocument(value)) return value._id;
+  return undefined;
 }
 
 /**
@@ -500,7 +515,7 @@ export function ObjectIDMake(value: any): ObjectID | undefined {
  *
  * @returns `true` or `false`.
  */
-export function valueIsValidObjectID(value: any): boolean {
+export function valueIsCompatibleObjectID(value: any): boolean {
   if (is.nullOrUndefined(value)) return false;
   if (!ObjectID.isValid(value)) return false;
   if (is.directInstanceOf(value, ObjectID)) return true;
