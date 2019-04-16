@@ -73,11 +73,11 @@ export async function connectToDb(): Promise<void> {
   });
 
   connection.on('close', (err: MongoError) => {
-    debug('Terminating MongoDB client...', 'OK', err);
+    debug('Terminating MongoDB client...', 'OK');
   });
 
   connection.on('error', (err: MongoError) => {
-    debug('Handling client error...', 'OK', err);
+    debug('Handling client error...', 'ERR');
   });
 
   connection.on('fullsetup', () => {
@@ -85,7 +85,7 @@ export async function connectToDb(): Promise<void> {
   });
 
   connection.on('parseError', (err: MongoError) => {
-    debug('Handling parse error...', 'OK', err);
+    debug('Handling parse error...', 'ERR');
   });
 
   connection.on('reconnect', () => {
@@ -93,7 +93,7 @@ export async function connectToDb(): Promise<void> {
   });
 
   connection.on('timeout', (err: MongoError) => {
-    debug('Receiving MongoDB client timeout...', 'OK', err);
+    debug('Receiving MongoDB client timeout...', 'ERR');
   });
 }
 
@@ -134,7 +134,7 @@ export function configureDb(options: Configuration) {
 export async function getDbInstance(): Promise<Db> {
   if (client) return client.db(config.name);
 
-  debug('No MongoDB client, reinitiating connection...', 'OK');
+  debug('No MongoDB client, initiating connection...', 'OK');
 
   await connectToDb();
 
