@@ -5,7 +5,7 @@
 
 import is from '@sindresorhus/is';
 import * as db from '..';
-import { AggregationPipeline, AggregationStageDescriptor, FieldSpec, GroupStageFactorySpec, LookupStageFactoryOptions, LookupStageFactorySpec, MatchStageFactoryOptions, MatchStageFactorySpec, PipelineFactoryOptions, PipelineFactoryOperators, ProjectStageFactoryOptions, Schema, SortStageFactorySpec } from '../types';
+import { AggregationPipeline, AggregationStageDescriptor, FieldSpec, GroupStageFactorySpec, LookupStageFactoryOptions, LookupStageFactorySpec, MatchStageFactoryOptions, MatchStageFactorySpec, PipelineFactoryOperators, PipelineFactoryOptions, ProjectStageFactoryOptions, Schema, SortStageFactorySpec } from '../types';
 import sanitizeQuery from '../utils/sanitizeQuery';
 
 export default abstract class Aggregation {

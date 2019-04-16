@@ -10,7 +10,7 @@ import bcrypt from 'bcrypt';
 import _ from 'lodash';
 import { Collection, FilterQuery, ObjectID, UpdateQuery } from 'mongodb';
 import * as db from '..';
-import { AggregationPipeline, Document, DocumentFragment, FieldDefaultValueFunction, FieldFormatFunction, FieldRandomValueFunction, FieldSpec, FieldValidationStrategy, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOptions, PipelineFactoryOperators, Query, Schema, typeIsUpdateQuery, typeIsValidObjectID, Update, FieldDescriptor, typeIsFieldDescriptor } from '../types';
+import { AggregationPipeline, Document, DocumentFragment, FieldDefaultValueFunction, FieldDescriptor, FieldFormatFunction, FieldRandomValueFunction, FieldSpec, FieldValidationStrategy, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOperators, PipelineFactoryOptions, Query, Schema, typeIsFieldDescriptor, typeIsUpdateQuery, typeIsValidObjectID, Update } from '../types';
 import getFieldSpecByKey from '../utils/getFieldSpecByKey';
 import sanitizeDocument from '../utils/sanitizeDocument';
 import sanitizeQuery from '../utils/sanitizeQuery';
@@ -897,7 +897,6 @@ export default <T = {}>(schema: Schema<T>) => {
         this.validateDocumentRequiredFields(doc);
       }
     }
-
 
     /**
      * Handler called before an attempt to insert document into the database. This
