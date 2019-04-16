@@ -24,12 +24,17 @@ export type Update<T = {}> = UpdateQuery<DocumentFragment<T>> | Partial<{ [K in 
 /**
  * Data type for all field types.
  */
-export type FieldType = FieldBasicType | FieldBasicType[] | { [field: string]: FieldSpecs };
+export type FieldType = FieldBasicType | FieldBasicType[];
 
 /**
  * Data type for acceptable field values.
  */
 export type FieldValue = undefined | FieldBasicValue | FieldBasicValue[] | { [subfield: string]: FieldValue };
+
+/**
+ * Data type for field descriptors.
+ */
+export type FieldDescriptors<T = { [key: string]: any }> = { [K in keyof T]: FieldSpecs };
 
 /**
  * Specification for defining a field in the MongoDB collection.
@@ -38,7 +43,7 @@ export interface FieldSpecs {
   /**
    * @see FieldType
    */
-  type: FieldType;
+  type: FieldType | FieldDescriptors;
 
   /**
    * When the type is an ObjectID, that means th is field is a foreign key to
@@ -127,9 +132,7 @@ export interface Schema<T = any> {
    *
    * @see FieldSpecs
    */
-  fields: {
-    [K in keyof Required<T>]: FieldSpecs;
-  };
+  fields: FieldDescriptors<Required<T>>;
 
   /**
    * Defines the indexes of this collection.
@@ -450,7 +453,7 @@ export function typeIsIdentifiableDocument(value: any): value is { _id: ObjectID
 }
 
 /**
- * Checks if a value is a value ObjectID.
+ * Checks if a value is a valid ObjectID.
  *
  * @param value - Value to check.
  *
@@ -460,6 +463,19 @@ export function typeIsValidObjectID(value: any): value is ObjectID {
   if (is.nullOrUndefined(value)) return false;
   if (!is.directInstanceOf(value, ObjectID)) return false;
   if (!ObjectID.isValid(value)) return false;
+
+  return true;
+}
+
+/**
+ * Checks if a value is a FieldDescriptors object.
+ *
+ * @param value
+ *
+ * @returns `true` or `false`.
+ */
+export function typeIsFieldDescriptors(value: any): value is FieldDescriptors {
+  if (!is.plainObject(value)) return false;
 
   return true;
 }
