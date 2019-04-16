@@ -12,20 +12,32 @@ describe('utils/sanitizeDocument', () => {
       extraneous: 'foo',
     };
 
-    const o = sanitizeDocument<BazProps>(Baz.schema, t);
+    const o = sanitizeDocument(Baz.schema, t);
 
+    assert(o.hasOwnProperty('aString'));
     assert(!o.hasOwnProperty('extraneous'));
   });
 
-  it('can remove undefined fields in a document fragment', () => {
-    const t: DocumentFragment<BazProps> = {
-      aString: 'foo',
+  it('can remove `undefined` and `null` fields in a document fragment', () => {
+    const t: any = {
       aNumber: undefined,
+      aBoolean: null,
     };
 
-    const o = sanitizeDocument<BazProps>(Baz.schema, t);
+    const o = sanitizeDocument(Baz.schema, t);
 
-    assert(!o.aNumber);
+    assert(!o.hasOwnProperty('aNumber'));
+    assert(!o.hasOwnProperty('aBoolean'));
+  });
+
+  it('can account for fields in dot notation format', () => {
+    const t: any = {
+      'anObject.a': 'bar',
+    };
+
+    const o = sanitizeDocument(Baz.schema, t, { accountForDotNotation: true });
+
+    assert(o.hasOwnProperty('anObject.a'));
   });
 });
 
@@ -33,6 +45,7 @@ interface BazProps {
   aString: string;
   aNumber?: number;
   aBoolean?: boolean;
+  anObject?: { a?: string; b?: string; };
   aFormattedString?: string;
   anEncryptedString?: string;
 }
@@ -45,6 +58,7 @@ const BazSchema: Schema<BazProps> = {
     aString: { type: String, required: true },
     aNumber: { type: Number },
     aBoolean: { type: Boolean },
+    anObject: { type: { a: { type: String }, b: { type: String } } },
     aFormattedString: { type: String },
     anEncryptedString: { type: String, encrypted: true },
   },

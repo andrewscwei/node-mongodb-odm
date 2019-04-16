@@ -49,7 +49,7 @@ export default function sanitizeQuery<T = {}>(schema: Schema, query: Query, { st
     return { _id: new ObjectID(query) };
   }
   else if (strict) {
-    return sanitizeDocument<T>(schema, query);
+    return sanitizeDocument<T>(schema, query, { accountForDotNotation: true });
   }
   else {
     return query;

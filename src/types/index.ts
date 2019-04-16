@@ -166,6 +166,13 @@ export interface ModelValidateDocumentOptions {
    * supposedly has a unique index, validation fails.
    */
   ignoreUniqueIndex?: boolean;
+
+  /**
+   * Tells the validation process that the document contains dot notations to
+   * in its keys. Dot notations are usually used by udate queries to update
+   * fields in an embedded doc as opposed to a top-level field.
+   */
+  accountForDotNotation?: boolean;
 }
 
 export interface ModelFindOneOptions extends CollectionAggregationOptions {}
