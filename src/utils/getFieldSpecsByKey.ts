@@ -1,5 +1,5 @@
 import is from '@sindresorhus/is';
-import { FieldSpecs, typeIsFieldDescriptor } from '../types';
+import { FieldSpec, typeIsFieldDescriptor } from '../types';
 
 /**
  * Finds and returns the specs of a field in the provided schema by its key.
@@ -7,7 +7,7 @@ import { FieldSpecs, typeIsFieldDescriptor } from '../types';
  *
  * @returns The field specs.
  */
-export default function getFieldSpecsByKey(fieldDescriptor: { [key: string]: FieldSpecs }, key: string): FieldSpecs | undefined {
+export default function getFieldSpecsByKey(fieldDescriptor: { [key: string]: FieldSpec }, key: string): FieldSpec | undefined {
   const keys = key.split('.');
   const k = keys.shift();
 

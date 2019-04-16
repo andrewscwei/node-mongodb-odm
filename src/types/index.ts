@@ -34,12 +34,12 @@ export type FieldValue = undefined | FieldBasicValue | FieldBasicValue[] | { [su
 /**
  * Data type for field descriptors.
  */
-export type FieldDescriptor<T = { [key: string]: any }> = { [K in keyof T]: FieldSpecs };
+export type FieldDescriptor<T = { [key: string]: any }> = { [K in keyof T]: FieldSpec };
 
 /**
  * Specification for defining a field in the MongoDB collection.
  */
-export interface FieldSpecs {
+export interface FieldSpec {
   /**
    * @see FieldType
    */
@@ -130,7 +130,7 @@ export interface Schema<T = any> {
   /**
    * Defines document fields.
    *
-   * @see FieldSpecs
+   * @see FieldSpec
    */
   fields: FieldDescriptor<Required<T>>;
 

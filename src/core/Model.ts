@@ -10,7 +10,7 @@ import bcrypt from 'bcrypt';
 import _ from 'lodash';
 import { Collection, FilterQuery, ObjectID, UpdateQuery } from 'mongodb';
 import * as db from '..';
-import { AggregationPipeline, Document, DocumentFragment, FieldDefaultValueFunction, FieldFormatFunction, FieldRandomValueFunction, FieldSpecs, FieldValidationStrategy, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOptions, PipelineFactorySpecs, Query, Schema, typeIsUpdateQuery, typeIsValidObjectID, Update, FieldDescriptor, typeIsFieldDescriptor } from '../types';
+import { AggregationPipeline, Document, DocumentFragment, FieldDefaultValueFunction, FieldFormatFunction, FieldRandomValueFunction, FieldSpec, FieldValidationStrategy, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOptions, PipelineFactorySpecs, Query, Schema, typeIsUpdateQuery, typeIsValidObjectID, Update, FieldDescriptor, typeIsFieldDescriptor } from '../types';
 import getFieldSpecsByKey from '../utils/getFieldSpecsByKey';
 import sanitizeDocument from '../utils/sanitizeDocument';
 import sanitizeQuery from '../utils/sanitizeQuery';
@@ -1184,7 +1184,7 @@ export default <T = {}>(schema: Schema<T>) => {
 
       for (const modelName of cascadeModelNames) {
         const ModelClass = db.getModel(modelName);
-        const fields: { [fieldName: string]: FieldSpecs } = ModelClass.schema.fields;
+        const fields: { [fieldName: string]: FieldSpec } = ModelClass.schema.fields;
 
         if (!ModelClass) throw new Error(`[${this.schema.model}] Trying to cascade delete from model ${modelName} but model is not found`);
 

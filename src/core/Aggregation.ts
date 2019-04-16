@@ -5,7 +5,7 @@
 
 import is from '@sindresorhus/is';
 import * as db from '..';
-import { AggregationPipeline, AggregationStageDescriptor, FieldSpecs, GroupStageFactorySpecs, LookupStageFactoryOptions, LookupStageFactorySpecs, MatchStageFactoryOptions, MatchStageFactorySpecs, PipelineFactoryOptions, PipelineFactorySpecs, ProjectStageFactoryOptions, Schema, SortStageFactorySpecs } from '../types';
+import { AggregationPipeline, AggregationStageDescriptor, FieldSpec, GroupStageFactorySpecs, LookupStageFactoryOptions, LookupStageFactorySpecs, MatchStageFactoryOptions, MatchStageFactorySpecs, PipelineFactoryOptions, PipelineFactorySpecs, ProjectStageFactoryOptions, Schema, SortStageFactorySpecs } from '../types';
 import sanitizeQuery from '../utils/sanitizeQuery';
 
 export default abstract class Aggregation {
@@ -114,7 +114,7 @@ export default abstract class Aggregation {
    * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/lookup/}
    */
   static lookupStageFactory(schema: Schema, specs: LookupStageFactorySpecs, { fromPrefix = '', toPrefix = '' }: LookupStageFactoryOptions = {}): AggregationPipeline {
-    const fields: { [fieldName: string]: FieldSpecs} = schema.fields;
+    const fields: { [fieldName: string]: FieldSpec} = schema.fields;
 
     let pipe: AggregationPipeline = [];
 
@@ -236,7 +236,7 @@ export default abstract class Aggregation {
    * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/project/}
    */
   static projectStageFactory(schema: Schema, { toPrefix = '', fromPrefix = '', populate = {}, exclude = [] }: ProjectStageFactoryOptions = {}): AggregationPipeline {
-    const fields: { [fieldName: string]: FieldSpecs} = schema.fields;
+    const fields: { [fieldName: string]: FieldSpec} = schema.fields;
     const out: { [key: string]: any } = { [`${toPrefix}_id`]: `$${fromPrefix}_id` };
 
     for (const key in fields) {

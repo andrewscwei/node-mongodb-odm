@@ -1,12 +1,12 @@
 import is from '@sindresorhus/is';
 import { ObjectID } from 'mongodb';
-import { FieldSpecs, FieldType, FieldValidationStrategy, FieldValue, typeIsValidObjectID } from '../types';
+import { FieldSpec, FieldType, FieldValidationStrategy, FieldValue, typeIsValidObjectID } from '../types';
 
 /**
  * Checks a value against field properties definied in a schema.
  *
  * @param value - The value to check.
- * @param specs - @see FieldSpecs
+ * @param specs - @see FieldSpec
  * @param strategy - @see FieldValidationStrategy
  *
  * @throws {TypeError} Value is marked as required in the specs but it is null
@@ -69,7 +69,7 @@ import { FieldSpecs, FieldType, FieldValidationStrategy, FieldValue, typeIsValid
  * @throws {TypeError} Value fails custom validation function (only if validator
  *                     is a function).
  */
-export default function validateFieldValue<T = FieldValue>(value: any, specs: FieldSpecs, strategy?: FieldValidationStrategy<T>) {
+export default function validateFieldValue<T = FieldValue>(value: any, specs: FieldSpec, strategy?: FieldValidationStrategy<T>) {
   // Check if value is undefined or null, then respond accordingly depending on
   // whether or not it is a required value.
   if (is.nullOrUndefined(value)) {
@@ -198,7 +198,7 @@ export default function validateFieldValue<T = FieldValue>(value: any, specs: Fi
       // Validate each field.
       for (const subFieldName in specs.type) {
         if (!specs.type.hasOwnProperty(subFieldName)) continue;
-        validateFieldValue(value[subFieldName], (specs.type as { [key: string]: FieldSpecs })[subFieldName]);
+        validateFieldValue(value[subFieldName], (specs.type as { [key: string]: FieldSpec })[subFieldName]);
       }
     }
   }
