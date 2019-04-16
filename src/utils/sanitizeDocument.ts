@@ -35,7 +35,7 @@ export default function sanitizeDocument<T = {}>(schema: Schema, doc: DocumentFr
     // Ignore fields that don't exist in the schema with/without dot notation
     // enabled.
     if ((key !== '_id') && !accountForDotNotation && !schema.fields.hasOwnProperty(key)) continue;
-    if ((key !== '_id') && accountForDotNotation && !getFieldSpecsByKey(schema, key)) continue;
+    if ((key !== '_id') && accountForDotNotation && !getFieldSpecsByKey(schema.fields, key)) continue;
 
     // Ignore fields with `undefined` or `null` values.
     if (is.nullOrUndefined((doc as any)[key])) continue;
