@@ -11,7 +11,7 @@ import _ from 'lodash';
 import { Collection, FilterQuery, ObjectID, UpdateQuery } from 'mongodb';
 import * as db from '..';
 import { AggregationPipeline, Document, DocumentFragment, FieldDefaultValueFunction, FieldFormatFunction, FieldRandomValueFunction, FieldSpec, FieldValidationStrategy, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOptions, PipelineFactorySpecs, Query, Schema, typeIsUpdateQuery, typeIsValidObjectID, Update, FieldDescriptor, typeIsFieldDescriptor } from '../types';
-import getFieldSpecsByKey from '../utils/getFieldSpecsByKey';
+import getFieldSpecByKey from '../utils/getFieldSpecByKey';
 import sanitizeDocument from '../utils/sanitizeDocument';
 import sanitizeQuery from '../utils/sanitizeQuery';
 import validateFieldValue from '../utils/validateFieldValue';
@@ -799,10 +799,10 @@ export default <T = {}>(schema: Schema<T>) => {
       for (const key in this.schema.fields) {
         if (!formattedDoc.hasOwnProperty(key)) continue;
 
-        const fieldSpecs = fields[key];
+        const fieldSpec = fields[key];
         const formatter = this.formatProps[key];
 
-        if (!fieldSpecs) throw new Error(`[${this.schema.model}] Field ${key} not found in schema`);
+        if (!fieldSpec) throw new Error(`[${this.schema.model}] Field ${key} not found in schema`);
 
         // If the schema has a certain formatting function defined for this field,
         // apply it.
@@ -812,7 +812,7 @@ export default <T = {}>(schema: Schema<T>) => {
         }
 
         // If the schema indicates that this field is encrypted, encrypt it.
-        if (fieldSpecs.encrypted === true) {
+        if (fieldSpec.encrypted === true) {
           formattedDoc[key] = await bcrypt.hash(`${formattedDoc[key]}`, 10) as any;
         }
       }
@@ -825,7 +825,7 @@ export default <T = {}>(schema: Schema<T>) => {
      * fails. This method does not modify the document in any way. It checks for
      * the following in order:
      *   1. Each field is defined in the schema.
-     *   2. Each field value conforms to the defined field specs.
+     *   2. Each field value conforms to the defined field spec.
      *   3. Unique indexes are enforced (only if `ignoreUniqueIndex` is disabled).
      *   4. No required fields are missing (only if `strict` is enabled).
      *
@@ -858,15 +858,15 @@ export default <T = {}>(schema: Schema<T>) => {
         if (this.schema.timestamps && (key === 'createdAt')) continue;
 
         // #1 Check if field is defined in the schema.
-        const fieldSpecs = options.accountForDotNotation ? getFieldSpecsByKey(this.schema.fields, key) : schema.fields[key as keyof T];
-        if (fieldSpecs === undefined) throw new Error(`[${this.schema.model}] The field '${key}' is not defined in the ${JSON.stringify(this.schema.fields, undefined, 0)}`);
+        const fieldSpec = options.accountForDotNotation ? getFieldSpecByKey(this.schema.fields, key) : schema.fields[key as keyof T];
+        if (fieldSpec === undefined) throw new Error(`[${this.schema.model}] The field '${key}' is not defined in the ${JSON.stringify(this.schema.fields, undefined, 0)}`);
 
-        // #2 Check if field value conforms to its defined specs.
+        // #2 Check if field value conforms to its defined spec.
         const val = _.get(doc, key, undefined);
         const validationStrategy = _.get(this.validateProps, key, undefined);
 
         try {
-          validateFieldValue(val, fieldSpecs, validationStrategy);
+          validateFieldValue(val, fieldSpec, validationStrategy);
         }
         catch (err) {
           debug(`Validating value ${JSON.stringify(val)} for field "${key}"...`, 'ERR', err.message);
@@ -1204,7 +1204,7 @@ export default <T = {}>(schema: Schema<T>) => {
 
     /**
      * Validates a doc of this model to see if the required fields are in place.
-     * This process handles specs defined for embedded docs as well.
+     * This process handles spec defined for embedded docs as well.
      *
      * @param doc - The doc to validate.
      * @param fieldDescriptor - The field descriptor to validate against.
@@ -1216,10 +1216,10 @@ export default <T = {}>(schema: Schema<T>) => {
       for (const field in fieldDescriptor) {
         if (!fieldDescriptor.hasOwnProperty(field)) continue;
 
-        const fieldSpecs = fieldDescriptor[field];
+        const fieldSpec = fieldDescriptor[field];
 
         // If field is not marked as required, skip.
-        if (!fieldSpecs.required) continue;
+        if (!fieldSpec.required) continue;
 
         // If model has default props defined for this field, skip.
         if (this.defaultProps.hasOwnProperty(field)) continue;
@@ -1229,8 +1229,8 @@ export default <T = {}>(schema: Schema<T>) => {
         if (!doc.hasOwnProperty(field)) throw new TypeError(`[${this.schema.model}] Missing required field "${fieldName ? `${fieldName}.` : ''}${field}"`);
 
         // Recursively check for embedded docs, if applicable.
-        if (typeIsFieldDescriptor(fieldSpecs.type)) {
-          this.validateDocumentRequiredFields(doc[field], fieldSpecs.type, field);
+        if (typeIsFieldDescriptor(fieldSpec.type)) {
+          this.validateDocumentRequiredFields(doc[field], fieldSpec.type, field);
         }
       }
     }

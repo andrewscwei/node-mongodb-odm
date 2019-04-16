@@ -6,10 +6,10 @@ import { FieldSpec, FieldType, FieldValidationStrategy, FieldValue, typeIsValidO
  * Checks a value against field properties definied in a schema.
  *
  * @param value - The value to check.
- * @param specs - @see FieldSpec
+ * @param spec - @see FieldSpec
  * @param strategy - @see FieldValidationStrategy
  *
- * @throws {TypeError} Value is marked as required in the specs but it is null
+ * @throws {TypeError} Value is marked as required in the spec but it is null
  *                     or undefined.
  * @throws {TypeError} Value is supposed to be a string but it is not.
  * @throws {TypeError} String value does not conform to the RegExp validator
@@ -53,7 +53,7 @@ import { FieldSpec, FieldType, FieldValidationStrategy, FieldValue, typeIsValidO
  *                     if validator is a number).
  * @throws {TypeError} ObjectID value should not have an array validator (only
  *                     if validator is an array).
- * @throws {TypeError} Incorrect definition of a typed array type in the specs.
+ * @throws {TypeError} Incorrect definition of a typed array type in the spec.
  * @throws {TypeError} Value is supposed to be a typed array but it is not even
  *                     an array.
  * @throws {TypeError} One or more values in the typed array is not of the
@@ -69,11 +69,11 @@ import { FieldSpec, FieldType, FieldValidationStrategy, FieldValue, typeIsValidO
  * @throws {TypeError} Value fails custom validation function (only if validator
  *                     is a function).
  */
-export default function validateFieldValue<T = FieldValue>(value: any, specs: FieldSpec, strategy?: FieldValidationStrategy<T>) {
+export default function validateFieldValue<T = FieldValue>(value: any, spec: FieldSpec, strategy?: FieldValidationStrategy<T>) {
   // Check if value is undefined or null, then respond accordingly depending on
   // whether or not it is a required value.
   if (is.nullOrUndefined(value)) {
-    if (specs.required) {
+    if (spec.required) {
       throw new TypeError('The value is marked as required but it is null or undefined');
     }
     else {
@@ -81,7 +81,7 @@ export default function validateFieldValue<T = FieldValue>(value: any, specs: Fi
     }
   }
 
-  switch (specs.type) {
+  switch (spec.type) {
   case String:
     if (!is.string(value)) throw new TypeError(`The value "${value}" is expected to be a string but instead it is a(n) ${is(value)}`);
 
@@ -168,21 +168,21 @@ export default function validateFieldValue<T = FieldValue>(value: any, specs: Fi
     break;
   default:
     // If type is an array of a type, i.e. [Number].
-    if (is.array(specs.type)) {
-      if (specs.type.length !== 1) throw new TypeError(`Incorrect definition of a typed array type ${specs.type}: when specifying a type as an array of another type, wrap the type with [], hence a one-element array`);
+    if (is.array(spec.type)) {
+      if (spec.type.length !== 1) throw new TypeError(`Incorrect definition of a typed array type ${spec.type}: when specifying a type as an array of another type, wrap the type with [], hence a one-element array`);
       if (!is.array(value)) throw new TypeError(`The value "${value}" is expected to be a typed array but instead it is a(n) ${is(value)}`);
 
       // Ensure that every element within the array conforms to the specified
       // type and passes the validation test.
       for (const item of value) {
         validateFieldValue(item, {
-          ...specs,
-          type: (specs.type as FieldType[])[0],
+          ...spec,
+          type: (spec.type as FieldType[])[0],
         });
       }
     }
     // If type is an object.
-    else if (is.plainObject(specs.type)) {
+    else if (is.plainObject(spec.type)) {
       if (!is.plainObject(value)) throw new TypeError(`The value "${value}" is expected to be an object but instead it is a(n) ${is(value)}`);
 
       if (is.regExp(strategy)) {
@@ -196,9 +196,9 @@ export default function validateFieldValue<T = FieldValue>(value: any, specs: Fi
       }
 
       // Validate each field.
-      for (const subFieldName in specs.type) {
-        if (!specs.type.hasOwnProperty(subFieldName)) continue;
-        validateFieldValue(value[subFieldName], (specs.type as { [key: string]: FieldSpec })[subFieldName]);
+      for (const subFieldName in spec.type) {
+        if (!spec.type.hasOwnProperty(subFieldName)) continue;
+        validateFieldValue(value[subFieldName], (spec.type as { [key: string]: FieldSpec })[subFieldName]);
       }
     }
   }

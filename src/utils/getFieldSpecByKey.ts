@@ -2,12 +2,12 @@ import is from '@sindresorhus/is';
 import { FieldSpec, typeIsFieldDescriptor } from '../types';
 
 /**
- * Finds and returns the specs of a field in the provided schema by its key.
+ * Finds and returns the spec of a field in the provided schema by its key.
  * This key can be in dot notation to seek fields in embedded docs.
  *
- * @returns The field specs.
+ * @returns The field spec.
  */
-export default function getFieldSpecsByKey(fieldDescriptor: { [key: string]: FieldSpec }, key: string): FieldSpec | undefined {
+export default function getFieldSpecByKey(fieldDescriptor: { [key: string]: FieldSpec }, key: string): FieldSpec | undefined {
   const keys = key.split('.');
   const k = keys.shift();
 
@@ -21,6 +21,6 @@ export default function getFieldSpecsByKey(fieldDescriptor: { [key: string]: Fie
   }
   else {
     if (!typeIsFieldDescriptor(o.type)) return undefined;
-    return getFieldSpecsByKey(o.type, keys.join('.'));
+    return getFieldSpecByKey(o.type, keys.join('.'));
   }
 }

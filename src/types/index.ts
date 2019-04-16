@@ -267,30 +267,30 @@ export interface PipelineFactorySpecs {
   /**
    * Lookup stage spec.
    */
-  $lookup?: LookupStageFactorySpecs;
+  $lookup?: LookupStageFactorySpec;
 
   /**
    * Match stage spec at the beginning of the pipeline.
    */
-  $match?: MatchStageFactorySpecs;
+  $match?: MatchStageFactorySpec;
 
   /**
    * Match stage spec appended to end of the pipeline.
    */
-  $prune?: MatchStageFactorySpecs;
+  $prune?: MatchStageFactorySpec;
 
   /**
    * Group stage spec.
    */
-  $group?: GroupStageFactorySpecs;
+  $group?: GroupStageFactorySpec;
 
   /**
    * Sort stage spec appended to the end of the pipeline.
    */
-  $sort?: SortStageFactorySpecs;
+  $sort?: SortStageFactorySpec;
 }
 
-export type MatchStageFactorySpecs = Query;
+export type MatchStageFactorySpec = Query;
 
 export interface MatchStageFactoryOptions {
   prefix?: string;
@@ -306,8 +306,8 @@ export interface MatchStageFactoryOptions {
  * will be ignored. Specs can be nested objects. `$unwind` is immediately
  * followed after the generated  `$lookup`.
  */
-export interface LookupStageFactorySpecs {
-  [modelName: string]: boolean | LookupStageFactorySpecs;
+export interface LookupStageFactorySpec {
+  [modelName: string]: boolean | LookupStageFactorySpec;
 }
 
 export interface LookupStageFactoryOptions {
@@ -326,9 +326,9 @@ export interface LookupStageFactoryOptions {
  * Specs that define the $group stage. If this is a string, a simple $group
  * stage will be generated with `_id` equal this string.
  */
-export type GroupStageFactorySpecs = string | { [key: string]: any };
+export type GroupStageFactorySpec = string | { [key: string]: any };
 
-export interface SortStageFactorySpecs {
+export interface SortStageFactorySpec {
   [key: string]: any;
 }
 

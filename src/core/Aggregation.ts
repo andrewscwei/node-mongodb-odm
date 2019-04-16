@@ -5,7 +5,7 @@
 
 import is from '@sindresorhus/is';
 import * as db from '..';
-import { AggregationPipeline, AggregationStageDescriptor, FieldSpec, GroupStageFactorySpecs, LookupStageFactoryOptions, LookupStageFactorySpecs, MatchStageFactoryOptions, MatchStageFactorySpecs, PipelineFactoryOptions, PipelineFactorySpecs, ProjectStageFactoryOptions, Schema, SortStageFactorySpecs } from '../types';
+import { AggregationPipeline, AggregationStageDescriptor, FieldSpec, GroupStageFactorySpec, LookupStageFactoryOptions, LookupStageFactorySpec, MatchStageFactoryOptions, MatchStageFactorySpec, PipelineFactoryOptions, PipelineFactorySpecs, ProjectStageFactoryOptions, Schema, SortStageFactorySpec } from '../types';
 import sanitizeQuery from '../utils/sanitizeQuery';
 
 export default abstract class Aggregation {
@@ -51,7 +51,7 @@ export default abstract class Aggregation {
    * Generates the $match stage of the aggregation pipeline.
    *
    * @param schema - The schema of the database collection.
-   * @param specs - Specs (aka query in this case) that defines the match.
+   * @param spec - Specs (aka query in this case) that defines the match.
    * @param options - Additional options.
    *
    * @returns The aggregation pipeline that handles the generated $match stage.
@@ -70,8 +70,8 @@ export default abstract class Aggregation {
    *
    * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/match/}
    */
-  static matchStageFactory<T = {}>(schema: Schema, specs: MatchStageFactorySpecs, { prefix = '' }: MatchStageFactoryOptions = {}): AggregationPipeline {
-    const sanitized = sanitizeQuery<T>(schema, specs, { strict: false });
+  static matchStageFactory<T = {}>(schema: Schema, spec: MatchStageFactorySpec, { prefix = '' }: MatchStageFactoryOptions = {}): AggregationPipeline {
+    const sanitized = sanitizeQuery<T>(schema, spec, { strict: false });
     const query: { [key: string]: any } = {};
 
     for (const key in sanitized) {
@@ -86,7 +86,7 @@ export default abstract class Aggregation {
    * Generates the $lookup stage of the aggregation pipeline.
    *
    * @param schema - The schema of the database collection.
-   * @param specs - Specs that defines the $lookup stage, supports looking up
+   * @param spec - Specs that defines the $lookup stage, supports looking up
    *                nested foreign keys.
    * @param options - Additional options.
    *
@@ -113,22 +113,22 @@ export default abstract class Aggregation {
    *
    * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/lookup/}
    */
-  static lookupStageFactory(schema: Schema, specs: LookupStageFactorySpecs, { fromPrefix = '', toPrefix = '' }: LookupStageFactoryOptions = {}): AggregationPipeline {
+  static lookupStageFactory(schema: Schema, spec: LookupStageFactorySpec, { fromPrefix = '', toPrefix = '' }: LookupStageFactoryOptions = {}): AggregationPipeline {
     const fields: { [fieldName: string]: FieldSpec} = schema.fields;
 
     let pipe: AggregationPipeline = [];
 
-    for (const key in specs) {
-      if (!specs.hasOwnProperty(key)) continue;
+    for (const key in spec) {
+      if (!spec.hasOwnProperty(key)) continue;
 
-      const val = specs[key];
-      if (!((val === true) || (typeof val === 'object'))) throw new Error(`[lookup(${schema}, ${specs}, ${{ fromPrefix, toPrefix }})] Invalid populate properties.`);
+      const val = spec[key];
+      if (!((val === true) || (typeof val === 'object'))) throw new Error(`[lookup(${schema}, ${spec}, ${{ fromPrefix, toPrefix }})] Invalid populate properties.`);
 
       const ref = fields[key] && fields[key].ref;
-      if (!ref) throw new Error(`[lookup(${schema}, ${specs}, ${{ fromPrefix, toPrefix }})] The field to populate does not have a reference model specified in the schema.`);
+      if (!ref) throw new Error(`[lookup(${schema}, ${spec}, ${{ fromPrefix, toPrefix }})] The field to populate does not have a reference model specified in the schema.`);
 
       const schemaRef = db.getModel(ref!).schema;
-      if (!schemaRef) throw new Error(`[lookup(${schema}, ${specs}, ${{ fromPrefix, toPrefix }})] Unable to find the model schema corresponding to the field to populate.`);
+      if (!schemaRef) throw new Error(`[lookup(${schema}, ${spec}, ${{ fromPrefix, toPrefix }})] Unable to find the model schema corresponding to the field to populate.`);
 
       pipe.push({
         $lookup: {
@@ -161,7 +161,7 @@ export default abstract class Aggregation {
    * Generates the $group stage of the aggregation pipeline.
    *
    * @param schema - The schema of the database collection.
-   * @param specs - Specs that define the $group stage.
+   * @param spec - Specs that define the $group stage.
    *
    * @returns The aggregation pipeline that handles the generated $group stage.
    *
@@ -175,14 +175,14 @@ export default abstract class Aggregation {
    *
    * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/group/}
    */
-  static groupStageFactory(schema: Schema, specs: GroupStageFactorySpecs): AggregationPipeline {
+  static groupStageFactory(schema: Schema, spec: GroupStageFactorySpec): AggregationPipeline {
     const pipe: AggregationPipeline = [];
 
-    if (is.string(specs)) {
-      pipe.push({ $group: { _id: `$${specs}` } });
+    if (is.string(spec)) {
+      pipe.push({ $group: { _id: `$${spec}` } });
     }
     else {
-      pipe.push({ $group: specs });
+      pipe.push({ $group: spec });
     }
 
     return pipe;
@@ -192,7 +192,7 @@ export default abstract class Aggregation {
    * Generates the $sort stage of the aggregation pipeline.
    *
    * @param schema - The schema of the database collection.
-   * @param specs - Specs that define the $sort stage.
+   * @param spec - Specs that define the $sort stage.
    *
    * @returns The aggregation pipeline that handles the generated $sort stage.
    *
@@ -202,9 +202,9 @@ export default abstract class Aggregation {
    *
    * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/sort/}
    */
-  static sortStageFactory(schema: Schema, specs: SortStageFactorySpecs): AggregationPipeline {
+  static sortStageFactory(schema: Schema, spec: SortStageFactorySpec): AggregationPipeline {
     const pipe: AggregationPipeline = [];
-    pipe.push({ $sort: specs });
+    pipe.push({ $sort: spec });
 
     return pipe;
   }
