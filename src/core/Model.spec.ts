@@ -142,6 +142,16 @@ describe('core/Model', () => {
     assert((updated as Document<BazProps>).aString === s);
   });
 
+  it('can update a field of an embedded doc within a doc', async () => {
+    const s = Faker.random.alphaNumeric(10);
+    const t = { aString: s };
+
+    let bar = await Bar.insertOneStrict(t);
+    bar = await Bar.updateOneStrict(bar._id, { 'anObject.aString': 'foo' } as any, { returnDoc: true }) as Document<BarProps>;
+
+    assert(bar.anObject && bar.anObject.aString === 'foo');
+  });
+
   it('can upsert a doc if it does not already exist', async () => {
     const s = Faker.random.alphaNumeric(10);
     const t: DocumentFragment<BazProps> = { aString: s };
@@ -373,7 +383,7 @@ const BarSchema: Schema<BarProps> = {
   collection: 'bars',
   cascade: ['Foo'],
   fields: {
-    aBar: { type: ObjectID, ref: 'Bar', required: true },
+    aBar: { type: ObjectID, ref: 'Bar' },
     aString: { type: String, required: true },
     aDate: { type: Date, required: true },
     anObject: {

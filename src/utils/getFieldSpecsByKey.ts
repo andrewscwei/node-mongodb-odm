@@ -7,14 +7,14 @@ import { FieldSpecs, typeIsFieldDescriptor } from '../types';
  *
  * @returns The field specs.
  */
-export default function getFieldSpecsByKey(fieldDescriptors: { [key: string]: FieldSpecs }, key: string): FieldSpecs | undefined {
+export default function getFieldSpecsByKey(fieldDescriptor: { [key: string]: FieldSpecs }, key: string): FieldSpecs | undefined {
   const keys = key.split('.');
   const k = keys.shift();
 
   if (is.nullOrUndefined(k)) return undefined;
-  if (!fieldDescriptors.hasOwnProperty(k)) return undefined;
+  if (!fieldDescriptor.hasOwnProperty(k)) return undefined;
 
-  const o = fieldDescriptors[k];
+  const o = fieldDescriptor[k];
 
   if (keys.length === 0) {
     return o;
