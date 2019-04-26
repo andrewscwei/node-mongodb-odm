@@ -1,13 +1,13 @@
 {
   "name": "@andrewscwei/mongodb-odm",
-  "version": "0.52.0",
+  "version": "0.52.1",
   "description": "ODM for MongoDB",
   "main": "build/index.js",
   "scripts": {
     "clean": "rimraf build",
     "build": "npm run clean && tsc",
-    "test:ts": "DEBUG=mongodb-odm* mocha --require ts-node/register --timeout 10000 --reporter spec --full-trace --colors --recursive --bail --exit \"src/**/*.spec.ts\"",
-    "test": "DEBUG=mongodb-odm* mocha --timeout 10000 --reporter spec --full-trace --colors --recursive --exit $([ -z \"$npm_config_path\" ] && echo build/**/*.spec.js || echo $npm_config_path)",
+    "test:ts": "DEBUG=mongodb-odm* mocha --require ts-node/register --timeout 10000 --reporter spec --full-trace --colors --recursive --bail --exit src/**/*.spec.ts",
+    "test": "DEBUG=mongodb-odm* mocha --timeout 10000 --reporter spec --full-trace --colors --recursive --exit build/**/*.spec.js",
     "db": "docker run --name node-mongodb-odm-db -d --rm -p 27017:27017 -v ${PWD}/.data/db:/data/db mongo:4.0.4",
     "db:stop": "docker stop node-mongodb-odm-db",
     "lint": "tslint \"src/**/*.ts\" --project tsconfig.json",

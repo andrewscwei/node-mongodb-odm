@@ -15,7 +15,7 @@ describe('core/Model', () => {
     configureDb({
       host: 'localhost:27017',
       name: 'mongodb_odm_test',
-      models: { Foo, Bar, Baz },
+      models: { Foo, Bar },
     });
 
     const db = await getDbInstance();
@@ -23,7 +23,7 @@ describe('core/Model', () => {
   });
 
   it('cannot be instantiated', async () => {
-    assert.throws(() => (new Baz()));
+    assert.throws(() => (new Bar()));
   });
 
   it('throws an error if the model has no schema defined', async () => {
@@ -31,12 +31,12 @@ describe('core/Model', () => {
   });
 
   it('can find a document', async () => {
-    const t: DocumentFragment<BazProps> = { aString: Faker.random.alphaNumeric(10) };
-    const res = await Baz.insertOneStrict(t);
+    const t: DocumentFragment<BarProps> = { aString: Faker.random.alphaNumeric(10) };
+    const res = await Bar.insertOneStrict(t);
 
     assert(res);
 
-    const doc = await Baz.findOneStrict(res._id);
+    const doc = await Bar.findOneStrict(res._id);
 
     assert(doc._id.equals(res._id));
   });
@@ -44,60 +44,55 @@ describe('core/Model', () => {
   it('can find multiple documents', async () => {
     const s = Faker.random.alphaNumeric(10);
 
-    await Baz.insertOne({ aString: s });
-    await Baz.insertOne({ aString: s });
-    await Baz.insertOne({ aString: s });
+    await Bar.insertOne({ aString: s });
+    await Bar.insertOne({ aString: s });
+    await Bar.insertOne({ aString: s });
 
-    const docs = await Baz.findMany({ aString: s });
+    const docs = await Bar.findMany({ aString: s });
 
     assert(docs.length === 3);
   });
 
   it('can find a random document', async () => {
-    const doc = await Baz.findOne();
-    assert(doc);
+    await Bar.findOneStrict();
   });
 
   it('can count the total number of documents in the collection', async () => {
     const s = Faker.random.alphaNumeric(10);
 
-    await Baz.insertOne({ aString: s });
-    await Baz.insertOne({ aString: s });
-    await Baz.insertOne({ aString: s });
+    await Bar.insertOne({ aString: s });
+    await Bar.insertOne({ aString: s });
+    await Bar.insertOne({ aString: s });
 
-    const count = await Baz.count({ aString: s });
+    const count = await Bar.count({ aString: s });
 
     assert(count === 3);
   });
 
   it('can generate random required fields', async () => {
-    const res = await Baz.randomFields();
+    const res = await Bar.randomFields();
     assert(is.string(res.aString));
   });
 
   it('can insert a new document', async () => {
-    const t: DocumentFragment<BazProps> = { aString: Faker.random.alphaNumeric(10) };
-    const doc = await Baz.insertOneStrict(t);
-
-    assert(ObjectID.isValid(doc._id));
+    const t: DocumentFragment<BarProps> = { aString: Faker.random.alphaNumeric(10) };
+    const doc = await Bar.insertOneStrict(t);
     assert(doc.aString === t.aString);
   });
 
   it('can insert multiple documents', async () => {
-    const t: DocumentFragment<BazProps>[] = [{ aString: Faker.random.alphaNumeric(10) }, { aString: Faker.random.alphaNumeric(10) }, { aString: Faker.random.alphaNumeric(10) }];
-    const docs = await Baz.insertMany(t);
-
-    assert(docs);
+    const t: DocumentFragment<BarProps>[] = [{ aString: Faker.random.alphaNumeric(10) }, { aString: Faker.random.alphaNumeric(10) }, { aString: Faker.random.alphaNumeric(10) }];
+    const docs = await Bar.insertMany(t);
+    assert(docs.length > 0);
     assert(docs!.reduce((prev, curr) => prev && ObjectID.isValid(curr._id), true));
-
-    docs!.forEach((doc, i) => assert(doc.aString === t[i].aString));
+    docs.forEach((doc, i) => assert(doc.aString === t[i].aString));
   });
 
   it('should throw if required fields are missing during insertion', async () => {
     let didThrow = true;
 
     try {
-      await Baz.insertOneStrict({ aNumber: 6 }).catch(err => { throw err; });
+      await Bar.insertOneStrict({ aNumber: 6 }).catch(err => { throw err; });
       didThrow = false;
     }
     catch (err) {}
@@ -106,70 +101,74 @@ describe('core/Model', () => {
   });
 
   it('can format documents according to the schema', async () => {
-    const t: DocumentFragment<BazProps> = { aFormattedString: Faker.random.alphaNumeric(10) };
-    const res = await Baz.formatDocument(t);
-    assert(Baz.formatProps.aFormattedString(t.aFormattedString!) === res.aFormattedString);
+    const t: DocumentFragment<BarProps> = { aFormattedString: Faker.random.alphaNumeric(10) };
+    const res = await Bar.formatDocument(t);
+    assert(Bar.formatProps.aFormattedString(t.aFormattedString!) === res.aFormattedString);
   });
 
   it('can encrypt document fields according to the schema', async () => {
     const s = Faker.random.alphaNumeric(10);
-    const t: DocumentFragment<BazProps> = { anEncryptedString: s };
-    const res = await Baz.formatDocument(t);
-
+    const t: DocumentFragment<BarProps> = { anEncryptedString: s };
+    const res = await Bar.formatDocument(t);
     assert(await bcrypt.compare(s, res.anEncryptedString!));
   });
 
   it('should automatically generate default values on insert', async () => {
-    const t: DocumentFragment<BazProps> = { aString: Faker.random.alphaNumeric(10) };
-    const res = await Baz.insertOneStrict(t);
-    assert(res.aBoolean === Baz.defaultProps.aBoolean);
+    const t: DocumentFragment<BarProps> = { aString: Faker.random.alphaNumeric(10) };
+    const res = await Bar.insertOneStrict(t);
+    assert(res.aBoolean === Bar.defaultProps.aBoolean);
   });
 
   it('should automatically format values on insert according to the schema', async () => {
-    const t: DocumentFragment<BazProps> = { aString: Faker.random.alphaNumeric(10), aFormattedString: Faker.random.alphaNumeric(10) };
-    const res = await Baz.insertOneStrict(t);
-    assert(Baz.formatProps.aFormattedString(t.aFormattedString!) === res.aFormattedString);
+    const t: DocumentFragment<BarProps> = { aString: Faker.random.alphaNumeric(10), aFormattedString: Faker.random.alphaNumeric(10) };
+    const res = await Bar.insertOneStrict(t);
+    assert(Bar.formatProps.aFormattedString(t.aFormattedString!) === res.aFormattedString);
   });
 
   it('can update an existing doc', async () => {
     const s = Faker.random.alphaNumeric(10);
-    const t: DocumentFragment<BazProps> = { aString: Faker.random.alphaNumeric(10) };
-
-    await Baz.insertOne(t);
-
-    const updated = await Baz.updateOneStrict(t, { aString: s }, { returnDoc: true });
-
-    assert((updated as Document<BazProps>).aString === s);
+    const t: DocumentFragment<BarProps> = { aString: Faker.random.alphaNumeric(10) };
+    await Bar.insertOneStrict(t);
+    const updated = await Bar.updateOneStrict(t, { aString: s }, { returnDoc: true });
+    assert((updated as Document<BarProps>).aString === s);
   });
 
   it('can update a field of an embedded doc within a doc', async () => {
     const s = Faker.random.alphaNumeric(10);
     const t = { aString: s };
-
     let bar = await Bar.insertOneStrict(t);
     bar = await Bar.updateOneStrict(bar._id, { 'anObject.aString': 'foo' } as any, { returnDoc: true }) as Document<BarProps>;
-
     assert(bar.anObject && bar.anObject.aString === 'foo');
   });
 
   it('can upsert a doc if it does not already exist', async () => {
     const s = Faker.random.alphaNumeric(10);
-    const t: DocumentFragment<BazProps> = { aString: s };
-
-    await Baz.updateOne(t, { aFormattedString: Faker.random.alphaNumeric(10) }, { upsert: true });
-
-    const doc = await Baz.findOne({ aString: s });
-
-    assert(doc);
+    const t: DocumentFragment<BarProps> = { aString: s };
+    await Bar.updateOneStrict(t, { aFormattedString: Faker.random.alphaNumeric(10) }, { upsert: true });
+    await Bar.findOneStrict({ aString: s });
   });
 
-  it('should return false if update fails and returnDoc is false', async () => {
-    const res = await Baz.updateOne(new ObjectID(), { aString: Faker.random.alphaNumeric(10) });
+  it('cannot upsert a doc if `allowUpserts` is not enabled in the schema', async () => {
+    const s = Faker.random.alphaNumeric(10);
+    const t: DocumentFragment<FooProps> = { aString: s };
+    let didThrow = true;
+
+    try {
+      await Foo.updateOneStrict(t, { aString: Faker.random.alphaNumeric(10) }, { upsert: true });
+      didThrow = false;
+    }
+    catch (err) {}
+
+    assert(didThrow);
+  });
+
+  it('should return `false` if update fails and `returnDoc` is `false`', async () => {
+    const res = await Bar.updateOne(new ObjectID(), { aString: Faker.random.alphaNumeric(10) });
     assert(res === false);
   });
 
-  it('should return null if update fails and returnDoc is true', async () => {
-    const res = await Baz.updateOne(new ObjectID(), { aString: Faker.random.alphaNumeric(10) }, { returnDoc: true });
+  it('should return `null` if update fails and `returnDoc` is `true`', async () => {
+    const res = await Bar.updateOne(new ObjectID(), { aString: Faker.random.alphaNumeric(10) }, { returnDoc: true });
     assert(is.null_(res));
   });
 
@@ -177,119 +176,119 @@ describe('core/Model', () => {
     const s = Faker.random.alphaNumeric(10);
     const t = Faker.random.alphaNumeric(10);
 
-    await Baz.insertOne({ aString: s });
-    const res = await Baz.updateOne({ aString: s }, { aFormattedString: t }, { returnDoc: true });
+    await Bar.insertOne({ aString: s });
+    const res = await Bar.updateOne({ aString: s }, { aFormattedString: t }, { returnDoc: true });
 
     assert(!is.nullOrUndefined(res));
-    assert((res as Document<BazProps>).aFormattedString !== t);
-    assert((res as Document<BazProps>).aFormattedString === Baz.formatProps.aFormattedString(t));
+    assert((res as Document<BarProps>).aFormattedString !== t);
+    assert((res as Document<BarProps>).aFormattedString === Bar.formatProps.aFormattedString(t));
   });
 
   it('should automatically format values on upsert according to the schema', async () => {
     const s = Faker.random.alphaNumeric(10);
-    const res = await Baz.updateOne({ aString: Faker.random.alphaNumeric(10) }, { aFormattedString: s }, { upsert: true, returnDoc: true });
+    const res = await Bar.updateOne({ aString: Faker.random.alphaNumeric(10) }, { aFormattedString: s }, { upsert: true, returnDoc: true });
 
     assert(!is.nullOrUndefined(res));
     assert(!is.boolean(res));
-    assert((res as Document<BazProps>).aFormattedString !== s);
-    assert((res as Document<BazProps>).aFormattedString === Baz.formatProps.aFormattedString(s));
+    assert((res as Document<BarProps>).aFormattedString !== s);
+    assert((res as Document<BarProps>).aFormattedString === Bar.formatProps.aFormattedString(s));
   });
 
   it('can update multiple existing docs', async () => {
     const s = Faker.random.alphaNumeric(10);
     const t = Faker.random.alphaNumeric(10);
-    const q: DocumentFragment<BazProps>[] = [{ aString: s }, { aString: s }, { aString: s }];
-    const docs = await Baz.insertMany(q);
+    const q: DocumentFragment<BarProps>[] = [{ aString: s }, { aString: s }, { aString: s }];
+    const docs = await Bar.insertMany(q);
 
     assert(docs);
     assert(docs!.reduce((prev, curr) => prev && ObjectID.isValid(curr._id), true));
 
-    const res = await Baz.updateMany({ aString: s }, { aString: t }, { returnDocs: true }) as Document<BazProps>[];
+    const res = await Bar.updateMany({ aString: s }, { aString: t }, { returnDocs: true }) as Document<BarProps>[];
 
     assert(res.length === docs.length);
     assert(res.reduce((o, v) => o && (v.aString === t), true));
   });
 
-  it('can upsert a doc in an updateMany op while `returnDocs` is true', async () => {
+  it('can upsert a doc in an `updateMany` op while `returnDocs` is `true`', async () => {
     const s = Faker.random.alphaNumeric(10);
     const t = Faker.random.alphaNumeric(10);
 
-    const res = await Baz.updateMany({ aString: s }, { aFormattedString: t }, { returnDocs: true, upsert: true }) as Document<BazProps>[];
+    const res = await Bar.updateMany({ aString: s }, { aFormattedString: t }, { returnDocs: true, upsert: true }) as Document<BarProps>[];
 
     assert(res.length === 1);
-    assert(!is.nullOrUndefined(await Baz.findOne({ aString: s })));
+    assert(!is.nullOrUndefined(await Bar.findOne({ aString: s })));
   });
 
-  it('can upsert a doc in an updateMany op while `returnDocs` is false', async () => {
+  it('can upsert a doc in an `updateMany` op while `returnDocs` is fa`lse', async () => {
     const s = Faker.random.alphaNumeric(10);
     const t = Faker.random.alphaNumeric(10);
 
-    const res = await Baz.updateMany({ aString: s }, { aFormattedString: t }, { upsert: true }) as boolean;
+    const res = await Bar.updateMany({ aString: s }, { aFormattedString: t }, { upsert: true }) as boolean;
 
     assert(res === true);
-    assert(!is.nullOrUndefined(await Baz.findOne({ aString: s })));
+    assert(!is.nullOrUndefined(await Bar.findOne({ aString: s })));
   });
 
   it('can delete a doc', async () => {
     const s = Faker.random.alphaNumeric(10);
 
-    await Baz.insertOne({ aString: s });
+    await Bar.insertOne({ aString: s });
 
-    assert(!is.null_(await Baz.findOne({ aString: s })));
+    assert(!is.null_(await Bar.findOne({ aString: s })));
 
-    const res = await Baz.deleteOne({ aString: s });
+    const res = await Bar.deleteOne({ aString: s });
 
     assert(res === true);
-    assert(is.null_(await Baz.findOne({ aString: s })));
+    assert(is.null_(await Bar.findOne({ aString: s })));
   });
 
   it('can delete a doc and return the deleted doc', async () => {
     const s = Faker.random.alphaNumeric(10);
-    const doc = await Baz.insertOneStrict({ aString: s });
+    const doc = await Bar.insertOneStrict({ aString: s });
 
-    assert(!is.null_(await Baz.findOne({ aString: s })));
+    assert(!is.null_(await Bar.findOne({ aString: s })));
 
     const objectId = doc._id;
 
-    const res = await Baz.deleteOne({ aString: s }, { returnDoc: true });
+    const res = await Bar.deleteOne({ aString: s }, { returnDoc: true });
 
     assert(!is.null_(res));
-    assert((res as Document<BazProps>)._id.equals(objectId));
-    assert(is.null_(await Baz.findOne({ aString: s })));
+    assert((res as Document<BarProps>)._id.equals(objectId));
+    assert(is.null_(await Bar.findOne({ aString: s })));
   });
 
   it('can delete multiple docs', async () => {
     const s = Faker.random.alphaNumeric(10);
 
-    await Baz.insertMany([{ aString: s }, { aString: s }, { aString: s }]);
+    await Bar.insertMany([{ aString: s }, { aString: s }, { aString: s }]);
 
-    assert((await Baz.count({ aString: s })) === 3);
+    assert((await Bar.count({ aString: s })) === 3);
 
-    await Baz.deleteMany({ aString: s });
+    await Bar.deleteMany({ aString: s });
 
-    assert((await Baz.count({ aString: s })) === 0);
+    assert((await Bar.count({ aString: s })) === 0);
   });
 
   it('can delete multiple docs and return the deleted docs', async () => {
     const s = Faker.random.alphaNumeric(10);
 
-    await Baz.insertMany([{ aString: s }, { aString: s }, { aString: s }]);
+    await Bar.insertMany([{ aString: s }, { aString: s }, { aString: s }]);
 
-    assert((await Baz.count({ aString: s })) === 3);
+    assert((await Bar.count({ aString: s })) === 3);
 
-    const res = await Baz.deleteMany({ aString: s }, { returnDocs: true });
+    const res = await Bar.deleteMany({ aString: s }, { returnDocs: true });
 
     assert(is.array(res));
-    assert((res as Document<BazProps>[]).length === 3);
+    assert((res as Document<BarProps>[]).length === 3);
   });
 
   it('can replace an existing doc and return the old doc', async () => {
     const s = Faker.random.alphaNumeric(10);
     const t = Faker.random.alphaNumeric(10);
 
-    await Baz.insertOne({ aString: s });
+    await Bar.insertOne({ aString: s });
 
-    const doc = await Baz.findAndReplaceOneStrict({ aString: s }, { aString: t }, { returnOriginal: true });
+    const doc = await Bar.findAndReplaceOneStrict({ aString: s }, { aString: t }, { returnOriginal: true });
 
     assert(!is.nullOrUndefined(doc));
     assert(doc.aString === s);
@@ -299,37 +298,49 @@ describe('core/Model', () => {
     const s = Faker.random.alphaNumeric(10);
     const t = Faker.random.alphaNumeric(10);
 
-    await Baz.insertOne({ aString: s });
+    await Bar.insertOne({ aString: s });
 
-    const doc = await Baz.findAndReplaceOneStrict({ aString: s }, { aString: t }, { returnOriginal: false });
+    const doc = await Bar.findAndReplaceOneStrict({ aString: s }, { aString: t }, { returnOriginal: false });
 
     assert(!is.nullOrUndefined(doc));
     assert(doc.aString === t);
   });
 
   it('can remove a property of a doc by updating it to `null`', async () => {
-    const baz = await Baz.insertOneStrict();
+    const baz = await Bar.insertOneStrict();
     assert(baz.aNumber);
-    await Baz.updateOneStrict(baz._id, { aNumber: null });
-    const res = await Baz.findOneStrict(baz._id);
+    await Bar.updateOneStrict(baz._id, { aNumber: null });
+    const res = await Bar.findOneStrict(baz._id);
     assert(res.aNumber === undefined);
   });
 
   it('can upsert a document while setting an update field to `null`', async () => {
     const t = Faker.random.alphaNumeric(10);
-    const exists = await Baz.exists({ aString: t });
+    const exists = await Bar.exists({ aString: t });
     assert(!exists);
-    const baz = await Baz.updateOneStrict({ aString: t }, { aNumber: null }, { upsert: true, returnDoc: true });
+    const baz = await Bar.updateOneStrict({ aString: t }, { aNumber: null }, { upsert: true, returnDoc: true });
     assert(baz);
-    assert((baz as Document<BazProps>).aNumber === undefined);
+    assert((baz as Document<BarProps>).aNumber === undefined);
   });
 });
+
+interface FooObject {
+  foo: {
+    aString: string;
+    aNumber?: number;
+  };
+  bar?: {
+    aString: string;
+    aNumber?: number;
+  };
+}
 
 interface FooProps {
   aString: string;
   aNumber: number;
   aBar: ObjectID;
   aFoo?: ObjectID;
+  anObject?: FooObject;
 }
 
 const FooSchema: Schema<FooProps> = {
@@ -341,6 +352,22 @@ const FooSchema: Schema<FooProps> = {
     aNumber: { type: Number, required: true },
     aBar: { type: ObjectID, ref: 'Bar', required: true },
     aFoo: { type: ObjectID, ref: 'Foo' },
+    anObject: {
+      type: {
+        foo: {
+          type: {
+            aString: { type: String },
+            aNumber: { type: Number },
+          },
+        },
+        bar: {
+          type: {
+            aString: { type: String },
+            aNumber: { type: Number },
+          },
+        },
+      },
+    },
   },
   indexes: [{
     spec: { aString: 1 }, options: { unique: true },
@@ -376,12 +403,15 @@ interface BarProps {
   };
   aNumber: number;
   aBoolean?: boolean;
+  aFormattedString?: string;
+  anEncryptedString?: string;
 }
 
 const BarSchema: Schema<BarProps> = {
   model: 'Bar',
   collection: 'bars',
   cascade: ['Foo'],
+  allowUpserts: true,
   fields: {
     aBar: { type: ObjectID, ref: 'Bar' },
     aString: { type: String, required: true },
@@ -396,11 +426,17 @@ const BarSchema: Schema<BarProps> = {
     },
     aNumber: { type: Number, required: true },
     aBoolean: { type: Boolean },
+    aFormattedString: { type: String },
+    anEncryptedString: { type: String, encrypted: true },
   },
+  indexes: [{
+    spec: { aString: 1 },
+  }],
 };
 
 class Bar extends Model(BarSchema) {
   static randomProps = {
+    aString: () => (Faker.random.alphaNumeric(10)),
     aNumber: () => (Math.floor(Math.random() * 1000) + 0),
   };
 
@@ -413,41 +449,6 @@ class Bar extends Model(BarSchema) {
   static validateProps = {
     aString: 100,
     aNumber: (value: number) => ((value >= 0 && value <= 1000)),
-  };
-}
-
-interface BazProps {
-  aString: string;
-  aNumber?: number;
-  aBoolean?: boolean;
-  aFormattedString?: string;
-  anEncryptedString?: string;
-}
-
-const BazSchema: Schema<BazProps> = {
-  model: 'Baz',
-  collection: 'bazs',
-  allowUpserts: true,
-  fields: {
-    aString: { type: String, required: true },
-    aNumber: { type: Number },
-    aBoolean: { type: Boolean },
-    aFormattedString: { type: String },
-    anEncryptedString: { type: String, encrypted: true },
-  },
-  indexes: [{
-    spec: { aString: 1 },
-  }],
-};
-
-class Baz extends Model(BazSchema) {
-  static randomProps = {
-    aString: () => Faker.random.alphaNumeric(10),
-  };
-
-  static defaultProps = {
-    aNumber: () => Faker.random.number(),
-    aBoolean: true,
   };
 
   static formatProps = {
