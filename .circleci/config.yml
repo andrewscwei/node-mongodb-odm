@@ -23,7 +23,10 @@ jobs:
           command: npm run build
       - run:
           name: Pack
-          command: .circleci/pack.sh
+          command: |
+            PACKAGE_FILE=$(npm pack | tail -1)
+            mkdir -p package
+            mv $PACKAGE_FILE package/
       - store_artifacts:
           path: ~/repo/package
       - persist_to_workspace:
@@ -59,7 +62,10 @@ jobs:
           at: .
       - deploy:
           name: Deploy to NPM
-          command: .circleci/deploy_to_npm.sh
+          command: |
+            echo "//registry.npmjs.org/:_authToken=$NPM_AUTH" >> ~/.npmrc
+            npm publish
+            echo "Successfully published to NPM"
 
 workflows:
   version: 2

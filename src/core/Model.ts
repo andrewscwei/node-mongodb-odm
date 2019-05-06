@@ -75,9 +75,11 @@ export default <T = {}>(schema: Schema<T>) => {
      *
      * @param fixedFields - A collection of fields that must be present in the
      *                      output.
-     * @param options - @see ModelRandomFieldsOptions
+     * @param options - See `ModelRandomFieldsOptions`.
      *
      * @returns A collection of fields whose values are randomly generated.
+     *
+     * @throws {Error} Invalid function provided for a random field.
      */
     static async randomFields(fixedFields: DocumentFragment<T> = {}, { includeOptionals = false }: ModelRandomFieldsOptions = {}): Promise<DocumentFragment<T>> {
       const o: DocumentFragment<T> = {};
@@ -112,7 +114,7 @@ export default <T = {}>(schema: Schema<T>) => {
      *
      * @param queryOrOperators - This is either a query for the $match stage or
      *                           operators for the aggregation factory function.
-     * @param options - @see PipelineFactoryOptions
+     * @param options - See `PipelineFactoryOptions`.
      *
      * @returns Aggregation pipeline.
      *
@@ -199,10 +201,11 @@ export default <T = {}>(schema: Schema<T>) => {
      * no query is specified, a random document will be fetched.
      *
      * @param query - Query used for the $match stage of the aggregation pipeline.
-     * @param options - @see module:mongodb.Collection#aggregate
+     * @param options - See `module:mongodb.Collection#aggregate`.
      *
      * @returns The matching document as the fulfillment value.
      *
+     * @throws {Error} More or less than 1 document found.
      * @throws {Error} No document found.
      */
     static async findOneStrict<R = T>(query?: Query<T>, options?: ModelFindOneOptions): Promise<Document<R>> {
@@ -228,7 +231,7 @@ export default <T = {}>(schema: Schema<T>) => {
      * and returns `null` when no document is found.
      *
      * @param query - Query used for the $match stage of the aggregation pipeline.
-     * @param options - @see module:mongodb.Collection#aggregate
+     * @param options - See `module:mongodb.Collection#aggregate`.
      *
      * @returns The matching document as the fulfillment value.
      *
@@ -249,7 +252,7 @@ export default <T = {}>(schema: Schema<T>) => {
      * framework. If no query is specified, all documents are fetched.
      *
      * @param query - Query used for the $match stage of the aggregation pipeline.
-     * @param options - @see module:mongodb.Collection#aggregate
+     * @param options - See `module:mongodb.Collection#aggregate`.
      *
      * @returns The matching documents as the fulfillment value.
      */
@@ -263,8 +266,8 @@ export default <T = {}>(schema: Schema<T>) => {
      * Inserts one document into this model's collection. If `doc` is not
      * specified, random fields will be generated.
      *
-     * @param doc - Document to be inserted. @see module:mongodb.Collection#insertOne
-     * @param options - @see ModelInsertOneOptions
+     * @param doc - Document to be inserted. See `module:mongodb.Collection#insertOne`.
+     * @param options - See `ModelInsertOneOptions`.
      *
      * @returns The inserted document.
      *
@@ -302,8 +305,8 @@ export default <T = {}>(schema: Schema<T>) => {
      * Same as the strict insert one operation except this method swallows all
      * errors and returns null if the document cannot be inserted.
      *
-     * @param doc - Document to be inserted. @see module:mongodb.Collection#insertOne
-     * @param options - @see ModelInsertOneOptions
+     * @param doc - Document to be inserted. See `module:mongodb.Collection#insertOne`.
+     * @param options - See `ModelInsertOneOptions`.
      *
      * @returns The inserted document.
      *
@@ -322,8 +325,8 @@ export default <T = {}>(schema: Schema<T>) => {
     /**
      * Inserts multiple documents into this model's collection.
      *
-     * @param docs - Array of documents to insert. @see module:mongodb.Collection#insertMany
-     * @param options - @see module:mongodb.Collection#insertMany
+     * @param docs - Array of documents to insert. See `module:mongodb.Collection#insertMany`.
+     * @param options - See `module:mongodb.Collection#insertMany`.
      *
      * @returns The inserted documents.
      *
@@ -372,7 +375,7 @@ export default <T = {}>(schema: Schema<T>) => {
      * @param query - Query for the document to update.
      * @param update - Either an object whose key/value pair represent the fields
      *                 belonging to this model to update to, or an update query.
-     * @param options - @see ModelUpdateOneOptions
+     * @param options - See `ModelUpdateOneOptions`.
      *
      * @returns The updated doc if `returnDoc` is set to `true`, else there is no
      *          fulfillment value.
@@ -384,8 +387,8 @@ export default <T = {}>(schema: Schema<T>) => {
      *
      * @throws {Error} This method is called even though updates are disabled in
      *                 the schema.
-     * @throws {Error} Query is invalid probably because it is not santized due to
-     *                 hooks being skipped.
+     * @throws {Error} Query is invalid probably because it is not santized due
+     *                 to hooks being skipped.
      * @throws {Error} A doc is updated but it cannot be found.
      */
     static async updateOneStrict(query: Query<T>, update: Update<T>, options: ModelUpdateOneOptions = {}): Promise<void | Document<T>> {
@@ -457,7 +460,7 @@ export default <T = {}>(schema: Schema<T>) => {
      * @param query - Query for the document to update.
      * @param update - Either an object whose key/value pair represent the fields
      *                 belonging to this model to update to, or an update query.
-     * @param options - @see ModelUpdateOneOptions
+     * @param options - See `ModelUpdateOneOptions`.
      *
      * @returns The updated doc if `returnDoc` is set to `true`, else either
      *          `true` or `false` depending on whether the operation was
@@ -484,7 +487,7 @@ export default <T = {}>(schema: Schema<T>) => {
      * @param query - Query for document to update.
      * @param update - Either an object whose key/value pair represent the fields
      *                 belonging to this model to update to, or an update query.
-     * @param options - @see ModelUpdateManyOptions
+     * @param options - See `ModelUpdateManyOptions`.
      *
      * @returns The updated docs if `returnDocs` is set to `true`, else `true` or
      *         `false` depending on whether or not the operation was successful.
@@ -555,7 +558,7 @@ export default <T = {}>(schema: Schema<T>) => {
      * Deletes one document matched by `query`.
      *
      * @param query - Query for document to delete.
-     * @param options @see ModelDeleteOneOptions
+     * @param options - See `ModelDeleteOneOptions`.
      *
      * @returns The deleted doc if `returnDoc` is set to `true`.
      *
@@ -605,7 +608,7 @@ export default <T = {}>(schema: Schema<T>) => {
      * errors.
      *
      * @param query - Query for document to delete.
-     * @param options @see ModelDeleteOneOptions
+     * @param options - See `ModelDeleteOneOptions`.
      *
      * @returns The deleted doc if `returnDoc` is set to `true`, else `true` or
      *         `false` depending on whether or not the operation was successful.
@@ -632,7 +635,7 @@ export default <T = {}>(schema: Schema<T>) => {
      * Deletes multiple documents matched by `query`.
      *
      * @param query - Query to match documents for deletion.
-     * @param options - @see ModelDeleteManyOptions
+     * @param options - See `ModelDeleteManyOptions`.
      *
      * @returns The deleted docs if `returnDocs` is set to `true`, else `true` or
      *         `false` depending on whether or not the operation was successful.
@@ -696,7 +699,7 @@ export default <T = {}>(schema: Schema<T>) => {
      *
      * @param query - Query for document to replace.
      * @param replacement - The replacement document.
-     * @param options - @see ModelReplaceOneOptions
+     * @param options - See `ModelReplaceOneOptions`.
      *
      * @returns The replaced document (by default) or the new document (depending
      *         on the `returnOriginal` option).
@@ -740,7 +743,7 @@ export default <T = {}>(schema: Schema<T>) => {
      *
      * @param query - Query for document to replace.
      * @param replacement - The replacement document.
-     * @param options - @see ModelReplaceOneOptions
+     * @param options - See `ModelReplaceOneOptions`.
      *
      * @returns The replaced document (by default) or the new document (depending
      *          on the `returnOriginal` option) if available, `null` otherwise.
@@ -791,6 +794,9 @@ export default <T = {}>(schema: Schema<T>) => {
      * @param doc - Document to format.
      *
      * @returns The formatted document as the fulfillment value.
+     *
+     * @throws {Error} A field in the document to format is not defined in the
+     *                 schema.
      */
     static async formatDocument(doc: DocumentFragment<T>): Promise<DocumentFragment<T>> {
       const formattedDoc = _.cloneDeep(doc);
@@ -830,7 +836,7 @@ export default <T = {}>(schema: Schema<T>) => {
      *   4. No required fields are missing (only if `strict` is enabled).
      *
      * @param doc - The doc to validate.
-     * @param options - @see ModelValidateDocumentOptions
+     * @param options - See `ModelValidateDocumentOptions`.
      *
      * @throws {Error} Document is not an object.
      * @throws {Error} Document is empty.
@@ -968,7 +974,7 @@ export default <T = {}>(schema: Schema<T>) => {
      * upsert operation.
      *
      * @param doc - The document to be inserted/upserted.
-     * @param options - @see ModelBeforeInsertOptions
+     * @param options - See `ModelBeforeInsertOptions`.
      *
      * @returns Document to be inserted/upserted to the database.
      */
@@ -1027,7 +1033,7 @@ export default <T = {}>(schema: Schema<T>) => {
      *
      * @param query - Query for document to update.
      * @param update - The update to apply.
-     * @param options - @see ModelUpdateOneOptions, @see ModelUpdateManyOptions
+     * @param options - See `ModelUpdateOneOptions` and `ModelUpdateManyOptions`.
      *
      * @returns The modified update to apply.
      *
@@ -1136,7 +1142,9 @@ export default <T = {}>(schema: Schema<T>) => {
      * Handler invoked right before a deletion.
      *
      * @param query - Query for document to delete.
-     * @param options - @see ModelDeleteOneOptions, @see ModelDeleteManyOptions
+     * @param options - See `ModelDeleteOneOptions` and `ModelDeleteManyOptions`.
+     *
+     * @returns The processed query for deletion.
      */
     private static async beforeDelete(query: Query<T>, options: ModelDeleteOneOptions | ModelDeleteManyOptions): Promise<FilterQuery<T>> {
       const q = await this.willDeleteDocument(query);
@@ -1173,6 +1181,7 @@ export default <T = {}>(schema: Schema<T>) => {
      *                collections are pointing to.
      *
      * @throws {Error} Cascade deletion is incorrectly defined in the schema.
+     * @throws {Error} Cascade deletion failed because a model cannot be found.
      */
     private static async cascadeDelete(docId: ObjectID) {
       const cascadeModelNames = this.schema.cascade;
@@ -1209,7 +1218,7 @@ export default <T = {}>(schema: Schema<T>) => {
      * @param fieldDescriptor - The field descriptor to validate against.
      * @param fieldName - The parent field name, for references only.
      *
-     * @throw {TypeError} Missing field.
+     * @throws {TypeError} Missing field.
      */
     private static validateDocumentRequiredFields(doc: { [key: string]: any }, fieldDescriptor: FieldDescriptor = this.schema.fields, fieldName?: string) {
       for (const field in fieldDescriptor) {

@@ -154,7 +154,7 @@ export async function getDbInstance(): Promise<Db> {
 export function getModel(modelOrCollectionName: string): ReturnType<typeof Model> {
   const models = config.models;
 
-  if (is.nullOrUndefined(models)) throw new Error('You must register models using the configureDb() function');
+  if (is.nullOrUndefined(models)) throw new Error('You must register models using the #configureDb() function');
 
   if (models.hasOwnProperty(modelOrCollectionName)) return models[modelOrCollectionName];
 
@@ -178,11 +178,15 @@ export function getModel(modelOrCollectionName: string): ReturnType<typeof Model
  * @returns The MongoDB collection.
  *
  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html}
+ *
+ * @throws {Error} There are no models registered.
+ * @throws {Error} Unable to find the model associated with the model or
+ *                 collection name.
  */
 export async function getCollection(modelOrCollectionName: string): Promise<Collection> {
   const models = config.models!;
 
-  if (is.nullOrUndefined(models)) throw new Error('You must register models using the configureDb() function');
+  if (is.nullOrUndefined(models)) throw new Error('You must register models using the #configureDb() function');
 
   // TODO: Indexes are lost somehow, comment this out temporarily.
   // if (!is.nullOrUndefined(collections[modelOrCollectionName])) {
@@ -235,3 +239,4 @@ export { default as sanitizeQuery } from './utils/sanitizeQuery';
 export { default as validateFieldValue } from './utils/validateFieldValue';
 export { Model };
 export { ObjectID };
+

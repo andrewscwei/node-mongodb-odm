@@ -17,15 +17,17 @@ export default abstract class Aggregation {
    * @param options - @see PipelineFactoryOptions
    *
    * @returns The generated aggregate pipeline.
+   *
+   * @throws {TypeError} Invalid params or options provided.
    */
   static pipelineFactory(schema: Schema, { $lookup, $match, $prune, $group, $sort }: PipelineFactoryOperators = {}, { prefix = '', pipeline = [] }: PipelineFactoryOptions = {}): AggregationPipeline {
-    if (!(is.undefined($match) || is.object($match) || is.string($match))) throw new Error('Bad $match descriptor provided');
-    if (!(is.undefined($lookup) || is.object($lookup))) throw new Error('Bad $lookup descriptor provided');
-    if (!(is.undefined($prune) || is.object($prune) || is.string($prune))) throw new Error('Bad $prune descriptor provided');
-    if (!(is.undefined($group) || is.object($group) || is.string($group))) throw new Error('Bad $group descriptor provided');
-    if (!(is.undefined($sort) || is.object($sort))) throw new Error('Bad $sort descriptor provided');
-    if (!(is.string(prefix))) throw new Error('Bad prefix provided');
-    if (!(is.array(pipeline))) throw new Error('Bad pipeline provided');
+    if (!(is.undefined($match) || is.object($match) || is.string($match))) throw new TypeError('Bad $match descriptor provided');
+    if (!(is.undefined($lookup) || is.object($lookup))) throw new TypeError('Bad $lookup descriptor provided');
+    if (!(is.undefined($prune) || is.object($prune) || is.string($prune))) throw new TypeError('Bad $prune descriptor provided');
+    if (!(is.undefined($group) || is.object($group) || is.string($group))) throw new TypeError('Bad $group descriptor provided');
+    if (!(is.undefined($sort) || is.object($sort))) throw new TypeError('Bad $sort descriptor provided');
+    if (!(is.string(prefix))) throw new TypeError('Bad prefix provided');
+    if (!(is.array(pipeline))) throw new TypeError('Bad pipeline provided');
 
     // If lookup stage is specified, add it to beginning of the pipeline.
     if ($lookup) pipeline = Aggregation.lookupStageFactory(schema, $lookup, { fromPrefix: prefix, toPrefix: prefix }).concat(pipeline);
@@ -110,6 +112,10 @@ export default abstract class Aggregation {
    * lookupStageFactory(schema, { subModel: { subSubModel: true } }, { fromPrefix: 'foo.', toPrefix: 'bar.' })
    *
    * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/lookup/}
+   *
+   * @throws {TypeError} Invalid params or options provided.
+   * @throws {Error} Field to populate doesn't have a `ref` field specified.
+   * @throws {Error} Unable to find the schema for the field to populate.
    */
   static lookupStageFactory(schema: Schema, spec: LookupStageFactorySpec, { fromPrefix = '', toPrefix = '' }: LookupStageFactoryOptions = {}): AggregationPipeline {
     const fields: { [fieldName: string]: FieldSpec} = schema.fields;
@@ -120,7 +126,7 @@ export default abstract class Aggregation {
       if (!spec.hasOwnProperty(key)) continue;
 
       const val = spec[key];
-      if (!((val === true) || (typeof val === 'object'))) throw new Error(`[lookup(${schema}, ${spec}, ${{ fromPrefix, toPrefix }})] Invalid populate properties.`);
+      if (!((val === true) || (typeof val === 'object'))) throw new TypeError(`[lookup(${schema}, ${spec}, ${{ fromPrefix, toPrefix }})] Invalid populate properties.`);
 
       const ref = fields[key] && fields[key].ref;
       if (!ref) throw new Error(`[lookup(${schema}, ${spec}, ${{ fromPrefix, toPrefix }})] The field to populate does not have a reference model specified in the schema.`);
