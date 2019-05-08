@@ -509,6 +509,24 @@ export function ObjectIDGet(value: any): ObjectID | undefined {
 }
 
 /**
+ * Chec ks to see if 2 values are equal ObjectID's.
+ *
+ * @param value1 - First value to compare.
+ * @param value2 - Second value to compare.
+ *
+ * @returns `true` if they are equal ObjectID's, `false` otherwise.
+ */
+export function ObjectIDEqual(value1: any, value2: any): boolean {
+  const objectId1 = ObjectIDGet(value1);
+  const objectId2 = ObjectIDGet(value2);
+
+  if (!objectId1) return false;
+  if (!objectId2) return false;
+
+  return objectId1.equals(objectId2);
+}
+
+/**
  * Checks if a value can be used to create a valid ObjectID.
  *
  * @param value - The value to check.

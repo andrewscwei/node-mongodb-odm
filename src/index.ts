@@ -239,4 +239,3 @@ export { default as sanitizeQuery } from './utils/sanitizeQuery';
 export { default as validateFieldValue } from './utils/validateFieldValue';
 export { Model };
 export { ObjectID };
-
