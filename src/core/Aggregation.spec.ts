@@ -1,6 +1,5 @@
 /* tslint:disable max-classes-per-file */
 
-import is from '@sindresorhus/is';
 import assert from 'assert';
 import Faker from 'faker';
 import _ from 'lodash';
@@ -157,7 +156,7 @@ describe('core/Aggregation', () => {
     ];
 
     assert(actual.length === expected.length);
-    assert(is.object(actual[0]));
+    assert(_.isObject(actual[0]));
     assert((actual[0] as AggregationStageDescriptor).hasOwnProperty('$match'));
     assert(objectId.equals((expected[0] as AggregationStageDescriptor).$match._id));
   });

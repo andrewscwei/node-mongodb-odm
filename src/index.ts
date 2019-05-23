@@ -3,7 +3,7 @@
  *       the MongoClient instance.
  */
 
-import is from '@sindresorhus/is';
+import _ from 'lodash';
 import { Collection, Db, MongoClient, MongoError, ObjectID } from 'mongodb';
 import Model from './core/Model';
 
@@ -154,7 +154,7 @@ export async function getDbInstance(): Promise<Db> {
 export function getModel(modelOrCollectionName: string): ReturnType<typeof Model> {
   const models = config.models;
 
-  if (is.nullOrUndefined(models)) throw new Error('You must register models using the #configureDb() function');
+  if (_.isNil(models)) throw new Error('You must register models using the #configureDb() function');
 
   if (models.hasOwnProperty(modelOrCollectionName)) return models[modelOrCollectionName];
 
@@ -186,10 +186,10 @@ export function getModel(modelOrCollectionName: string): ReturnType<typeof Model
 export async function getCollection(modelOrCollectionName: string): Promise<Collection> {
   const models = config.models!;
 
-  if (is.nullOrUndefined(models)) throw new Error('You must register models using the #configureDb() function');
+  if (_.isNil(models)) throw new Error('You must register models using the #configureDb() function');
 
   // TODO: Indexes are lost somehow, comment this out temporarily.
-  // if (!is.nullOrUndefined(collections[modelOrCollectionName])) {
+  // if (!_.isNil(collections[modelOrCollectionName])) {
   //   return collections[modelOrCollectionName];
   // }
 
@@ -204,7 +204,7 @@ export async function getCollection(modelOrCollectionName: string): Promise<Coll
     }
   }
 
-  if (is.nullOrUndefined(ModelClass)) throw new Error('Unable to find collection with given model or collection name, is the model registered?');
+  if (_.isNil(ModelClass)) throw new Error('Unable to find collection with given model or collection name, is the model registered?');
 
   const dbInstance = await getDbInstance();
   const schema = ModelClass!.schema;

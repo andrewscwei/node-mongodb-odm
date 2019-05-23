@@ -1,4 +1,4 @@
-import is from '@sindresorhus/is';
+import _ from 'lodash';
 import { ObjectID } from 'mongodb';
 import { Query, Schema, typeIsValidObjectID } from '../types';
 import sanitizeDocument from './sanitizeDocument';
@@ -45,7 +45,7 @@ export default function sanitizeQuery<T = {}>(schema: Schema, query: Query, { st
   if (typeIsValidObjectID(query)) {
     return { _id: query };
   }
-  else if (is.string(query)) {
+  else if (_.isString(query)) {
     return { _id: new ObjectID(query) };
   }
   else if (strict) {

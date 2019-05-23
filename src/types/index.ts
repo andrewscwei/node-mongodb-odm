@@ -1,4 +1,4 @@
-import is from '@sindresorhus/is';
+import _ from 'lodash';
 import { CollectionAggregationOptions, CollectionInsertManyOptions, CollectionInsertOneOptions, CommonOptions, FilterQuery, FindOneAndReplaceOption, IndexOptions, ObjectID, ReplaceOneOptions, UpdateQuery } from 'mongodb';
 
 /**
@@ -434,7 +434,7 @@ export interface SchemaIndex {
  * @returns `true` if value is an Update, `false` otherwise.
  */
 export function typeIsUpdateQuery<T = {}>(value: any): value is UpdateQuery<DocumentFragment<T>> {
-  if (!is.plainObject(value)) return false;
+  if (!_.isPlainObject(value)) return false;
   return Object.keys(value).some(val => val.startsWith('$'));
 }
 
@@ -446,8 +446,8 @@ export function typeIsUpdateQuery<T = {}>(value: any): value is UpdateQuery<Docu
  * @returns `true` if value is an identifiable document, `false` otherwise.
  */
 export function typeIsIdentifiableDocument(value: any): value is { _id: ObjectID } & { [field: string]: FieldValue; } {
-  if (is.nullOrUndefined(value)) return false;
-  if (!is.plainObject(value)) return false;
+  if (_.isNil(value)) return false;
+  if (!_.isPlainObject(value)) return false;
   if (!typeIsValidObjectID(value._id)) return false;
   return true;
 }
@@ -460,8 +460,8 @@ export function typeIsIdentifiableDocument(value: any): value is { _id: ObjectID
  * @returns `true` if valie is an ObjectID, `false` otherwise.
  */
 export function typeIsValidObjectID(value: any): value is ObjectID {
-  if (is.nullOrUndefined(value)) return false;
-  if (!is.directInstanceOf(value, ObjectID)) return false;
+  if (_.isNil(value)) return false;
+  if (!(value instanceof ObjectID)) return false;
   if (!ObjectID.isValid(value)) return false;
 
   return true;
@@ -475,7 +475,7 @@ export function typeIsValidObjectID(value: any): value is ObjectID {
  * @returns `true` or `false`.
  */
 export function typeIsFieldDescriptor(value: any): value is FieldDescriptor {
-  if (!is.plainObject(value)) return false;
+  if (!_.isPlainObject(value)) return false;
 
   return true;
 }
@@ -534,9 +534,9 @@ export function ObjectIDEqual(value1: any, value2: any): boolean {
  * @returns `true` or `false`.
  */
 export function valueIsCompatibleObjectID(value: any): boolean {
-  if (is.nullOrUndefined(value)) return false;
+  if (_.isNil(value)) return false;
   if (!ObjectID.isValid(value)) return false;
-  if (is.directInstanceOf(value, ObjectID)) return true;
+  if (value instanceof ObjectID) return true;
 
   try {
     const objectId = new ObjectID(value);

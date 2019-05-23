@@ -5,7 +5,6 @@
  *       validations, etc. All returned documents are native JSON objects.
  */
 
-import is from '@sindresorhus/is';
 import bcrypt from 'bcrypt';
 import _ from 'lodash';
 import { Collection, FilterQuery, ObjectID, UpdateQuery } from 'mongodb';
@@ -94,7 +93,7 @@ export default <T = {}>(schema: Schema<T>) => {
 
         const func = this.randomProps[key];
 
-        if (!is.function_(func)) throw new Error(`[${this.schema.model}] Property "${key}" in randomProps must be a function`);
+        if (!_.isFunction(func)) throw new Error(`[${this.schema.model}] Property "${key}" in randomProps must be a function`);
 
         // Use provided random function if provided in the schema.
         o[key] = func() as any;
@@ -147,7 +146,7 @@ export default <T = {}>(schema: Schema<T>) => {
     static async identifyOneStrict(query: Query): Promise<ObjectID> {
       const result = await this.findOne(query);
 
-      if (is.nullOrUndefined(result)) throw new Error(`[${this.schema.model}] No results found while identifying this ${this.schema.model} using the query ${JSON.stringify(query, null, 0)}`);
+      if (_.isNil(result)) throw new Error(`[${this.schema.model}] No results found while identifying this ${this.schema.model} using the query ${JSON.stringify(query, null, 0)}`);
       if (!ObjectID.isValid(result._id)) throw new Error(`[${this.schema.model}] ID of ${result} is not a valid ObjectID`);
 
       return result._id;
@@ -209,7 +208,7 @@ export default <T = {}>(schema: Schema<T>) => {
      * @throws {Error} No document found.
      */
     static async findOneStrict<R = T>(query?: Query<T>, options?: ModelFindOneOptions): Promise<Document<R>> {
-      if (is.nullOrUndefined(query)) {
+      if (_.isNil(query)) {
         const collection = await this.getCollection();
         const results = await collection.aggregate(this.pipeline().concat([{ $sample: { size: 1 } }])).toArray();
 
@@ -398,7 +397,7 @@ export default <T = {}>(schema: Schema<T>) => {
       const [q, u] = (options.skipHooks === true) ? [query, update] : await this.beforeUpdate(query, update, options);
 
       if (options.returnDoc === true) {
-        if (!is.plainObject(q)) {
+        if (!_.isPlainObject(q)) {
           throw new Error(`[${this.schema.model}] Invalid query, maybe it is not sanitized? This could happen if you enabled skipHooks in the options, in which case you will need to sanitize the query yourself`);
         }
 
@@ -413,10 +412,10 @@ export default <T = {}>(schema: Schema<T>) => {
         let newDoc;
 
         // Handle upserts properly.
-        if (is.nullOrUndefined(res.lastErrorObject.upserted)) {
+        if (_.isNil(res.lastErrorObject.upserted)) {
           oldDoc = res.value;
 
-          if (is.nullOrUndefined(oldDoc)) throw new Error(`[${this.schema.model}] Unable to return the old document before the update`);
+          if (_.isNil(oldDoc)) throw new Error(`[${this.schema.model}] Unable to return the old document before the update`);
 
           newDoc = await this.findOne<T>(oldDoc._id);
         }
@@ -424,7 +423,7 @@ export default <T = {}>(schema: Schema<T>) => {
           newDoc = await this.findOne<T>(res.lastErrorObject.upserted);
         }
 
-        if (is.nullOrUndefined(newDoc)) {
+        if (_.isNil(newDoc)) {
           throw new Error(`[${this.schema.model}] Unable to find the updated doc`);
         }
 
@@ -435,7 +434,7 @@ export default <T = {}>(schema: Schema<T>) => {
         return newDoc;
       }
       else {
-        if (!is.plainObject(q)) {
+        if (!_.isPlainObject(q)) {
           throw new Error(`[${this.schema.model}] Invalid query, maybe it is not sanitized? This could happen if you enabled skipHooks in the options, in which case you will need to sanitize the query yourself`);
         }
 
@@ -515,7 +514,7 @@ export default <T = {}>(schema: Schema<T>) => {
         if ((n <= 0) && (options.upsert === true)) {
           const res = await this.updateOne(q, u, { ...options, returnDoc: true, skipHooks: true });
 
-          if (is.boolean(res) || is.nullOrUndefined(res)) {
+          if (_.isBoolean(res) || _.isNil(res)) {
             throw new Error(`[${this.schema.model}] Error upserting document during an updateMany operation`);
           }
 
@@ -597,7 +596,7 @@ export default <T = {}>(schema: Schema<T>) => {
         debug('Deleting an existing document...', 'OK', JSON.stringify(query, null, 0), JSON.stringify(results, null, 0));
 
         if (results.result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to delete document`);
-        if (!is.number(results.result.n) || (results.result.n <= 0)) throw new Error(`[${this.schema.model}] Unable to delete document`);
+        if (!_.isNumber(results.result.n) || (results.result.n <= 0)) throw new Error(`[${this.schema.model}] Unable to delete document`);
 
         await this.afterDelete();
       }
@@ -685,7 +684,7 @@ export default <T = {}>(schema: Schema<T>) => {
 
         if (results.result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to delete documents`);
 
-        if (!is.number(results.result.n) || (results.result.n <= 0)) return false;
+        if (!_.isNumber(results.result.n) || (results.result.n <= 0)) return false;
 
         await this.afterDelete();
 
@@ -723,11 +722,11 @@ export default <T = {}>(schema: Schema<T>) => {
 
       const oldDoc = results.value;
 
-      if (is.nullOrUndefined(oldDoc)) throw new Error(`[${this.schema.model}] Unable to return the old document`);
+      if (_.isNil(oldDoc)) throw new Error(`[${this.schema.model}] Unable to return the old document`);
 
       const newDoc = await this.findOne<T>(r);
 
-      if (is.null_(newDoc)) {
+      if (_.isNull(newDoc)) {
         throw new Error(`[${this.schema.model}] Document is replaced but unable to find the new document in the database`);
       }
 
@@ -812,7 +811,7 @@ export default <T = {}>(schema: Schema<T>) => {
 
         // If the schema has a certain formatting function defined for this field,
         // apply it.
-        if (is.function_(formatter)) {
+        if (_.isFunction(formatter)) {
           const formattedValue = await formatter(formattedDoc[key] as any);
           formattedDoc[key] = formattedValue as any;
         }
@@ -850,8 +849,8 @@ export default <T = {}>(schema: Schema<T>) => {
      * @throws {Error} Some required fields in the document are missing.
      */
     static async validateDocument(doc: DocumentFragment<T>, options: ModelValidateDocumentOptions = {}) {
-      if (!is.plainObject(doc)) throw new Error(`[${this.schema.model}] Invalid document provided`);
-      if (is.emptyObject(doc)) throw new Error(`[${this.schema.model}] Empty objects are not permitted`);
+      if (!_.isPlainObject(doc)) throw new Error(`[${this.schema.model}] Invalid document provided`);
+      if (_.isEmpty(doc)) throw new Error(`[${this.schema.model}] Empty objects are not permitted`);
 
       for (const key in doc) {
         if (!doc.hasOwnProperty(key)) continue;
@@ -988,8 +987,8 @@ export default <T = {}>(schema: Schema<T>) => {
 
       // Unless specified, always renew the `createdAt` and `updatedAt` fields.
       if ((this.schema.timestamps === true) && (options.ignoreTimestamps !== true)) {
-        if (!is.date(o.createdAt)) o.createdAt = new Date();
-        if (!is.date(o.updatedAt)) o.updatedAt = new Date();
+        if (!_.isDate(o.createdAt)) o.createdAt = new Date();
+        if (!_.isDate(o.updatedAt)) o.updatedAt = new Date();
       }
 
       // Before inserting this document, go through each field and make sure that
@@ -1002,9 +1001,9 @@ export default <T = {}>(schema: Schema<T>) => {
 
         // Check if the field has a default value defined in the schema. If so,
         // apply it.
-        if (is.undefined(defaultValue)) continue;
+        if (_.isUndefined(defaultValue)) continue;
 
-        o[key as keyof T] = (is.function_(defaultValue)) ? defaultValue() as any : defaultValue as any;
+        o[key as keyof T] = (_.isFunction(defaultValue)) ? defaultValue() as any : defaultValue as any;
       }
 
       // Apply format function defined in the schema if applicable.
@@ -1080,7 +1079,7 @@ export default <T = {}>(schema: Schema<T>) => {
       // Add updated timestamps if applicable.
       if ((this.schema.timestamps === true) && (options.ignoreTimestamps !== true)) {
         if (!sanitizedUpdate.$set) sanitizedUpdate.$set = {};
-        if (!is.date(sanitizedUpdate.$set.updatedAt)) sanitizedUpdate.$set.updatedAt = new Date();
+        if (!_.isDate(sanitizedUpdate.$set.updatedAt)) sanitizedUpdate.$set.updatedAt = new Date();
       }
 
       // Format all fields in the update query.
@@ -1103,14 +1102,14 @@ export default <T = {}>(schema: Schema<T>) => {
           ...Object.keys(sanitizedUpdate.$unset || {}),
         ]);
 
-        if (!is.emptyObject(setOnInsert)) {
+        if (!_.isEmpty(setOnInsert)) {
           sanitizedUpdate.$setOnInsert = setOnInsert;
         }
       }
 
       // Validate all fields in the update query. Account for dot notations to
       // facilitate updating fields in embedded docs.
-      if (sanitizedUpdate.$set && !is.emptyObject(sanitizedUpdate.$set)) {
+      if (sanitizedUpdate.$set && !_.isEmpty(sanitizedUpdate.$set)) {
         await this.validateDocument(sanitizedUpdate.$set as DocumentFragment<T>, { ignoreUniqueIndex: true, accountForDotNotation: true, ...options });
       }
 
@@ -1118,10 +1117,10 @@ export default <T = {}>(schema: Schema<T>) => {
       const { $set, $setOnInsert, $addToSet, $push, ...rest } = sanitizedUpdate;
       const finalizedUpdate = {
         ...rest,
-        ...(is.nullOrUndefined($set) || is.emptyObject($set)) ? {} : { $set },
-        ...(is.nullOrUndefined($setOnInsert) || is.emptyObject($setOnInsert)) ? {} : { $setOnInsert },
-        ...(is.nullOrUndefined($addToSet) || is.emptyObject($addToSet)) ? {} : { $addToSet },
-        ...(is.nullOrUndefined($push) || is.emptyObject($push)) ? {} : { $push },
+        ...(_.isNil($set) || _.isEmpty($set)) ? {} : { $set },
+        ...(_.isNil($setOnInsert) || _.isEmpty($setOnInsert)) ? {} : { $setOnInsert },
+        ...(_.isNil($addToSet) || _.isEmpty($addToSet)) ? {} : { $addToSet },
+        ...(_.isNil($push) || _.isEmpty($push)) ? {} : { $push },
       };
 
       return [sanitizedQuery, finalizedUpdate];
@@ -1160,13 +1159,13 @@ export default <T = {}>(schema: Schema<T>) => {
      * @todo Cascade deletion only works for first-level foreign keys so far.
      */
     private static async afterDelete(docs?: Document<T> | Document<T>[]) {
-      if (is.array(docs)) {
+      if (_.isArray(docs)) {
         for (const doc of docs) {
           if (!typeIsValidObjectID(doc._id)) continue;
           await this.cascadeDelete(doc._id);
         }
       }
-      else if (!is.nullOrUndefined(docs) && typeIsValidObjectID(docs._id)) {
+      else if (!_.isNil(docs) && typeIsValidObjectID(docs._id)) {
         await this.cascadeDelete(docs._id);
       }
 
@@ -1186,9 +1185,9 @@ export default <T = {}>(schema: Schema<T>) => {
     private static async cascadeDelete(docId: ObjectID) {
       const cascadeModelNames = this.schema.cascade;
 
-      if (is.nullOrUndefined(cascadeModelNames)) return;
+      if (_.isNil(cascadeModelNames)) return;
 
-      if (!is.array(cascadeModelNames)) throw new Error(`[${this.schema.model}] Invalid definition of cascade in schema`);
+      if (!_.isArray(cascadeModelNames)) throw new Error(`[${this.schema.model}] Invalid definition of cascade in schema`);
 
       for (const modelName of cascadeModelNames) {
         const ModelClass = db.getModel(modelName);

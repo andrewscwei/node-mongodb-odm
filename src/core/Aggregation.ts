@@ -3,7 +3,7 @@
  *       framework.
  */
 
-import is from '@sindresorhus/is';
+import _ from 'lodash';
 import * as db from '..';
 import { AggregationPipeline, AggregationStageDescriptor, FieldSpec, GroupStageFactorySpec, LookupStageFactoryOptions, LookupStageFactorySpec, MatchStageFactoryOptions, MatchStageFactorySpec, PipelineFactoryOperators, PipelineFactoryOptions, ProjectStageFactoryOptions, Schema, SortStageFactorySpec } from '../types';
 import sanitizeQuery from '../utils/sanitizeQuery';
@@ -21,13 +21,13 @@ export default abstract class Aggregation {
    * @throws {TypeError} Invalid params or options provided.
    */
   static pipelineFactory(schema: Schema, { $lookup, $match, $prune, $group, $sort }: PipelineFactoryOperators = {}, { prefix = '', pipeline = [] }: PipelineFactoryOptions = {}): AggregationPipeline {
-    if (!(is.undefined($match) || is.object($match) || is.string($match))) throw new TypeError('Bad $match descriptor provided');
-    if (!(is.undefined($lookup) || is.object($lookup))) throw new TypeError('Bad $lookup descriptor provided');
-    if (!(is.undefined($prune) || is.object($prune) || is.string($prune))) throw new TypeError('Bad $prune descriptor provided');
-    if (!(is.undefined($group) || is.object($group) || is.string($group))) throw new TypeError('Bad $group descriptor provided');
-    if (!(is.undefined($sort) || is.object($sort))) throw new TypeError('Bad $sort descriptor provided');
-    if (!(is.string(prefix))) throw new TypeError('Bad prefix provided');
-    if (!(is.array(pipeline))) throw new TypeError('Bad pipeline provided');
+    if (!(_.isUndefined($match) || _.isObject($match) || _.isString($match))) throw new TypeError('Bad $match descriptor provided');
+    if (!(_.isUndefined($lookup) || _.isObject($lookup))) throw new TypeError('Bad $lookup descriptor provided');
+    if (!(_.isUndefined($prune) || _.isObject($prune) || _.isString($prune))) throw new TypeError('Bad $prune descriptor provided');
+    if (!(_.isUndefined($group) || _.isObject($group) || _.isString($group))) throw new TypeError('Bad $group descriptor provided');
+    if (!(_.isUndefined($sort) || _.isObject($sort))) throw new TypeError('Bad $sort descriptor provided');
+    if (!(_.isString(prefix))) throw new TypeError('Bad prefix provided');
+    if (!(_.isArray(pipeline))) throw new TypeError('Bad pipeline provided');
 
     // If lookup stage is specified, add it to beginning of the pipeline.
     if ($lookup) pipeline = Aggregation.lookupStageFactory(schema, $lookup, { fromPrefix: prefix, toPrefix: prefix }).concat(pipeline);
@@ -150,7 +150,7 @@ export default abstract class Aggregation {
         },
       });
 
-      if (is.object(val)) {
+      if (_.isObject(val)) {
         pipe = pipe.concat(Aggregation.lookupStageFactory(schemaRef, val, {
           fromPrefix: `${toPrefix}${key}.`,
           toPrefix: `${toPrefix}${key}.`,
@@ -182,7 +182,7 @@ export default abstract class Aggregation {
   static groupStageFactory(schema: Schema, spec: GroupStageFactorySpec): AggregationPipeline {
     const pipe: AggregationPipeline = [];
 
-    if (is.string(spec)) {
+    if (_.isString(spec)) {
       pipe.push({ $group: { _id: `$${spec}` } });
     }
     else {
@@ -252,9 +252,9 @@ export default abstract class Aggregation {
       if (populateOpts === false) continue;
 
       const populateRef = fields[key].ref;
-      const populateSchema = (!is.nullOrUndefined(populateOpts) && !is.nullOrUndefined(populateRef)) ? db.getModel(populateRef).schema : undefined;
+      const populateSchema = (!_.isNil(populateOpts) && !_.isNil(populateRef)) ? db.getModel(populateRef).schema : undefined;
 
-      out[`${toPrefix}${key}`] = is.nullOrUndefined(populateSchema) ? `$${fromPrefix}${key}` : (Aggregation.projectStageFactory(populateSchema, populateOpts === true ? undefined : populateOpts) as AggregationStageDescriptor[])[0]['$project'];
+      out[`${toPrefix}${key}`] = _.isNil(populateSchema) ? `$${fromPrefix}${key}` : (Aggregation.projectStageFactory(populateSchema, populateOpts === true ? undefined : populateOpts) as AggregationStageDescriptor[])[0]['$project'];
     }
 
     if (schema.timestamps) {

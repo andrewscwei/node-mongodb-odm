@@ -1,9 +1,9 @@
 /* tslint:disable max-classes-per-file */
 
-import is from '@sindresorhus/is';
 import assert from 'assert';
 import bcrypt from 'bcrypt';
 import Faker from 'faker';
+import _ from 'lodash';
 import { describe, it } from 'mocha';
 import { ObjectID } from 'mongodb';
 import { configureDb, getDbInstance } from '..';
@@ -71,7 +71,7 @@ describe('core/Model', () => {
 
   it('can generate random required fields', async () => {
     const res = await Bar.randomFields();
-    assert(is.string(res.aString));
+    assert(_.isString(res.aString));
   });
 
   it('can insert a new document', async () => {
@@ -169,7 +169,7 @@ describe('core/Model', () => {
 
   it('should return `null` if update fails and `returnDoc` is `true`', async () => {
     const res = await Bar.updateOne(new ObjectID(), { aString: Faker.random.alphaNumeric(10) }, { returnDoc: true });
-    assert(is.null_(res));
+    assert(_.isNull(res));
   });
 
   it('should automatically format values on update according to the schema', async () => {
@@ -179,7 +179,7 @@ describe('core/Model', () => {
     await Bar.insertOne({ aString: s });
     const res = await Bar.updateOne({ aString: s }, { aFormattedString: t }, { returnDoc: true });
 
-    assert(!is.nullOrUndefined(res));
+    assert(!_.isNil(res));
     assert((res as Document<BarProps>).aFormattedString !== t);
     assert((res as Document<BarProps>).aFormattedString === Bar.formatProps.aFormattedString(t));
   });
@@ -188,8 +188,8 @@ describe('core/Model', () => {
     const s = Faker.random.alphaNumeric(10);
     const res = await Bar.updateOne({ aString: Faker.random.alphaNumeric(10) }, { aFormattedString: s }, { upsert: true, returnDoc: true });
 
-    assert(!is.nullOrUndefined(res));
-    assert(!is.boolean(res));
+    assert(!_.isNil(res));
+    assert(!_.isBoolean(res));
     assert((res as Document<BarProps>).aFormattedString !== s);
     assert((res as Document<BarProps>).aFormattedString === Bar.formatProps.aFormattedString(s));
   });
@@ -216,7 +216,7 @@ describe('core/Model', () => {
     const res = await Bar.updateMany({ aString: s }, { aFormattedString: t }, { returnDocs: true, upsert: true }) as Document<BarProps>[];
 
     assert(res.length === 1);
-    assert(!is.nullOrUndefined(await Bar.findOne({ aString: s })));
+    assert(!_.isNil(await Bar.findOne({ aString: s })));
   });
 
   it('can upsert a doc in an `updateMany` op while `returnDocs` is fa`lse', async () => {
@@ -226,7 +226,7 @@ describe('core/Model', () => {
     const res = await Bar.updateMany({ aString: s }, { aFormattedString: t }, { upsert: true }) as boolean;
 
     assert(res === true);
-    assert(!is.nullOrUndefined(await Bar.findOne({ aString: s })));
+    assert(!_.isNil(await Bar.findOne({ aString: s })));
   });
 
   it('can delete a doc', async () => {
@@ -234,27 +234,27 @@ describe('core/Model', () => {
 
     await Bar.insertOne({ aString: s });
 
-    assert(!is.null_(await Bar.findOne({ aString: s })));
+    assert(!_.isNull(await Bar.findOne({ aString: s })));
 
     const res = await Bar.deleteOne({ aString: s });
 
     assert(res === true);
-    assert(is.null_(await Bar.findOne({ aString: s })));
+    assert(_.isNull(await Bar.findOne({ aString: s })));
   });
 
   it('can delete a doc and return the deleted doc', async () => {
     const s = Faker.random.alphaNumeric(10);
     const doc = await Bar.insertOneStrict({ aString: s });
 
-    assert(!is.null_(await Bar.findOne({ aString: s })));
+    assert(!_.isNull(await Bar.findOne({ aString: s })));
 
     const objectId = doc._id;
 
     const res = await Bar.deleteOne({ aString: s }, { returnDoc: true });
 
-    assert(!is.null_(res));
+    assert(!_.isNull(res));
     assert((res as Document<BarProps>)._id.equals(objectId));
-    assert(is.null_(await Bar.findOne({ aString: s })));
+    assert(_.isNull(await Bar.findOne({ aString: s })));
   });
 
   it('can delete multiple docs', async () => {
@@ -278,7 +278,7 @@ describe('core/Model', () => {
 
     const res = await Bar.deleteMany({ aString: s }, { returnDocs: true });
 
-    assert(is.array(res));
+    assert(_.isArray(res));
     assert((res as Document<BarProps>[]).length === 3);
   });
 
@@ -290,7 +290,7 @@ describe('core/Model', () => {
 
     const doc = await Bar.findAndReplaceOneStrict({ aString: s }, { aString: t }, { returnOriginal: true });
 
-    assert(!is.nullOrUndefined(doc));
+    assert(!_.isNil(doc));
     assert(doc.aString === s);
   });
 
@@ -302,7 +302,7 @@ describe('core/Model', () => {
 
     const doc = await Bar.findAndReplaceOneStrict({ aString: s }, { aString: t }, { returnOriginal: false });
 
-    assert(!is.nullOrUndefined(doc));
+    assert(!_.isNil(doc));
     assert(doc.aString === t);
   });
 

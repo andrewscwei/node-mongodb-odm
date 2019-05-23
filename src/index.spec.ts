@@ -1,5 +1,5 @@
-import is from '@sindresorhus/is';
 import assert from 'assert';
+import _ from 'lodash';
 import { before, describe, it } from 'mocha';
 import { configureDb, connectToDb, disconnectFromDb, getDbInstance, isDbConnected } from '.';
 
@@ -23,6 +23,6 @@ describe('can connect to a database', () => {
 
   it('can fetch db instance', async () => {
     const db = await getDbInstance();
-    assert(is.nullOrUndefined(db) === false);
+    assert(_.isNil(db) === false);
   });
 });

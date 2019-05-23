@@ -1,4 +1,4 @@
-import is from '@sindresorhus/is';
+import _ from 'lodash';
 import { FieldSpec, typeIsFieldDescriptor } from '../types';
 
 /**
@@ -11,7 +11,7 @@ export default function getFieldSpecByKey(fieldDescriptor: { [key: string]: Fiel
   const keys = key.split('.');
   const k = keys.shift();
 
-  if (is.nullOrUndefined(k)) return undefined;
+  if (_.isNil(k)) return undefined;
   if (!fieldDescriptor.hasOwnProperty(k)) return undefined;
 
   const o = fieldDescriptor[k];

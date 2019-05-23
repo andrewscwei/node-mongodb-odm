@@ -1,4 +1,4 @@
-import is from '@sindresorhus/is';
+import _ from 'lodash';
 import { DocumentFragment, Schema } from '../types';
 import getFieldSpecByKey from './getFieldSpecByKey';
 
@@ -38,7 +38,7 @@ export default function sanitizeDocument<T = {}>(schema: Schema, doc: DocumentFr
     if ((key !== '_id') && accountForDotNotation && !getFieldSpecByKey(schema.fields, key)) continue;
 
     // Ignore fields with `undefined` or `null` values.
-    if (is.nullOrUndefined((doc as any)[key])) continue;
+    if (_.isNil((doc as any)[key])) continue;
 
     o[key as keyof T] = (doc as any)[key];
   }
