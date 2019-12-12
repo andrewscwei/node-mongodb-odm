@@ -62,6 +62,7 @@ export async function connectToDb(): Promise<void> {
 
   client = await MongoClient.connect(url, {
     useNewUrlParser: true,
+    useUnifiedTopology: true,
   });
 
   const connection = client.db(config.name);

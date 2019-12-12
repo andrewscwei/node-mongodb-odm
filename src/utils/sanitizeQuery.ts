@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { ObjectID } from 'mongodb';
-import { Query, Schema, typeIsValidObjectID } from '../types';
+import { Query, Schema, typeIsValidObjectID, DocumentFragment } from '../types';
 import sanitizeDocument from './sanitizeDocument';
 
 interface SanitizeQueryOptions {
@@ -49,7 +49,7 @@ export default function sanitizeQuery<T = {}>(schema: Schema, query: Query, { st
     return { _id: new ObjectID(query) };
   }
   else if (strict) {
-    return sanitizeDocument<T>(schema, query, { accountForDotNotation: true });
+    return sanitizeDocument<T>(schema, query as DocumentFragment, { accountForDotNotation: true });
   }
   else {
     return query;

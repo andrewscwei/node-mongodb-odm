@@ -7,7 +7,7 @@
 
 import bcrypt from 'bcrypt';
 import _ from 'lodash';
-import { Collection, FilterQuery, ObjectID, UpdateQuery } from 'mongodb';
+import { Collection, FilterQuery, ObjectID, PushOperator, SetFields, UpdateQuery } from 'mongodb';
 import * as db from '..';
 import { AggregationPipeline, Document, DocumentFragment, FieldDefaultValueFunction, FieldDescriptor, FieldFormatFunction, FieldRandomValueFunction, FieldSpec, FieldValidationStrategy, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOperators, PipelineFactoryOptions, Query, Schema, typeIsFieldDescriptor, typeIsUpdateQuery, typeIsValidObjectID, Update } from '../types';
 import getFieldSpecByKey from '../utils/getFieldSpecByKey';
@@ -292,7 +292,7 @@ export default <T = {}>(schema: Schema<T>) => {
       if (results.ops.length > 1) throw new Error(`[${this.schema.model}] Somehow insertOne() op inserted more than 1 document`);
       if (results.ops.length < 1) throw new Error(`[${this.schema.model}] Unable to insert document`);
 
-      const o = results.ops[0];
+      const o = results.ops[0] as Document<T>;
 
       // Apply after insert handler.
       await this.afterInsert(o);
@@ -1047,7 +1047,7 @@ export default <T = {}>(schema: Schema<T>) => {
       // First sanitize the inputs. We want to be able to make sure the query is
       // valid and that the update object is a proper update query.
       const sanitizedQuery = sanitizeQuery<T>(this.schema, q) as DocumentFragment<T>;
-      const sanitizedUpdate: UpdateQuery<DocumentFragment<T>> = typeIsUpdateQuery<T>(u) ? { ...u } : { $set: u };
+      const sanitizedUpdate = (typeIsUpdateQuery<T>(u) ? { ...u } : { $set: u }) as UpdateQuery<DocumentFragment<T>>;
 
       // Sanitize all update queries. Remap `null` values to `$unset`.
       if (sanitizedUpdate.$set) {
@@ -1072,14 +1072,29 @@ export default <T = {}>(schema: Schema<T>) => {
         }
       }
 
-      if (sanitizedUpdate.$setOnInsert) sanitizedUpdate.$setOnInsert = sanitizeDocument<T>(this.schema, sanitizedUpdate.$setOnInsert, { accountForDotNotation: true });
-      if (sanitizedUpdate.$addToSet) sanitizedUpdate.$addToSet = sanitizeDocument<T>(this.schema, sanitizedUpdate.$addToSet, { accountForDotNotation: true });
-      if (sanitizedUpdate.$push) sanitizedUpdate.$push = sanitizeDocument<T>(this.schema, sanitizedUpdate.$push, { accountForDotNotation: true });
+      // Determine if there are values to set upon upsert. If so, sanitize them.
+      if (sanitizedUpdate.$setOnInsert) {
+        sanitizedUpdate.$setOnInsert = sanitizeDocument<T>(this.schema, sanitizedUpdate.$setOnInsert, { accountForDotNotation: true });
+      }
+
+      // Determine if there are new values to add to array fields of the doc
+      // (minding duplicates). If so, sanitize them.
+      if (sanitizedUpdate.$addToSet) {
+        const setFields = sanitizeDocument<T>(this.schema, sanitizedUpdate.$addToSet, { accountForDotNotation: true }) as SetFields<Partial<Document<T>>>;
+        sanitizedUpdate.$addToSet = setFields;
+      }
+
+      // Determine if there are new values to add to array fields of the doc
+      // (without minding duplicates). If so, sanitize them.
+      if (sanitizedUpdate.$push) {
+        const pushFields = sanitizeDocument<T>(this.schema, sanitizedUpdate.$push, { accountForDotNotation: true }) as PushOperator<Partial<Document<T>>>;
+        sanitizedUpdate.$push = pushFields;
+      }
 
       // Add updated timestamps if applicable.
       if ((this.schema.timestamps === true) && (options.ignoreTimestamps !== true)) {
         if (!sanitizedUpdate.$set) sanitizedUpdate.$set = {};
-        if (!_.isDate(sanitizedUpdate.$set.updatedAt)) sanitizedUpdate.$set.updatedAt = new Date();
+        if (!_.isDate(sanitizedUpdate.$set.updatedAt)) sanitizedUpdate.$set = { ...sanitizedUpdate.$set, updatedAt: new Date() };
       }
 
       // Format all fields in the update query.
@@ -1148,7 +1163,7 @@ export default <T = {}>(schema: Schema<T>) => {
     private static async beforeDelete(query: Query<T>, options: ModelDeleteOneOptions | ModelDeleteManyOptions): Promise<FilterQuery<T>> {
       const q = await this.willDeleteDocument(query);
 
-      return sanitizeQuery<T>(this.schema, q);
+      return sanitizeQuery<T>(this.schema, q) as FilterQuery<T>;
     }
 
     /**
