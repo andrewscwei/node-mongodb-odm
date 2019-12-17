@@ -69,9 +69,9 @@ import { FieldSpec, FieldType, FieldValidationStrategy, FieldValue, typeIsValidO
  * @throws {TypeError} Value fails custom validation function (only if validator
  *                     is a function).
  */
-export default function validateFieldValue<T = FieldValue>(value: any, spec: FieldSpec, strategy?: FieldValidationStrategy<T>) {
-  // Check if value is undefined or null, then respond accordingly depending on
-  // whether or not it is a required value.
+export default function validateFieldValue<T = FieldValue>(value: T, spec: FieldSpec, strategy?: FieldValidationStrategy<T>) {
+  // Check if value is `undefined` or `null`, then respond accordingly depending
+  // on whether or not it is a required value.
   if (_.isNil(value)) {
     if (spec.required) {
       throw new TypeError('The value is marked as required but it is null or undefined');
@@ -198,7 +198,7 @@ export default function validateFieldValue<T = FieldValue>(value: any, spec: Fie
       // Validate each field.
       for (const subFieldName in spec.type) {
         if (!spec.type.hasOwnProperty(subFieldName)) continue;
-        validateFieldValue(value[subFieldName], (spec.type as { [key: string]: FieldSpec })[subFieldName]);
+        validateFieldValue((value as any)[subFieldName], (spec.type as { [key: string]: FieldSpec })[subFieldName]);
       }
     }
   }

@@ -353,9 +353,9 @@ export interface ProjectStageFactoryOptions {
   populate?: ProjectStageFactoryOptionsPopulate;
 
   /**
-   * Schema fields  to exclude.
+   * Schema fields to exclude.
    */
-  exclude?: any[];
+  exclude?: string[];
 }
 
 export interface ProjectStageFactoryOptionsPopulate {
@@ -389,7 +389,7 @@ export type FieldFormatFunction<T = FieldValue> = (value: T) => T;
  *   4. Function: The value to be validated will be passed into this function
  *                and it must return `true`.
  */
-export type FieldValidationStrategy<T = FieldValue> = RegExp | number | any[] | FieldValidationFunction<T>;
+export type FieldValidationStrategy<T = FieldValue> = RegExp | number | T[] | FieldValidationFunction<T>;
 
 /**
  * Function for validating field values, in which the value to be validated

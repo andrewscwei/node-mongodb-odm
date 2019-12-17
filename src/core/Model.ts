@@ -147,7 +147,7 @@ export default <T = {}>(schema: Schema<T>) => {
     static async identifyOneStrict(query: Query): Promise<ObjectID> {
       const result = await this.findOne(query);
 
-      if (_.isNil(result)) throw new Error(`[${this.schema.model}] No results found while identifying this ${this.schema.model} using the query ${JSON.stringify(query, undefined, 0)}`);
+      if (!result) throw new Error(`[${this.schema.model}] No results found while identifying this ${this.schema.model} using the query ${JSON.stringify(query, undefined, 0)}`);
       if (!ObjectID.isValid(result._id)) throw new Error(`[${this.schema.model}] ID of ${result} is not a valid ObjectID`);
 
       return result._id;
@@ -211,7 +211,7 @@ export default <T = {}>(schema: Schema<T>) => {
      * @throws {Error} No document found.
      */
     static async findOneStrict<R = T>(query?: Query<T>, options?: ModelFindOneOptions): Promise<Document<R>> {
-      if (_.isNil(query)) {
+      if (!query) {
         const collection = await this.getCollection();
         const results = await collection.aggregate(this.pipeline().concat([{ $sample: { size: 1 } }])).toArray();
 
@@ -418,10 +418,10 @@ export default <T = {}>(schema: Schema<T>) => {
         let newDoc;
 
         // Handle upserts properly.
-        if (_.isNil(res.lastErrorObject.upserted)) {
+        if (!res.lastErrorObject.upserted) {
           oldDoc = res.value;
 
-          if (_.isNil(oldDoc)) throw new Error(`[${this.schema.model}] Unable to return the old document before the update`);
+          if (!oldDoc) throw new Error(`[${this.schema.model}] Unable to return the old document before the update`);
 
           newDoc = await this.findOne<T>(oldDoc._id);
         }
@@ -429,7 +429,7 @@ export default <T = {}>(schema: Schema<T>) => {
           newDoc = await this.findOne<T>(res.lastErrorObject.upserted);
         }
 
-        if (_.isNil(newDoc)) {
+        if (!newDoc) {
           throw new Error(`[${this.schema.model}] Unable to find the updated doc`);
         }
 
@@ -732,11 +732,11 @@ export default <T = {}>(schema: Schema<T>) => {
 
       const oldDoc = results.value;
 
-      if (_.isNil(oldDoc)) throw new Error(`[${this.schema.model}] Unable to return the old document`);
+      if (!oldDoc) throw new Error(`[${this.schema.model}] Unable to return the old document`);
 
       const newDoc = await this.findOne<T>(r);
 
-      if (_.isNil(newDoc)) {
+      if (!newDoc) {
         throw new Error(`[${this.schema.model}] Document is replaced but unable to find the new document in the database`);
       }
 
@@ -862,7 +862,6 @@ export default <T = {}>(schema: Schema<T>) => {
      * @throws {Error} Some required fields in the document are missing.
      */
     static async validateDocument(doc: DocumentFragment<T>, options: ModelValidateDocumentOptions = {}) {
-      if (!_.isPlainObject(doc)) throw new Error(`[${this.schema.model}] Invalid document provided`);
       if (_.isEmpty(doc)) throw new Error(`[${this.schema.model}] Empty objects are not permitted`);
 
       for (const key in doc) {
@@ -877,9 +876,11 @@ export default <T = {}>(schema: Schema<T>) => {
 
         // #1 Check if field is defined in the schema.
         const fieldSpec = options.accountForDotNotation ? getFieldSpecByKey(this.schema.fields, key) : schema.fields[key as keyof T];
-        if (_.isUndefined(fieldSpec)) throw new Error(`[${this.schema.model}] The field '${key}' is not defined in the ${JSON.stringify(this.schema.fields, undefined, 0)}`);
+        if (!fieldSpec) throw new Error(`[${this.schema.model}] The field '${key}' is not defined in the ${JSON.stringify(this.schema.fields, undefined, 0)}`);
 
-        // #2 Check if field value conforms to its defined spec.
+        // #2 Check if field value conforms to its defined spec. Note that the
+        // key can be in dot notation because this method may also be used when
+        // applying doc updates.
         const val = _.get(doc, key, undefined);
         const validationStrategy = _.get(this.validateProps, key, undefined);
 
@@ -1147,10 +1148,10 @@ export default <T = {}>(schema: Schema<T>) => {
       const { $set, $setOnInsert, $addToSet, $push, ...rest } = sanitizedUpdate;
       const finalizedUpdate = {
         ...rest,
-        ...(_.isNil($set) || _.isEmpty($set)) ? {} : { $set },
-        ...(_.isNil($setOnInsert) || _.isEmpty($setOnInsert)) ? {} : { $setOnInsert },
-        ...(_.isNil($addToSet) || _.isEmpty($addToSet)) ? {} : { $addToSet },
-        ...(_.isNil($push) || _.isEmpty($push)) ? {} : { $push },
+        ..._.isEmpty($set) ? {} : { $set },
+        ..._.isEmpty($setOnInsert) ? {} : { $setOnInsert },
+        ..._.isEmpty($addToSet) ? {} : { $addToSet },
+        ..._.isEmpty($push) ? {} : { $push },
       };
 
       return [sanitizedQuery, finalizedUpdate];
@@ -1195,8 +1196,8 @@ export default <T = {}>(schema: Schema<T>) => {
           await this.cascadeDelete(doc._id);
         }
       }
-      else if (!_.isNil(docs) && typeIsValidObjectID(docs._id)) {
-        await this.cascadeDelete(docs._id);
+      else if (typeIsValidObjectID(docs?._id)) {
+        await this.cascadeDelete(docs!._id);
       }
 
       await this.didDeleteDocument(docs);
@@ -1215,9 +1216,7 @@ export default <T = {}>(schema: Schema<T>) => {
     private static async cascadeDelete(docId: ObjectID) {
       const cascadeModelNames = this.schema.cascade;
 
-      if (_.isNil(cascadeModelNames)) return;
-
-      if (!_.isArray(cascadeModelNames)) throw new Error(`[${this.schema.model}] Invalid definition of cascade in schema`);
+      if (!cascadeModelNames) return;
 
       for (const modelName of cascadeModelNames) {
         const ModelClass = db.getModel(modelName);

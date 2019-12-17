@@ -12,7 +12,7 @@ export default abstract class Aggregation {
   /**
    * Generates a pipeline to pass into the aggregation framework.
    *
-   * @param {Schema} schema - The collection schema.
+   * @param schema - The collection schema.
    * @param operators - @see PipelineFactoryOperators
    * @param options - @see PipelineFactoryOptions
    *
@@ -21,14 +21,6 @@ export default abstract class Aggregation {
    * @throws {TypeError} Invalid params or options provided.
    */
   static pipelineFactory(schema: Schema, { $lookup, $match, $prune, $group, $sort }: PipelineFactoryOperators = {}, { prefix = '', pipeline = [] }: PipelineFactoryOptions = {}): AggregationPipeline {
-    if (!(_.isUndefined($match) || _.isObject($match) || _.isString($match))) throw new TypeError('Bad $match descriptor provided');
-    if (!(_.isUndefined($lookup) || _.isObject($lookup))) throw new TypeError('Bad $lookup descriptor provided');
-    if (!(_.isUndefined($prune) || _.isObject($prune) || _.isString($prune))) throw new TypeError('Bad $prune descriptor provided');
-    if (!(_.isUndefined($group) || _.isObject($group) || _.isString($group))) throw new TypeError('Bad $group descriptor provided');
-    if (!(_.isUndefined($sort) || _.isObject($sort))) throw new TypeError('Bad $sort descriptor provided');
-    if (!(_.isString(prefix))) throw new TypeError('Bad prefix provided');
-    if (!(_.isArray(pipeline))) throw new TypeError('Bad pipeline provided');
-
     // If lookup stage is specified, add it to beginning of the pipeline.
     if ($lookup) pipeline = Aggregation.lookupStageFactory(schema, $lookup, { fromPrefix: prefix, toPrefix: prefix }).concat(pipeline);
 
@@ -150,7 +142,7 @@ export default abstract class Aggregation {
         },
       });
 
-      if (_.isObject(val)) {
+      if (!_.isBoolean(val)) {
         pipe = pipe.concat(Aggregation.lookupStageFactory(schemaRef, val, {
           fromPrefix: `${toPrefix}${key}.`,
           toPrefix: `${toPrefix}${key}.`,

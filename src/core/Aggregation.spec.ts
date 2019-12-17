@@ -156,7 +156,7 @@ describe('core/Aggregation', () => {
     ];
 
     assert(actual.length === expected.length);
-    assert(_.isObject(actual[0]));
+    assert(_.isPlainObject(actual[0]));
     assert((actual[0] as AggregationStageDescriptor).hasOwnProperty('$match'));
     assert(objectId.equals((expected[0] as AggregationStageDescriptor).$match._id));
   });

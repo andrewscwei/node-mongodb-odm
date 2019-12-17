@@ -11,7 +11,7 @@ export default function getFieldSpecByKey(fieldDescriptor: { [key: string]: Fiel
   const keys = key.split('.');
   const k = keys.shift();
 
-  if (_.isNil(k)) return undefined;
+  if (!k) return undefined;
   if (!fieldDescriptor.hasOwnProperty(k)) return undefined;
 
   const o = fieldDescriptor[k];
