@@ -19,7 +19,7 @@ export type Query<T = {}> = string | ObjectID | FilterQuery<T>;
 /**
  * Update document descriptor.
  */
-export type Update<T = {}> = UpdateQuery<T> | Partial<{ [K in keyof Document<T>]: Document<T>[K] | null }>;
+export type Update<T = {}> = UpdateQuery<T> | Partial<{ [K in keyof Document<T>]: Document<T>[K] | undefined }>;
 
 /**
  * Data type for all field types.

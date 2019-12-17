@@ -83,9 +83,23 @@ describe('core/Model', () => {
   it('can insert multiple documents', async () => {
     const t: DocumentFragment<BarProps>[] = [{ aString: Faker.random.alphaNumeric(10) }, { aString: Faker.random.alphaNumeric(10) }, { aString: Faker.random.alphaNumeric(10) }];
     const docs = await Bar.insertMany(t);
-    assert(docs.length > 0);
+    assert(docs.length === t.length);
     assert(docs!.reduce((prev, curr) => prev && ObjectID.isValid(curr._id), true));
     docs.forEach((doc, i) => assert(doc.aString === t[i].aString));
+  });
+
+  it('can identify a single document', async () => {
+    const t: DocumentFragment<BarProps> = { aString: 'foo' };
+    await Bar.insertOneStrict(t);
+    const id = await Bar.identifyOne({ aString: 'foo' });
+    assert(id);
+  });
+
+  it('can identify multiple documents', async () => {
+    const t: DocumentFragment<BarProps>[] = [{ aString: 'bar' }, { aString: 'bar' }, { aString: 'bar' }];
+    await Bar.insertMany(t);
+    const ids = await Bar.identifyMany({ aString: 'bar' });
+    assert(ids.length === t.length);
   });
 
   it('should throw if required fields are missing during insertion', async () => {
@@ -167,9 +181,9 @@ describe('core/Model', () => {
     assert(res === false);
   });
 
-  it('should return `null` if update fails and `returnDoc` is `true`', async () => {
+  it('should return `undefined` if update fails and `returnDoc` is `true`', async () => {
     const res = await Bar.updateOne(new ObjectID(), { aString: Faker.random.alphaNumeric(10) }, { returnDoc: true });
-    assert(_.isNull(res));
+    assert(_.isUndefined(res));
   });
 
   it('should automatically format values on update according to the schema', async () => {
@@ -234,27 +248,27 @@ describe('core/Model', () => {
 
     await Bar.insertOne({ aString: s });
 
-    assert(!_.isNull(await Bar.findOne({ aString: s })));
+    assert((await Bar.findOne({ aString: s })) !== undefined);
 
     const res = await Bar.deleteOne({ aString: s });
 
     assert(res === true);
-    assert(_.isNull(await Bar.findOne({ aString: s })));
+    assert(_.isUndefined(await Bar.findOne({ aString: s })));
   });
 
   it('can delete a doc and return the deleted doc', async () => {
     const s = Faker.random.alphaNumeric(10);
     const doc = await Bar.insertOneStrict({ aString: s });
 
-    assert(!_.isNull(await Bar.findOne({ aString: s })));
+    assert((await Bar.findOne({ aString: s })) !== undefined);
 
     const objectId = doc._id;
 
     const res = await Bar.deleteOne({ aString: s }, { returnDoc: true });
 
-    assert(!_.isNull(res));
+    assert(res !== undefined);
     assert((res as Document<BarProps>)._id.equals(objectId));
-    assert(_.isNull(await Bar.findOne({ aString: s })));
+    assert(_.isUndefined(await Bar.findOne({ aString: s })));
   });
 
   it('can delete multiple docs', async () => {
@@ -306,21 +320,21 @@ describe('core/Model', () => {
     assert(doc.aString === t);
   });
 
-  it('can remove a property of a doc by updating it to `null`', async () => {
+  it('can remove a property of a doc by updating it to `undefined`', async () => {
     const baz = await Bar.insertOneStrict();
     assert(baz.aNumber);
-    await Bar.updateOneStrict(baz._id, { aNumber: null });
+    await Bar.updateOneStrict(baz._id, { aNumber: undefined });
     const res = await Bar.findOneStrict(baz._id);
-    assert(res.aNumber === undefined);
+    assert(_.isUndefined(res.aNumber));
   });
 
-  it('can upsert a document while setting an update field to `null`', async () => {
+  it('can upsert a document while setting an update field to `undefined`', async () => {
     const t = Faker.random.alphaNumeric(10);
     const exists = await Bar.exists({ aString: t });
     assert(!exists);
-    const baz = await Bar.updateOneStrict({ aString: t }, { aNumber: null }, { upsert: true, returnDoc: true });
+    const baz = await Bar.updateOneStrict({ aString: t }, { aNumber: undefined }, { upsert: true, returnDoc: true });
     assert(baz);
-    assert((baz as Document<BarProps>).aNumber === undefined);
+    assert(_.isUndefined((baz as Document<BarProps>).aNumber));
   });
 });
 
