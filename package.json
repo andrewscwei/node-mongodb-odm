@@ -1,6 +1,6 @@
 {
   "name": "@andrewscwei/mongodb-odm",
-  "version": "0.59.0",
+  "version": "0.60.0",
   "description": "ODM for MongoDB",
   "main": "build/index.js",
   "scripts": {
@@ -32,26 +32,26 @@
     "index.d.ts"
   ],
   "dependencies": {
-    "@types/mongodb": "^3.3.12",
-    "bcrypt": "^3.0.7",
+    "@types/mongodb": "^3.5.5",
+    "bcrypt": "^4.0.1",
     "debug": "^4.1.1",
     "lodash": "^4.17.15",
-    "mongodb": "^3.4.0"
+    "mongodb": "^3.5.5"
   },
   "devDependencies": {
     "@types/bcrypt": "^3.0.0",
     "@types/debug": "^4.1.5",
     "@types/dotenv": "^8.2.0",
-    "@types/faker": "^4.1.8",
+    "@types/faker": "^4.1.11",
     "@types/lodash": "^4.14.149",
-    "@types/mocha": "^5.2.7",
+    "@types/mocha": "^7.0.2",
     "dotenv": "^8.2.0",
     "faker": "^4.1.0",
-    "mocha": "^6.2.2",
-    "rimraf": "^3.0.0",
-    "ts-node": "^8.5.4",
-    "tslint": "^5.20.1",
-    "typescript": "3.7.3"
+    "mocha": "^7.1.1",
+    "rimraf": "^3.0.2",
+    "ts-node": "^8.8.2",
+    "tslint": "^6.1.1",
+    "typescript": "3.8.3"
   },
   "types": "build/index.d.ts"
 }
