@@ -1,4 +1,4 @@
-# mongodb-odm [![CircleCI](https://circleci.com/gh/andrewscwei/node-mongodb-odm.svg?style=svg)](https://circleci.com/gh/andrewscwei/node-mongodb-odm)
+# mongodb-odm [![CI](https://github.com/andrewscwei/node-mongodb-odm/workflows/CI/badge.svg)](https://github.com/andrewscwei/node-mongodb-odm/actions?query=workflow%3ACI) [![CD](https://github.com/andrewscwei/node-mongodb-odm/workflows/CD/badge.svg)](https://github.com/andrewscwei/node-mongodb-odm/actions?query=workflow%3ACD)
 
 Simple MonogDB ODM library written in TypeScript. This module is opinionated, has limited features and has an ever-changing API. Use with caution.
 
