@@ -13,7 +13,7 @@ import Model from './Model';
 describe('core/Model', () => {
   before(async () => {
     configureDb({
-      host: 'localhost:27017',
+      host: process.env.MONGODB_HOST ?? 'localhost:27017',
       name: 'mongodb_odm_test',
       models: { Foo, Bar },
     });
