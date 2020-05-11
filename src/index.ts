@@ -123,6 +123,7 @@ export function isDbConnected(): boolean {
  * @param options - Configuration options.
  */
 export function configureDb(options: Configuration) {
+  debug('Configuring ODM... OK', options);
   config = options;
   collections = {};
 }
@@ -135,7 +136,7 @@ export function configureDb(options: Configuration) {
 export async function getDbInstance(): Promise<Db> {
   if (client) return client.db(config.name);
 
-  debug('No MongoDB client, initiating connection...', 'OK');
+  debug('No MongoDB client, begin establishing connection');
 
   await connectToDb();
 
