@@ -6,7 +6,7 @@ import { configureDb, connectToDb, disconnectFromDb, getDbInstance, isDbConnecte
 describe('can connect to a database', () => {
   before(async () => {
     configureDb({
-      host: 'localhost:27017',
+      host: process.env.MONGODB_HOST ?? 'localhost:27017',
       name: 'mongodb_odm_test',
     });
   });
