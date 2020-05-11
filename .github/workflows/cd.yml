@@ -44,8 +44,8 @@ jobs:
     services:
       mongo:
         image: mongo:4.0.1
-        env:
-          MONGO_URL: "mongodb://localhost:27017"
+        ports:
+          - 27017:27017
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -66,6 +66,8 @@ jobs:
           sed -i '/"\*\*\/\*\.spec\.ts"/d' ./tsconfig.json
           npm run build
           npm test
+        env:
+          MONGO_URL: "mongodb://localhost:27017"
   deploy:
     name: Deploy
     needs: [test]
