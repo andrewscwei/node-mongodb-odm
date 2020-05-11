@@ -62,12 +62,10 @@ jobs:
         with:
           name: build
       - name: Test
-        env:
-          MONGODB_HOST: 'mongodb:27017'
         run: |
           sed -i '/"\*\*\/\*\.spec\.ts"/d' ./tsconfig.json
           npm run build
-          npm test
+          MONGODB_HOST=mongodb:27017 npm test
   deploy:
     name: Deploy
     needs: [test]
