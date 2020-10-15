@@ -19,7 +19,7 @@ export type Query<T = {}> = string | ObjectID | FilterQuery<T>;
 /**
  * Update document descriptor.
  */
-export type Update<T = {}> = UpdateQuery<T> | Partial<{ [K in keyof Document<T>]: Document<T>[K] | undefined }>;
+export type Update<T = {}> = UpdateQuery<DocumentFragment<T>> | Partial<{ [K in keyof Document<T>]: Document<T>[K] | undefined }>;
 
 /**
  * Data type for all field types.
@@ -198,7 +198,7 @@ export interface ModelInsertManyOptions extends ModelValidateDocumentOptions, Co
   ignoreTimestamps?: boolean;
 }
 
-export interface ModelUpdateOneOptions extends ModelInsertOneOptions, FindOneAndReplaceOption, ReplaceOneOptions {
+export interface ModelUpdateOneOptions extends ModelInsertOneOptions, FindOneAndReplaceOption<{}>, ReplaceOneOptions {
   /**
    * Specifies whether updated doc is returned when update completes.
    */
@@ -216,7 +216,7 @@ export interface ModelUpdateOneOptions extends ModelInsertOneOptions, FindOneAnd
   skipHooks?: boolean;
 }
 
-export interface ModelUpdateManyOptions extends CommonOptions, FindOneAndReplaceOption {
+export interface ModelUpdateManyOptions extends CommonOptions, FindOneAndReplaceOption<{}> {
   /**
    * Specifies whether updated docs are returned when update completes.
    */
@@ -243,7 +243,7 @@ export interface ModelDeleteManyOptions extends CommonOptions {
   returnDocs?: boolean;
 }
 
-export interface ModelReplaceOneOptions extends FindOneAndReplaceOption, ModelDeleteOneOptions, ModelInsertOneOptions {}
+export interface ModelReplaceOneOptions extends FindOneAndReplaceOption<{}>, ModelDeleteOneOptions, ModelInsertOneOptions {}
 
 export interface ModelCountOptions extends ModelFindManyOptions {}
 
