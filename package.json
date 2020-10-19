@@ -1,6 +1,6 @@
 {
   "name": "@andrewscwei/mongodb-odm",
-  "version": "0.63.0",
+  "version": "0.63.1",
   "description": "ODM for MongoDB",
   "main": "build/index.js",
   "scripts": {
