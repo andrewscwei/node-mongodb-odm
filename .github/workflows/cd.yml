@@ -10,7 +10,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    container: node:13.12.0
+    container: node:14.13.1
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -40,7 +40,7 @@ jobs:
     name: Test
     needs: [build]
     runs-on: ubuntu-latest
-    container: node:13.12.0
+    container: node:14.13.1
     services:
       mongodb:
         image: mongo:4.0.1
@@ -72,7 +72,7 @@ jobs:
     name: Deploy
     needs: [test]
     runs-on: ubuntu-latest
-    container: node:13.12.0
+    container: node:14.13.1
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -86,3 +86,5 @@ jobs:
           NPM_AUTH: ${{ secrets.NPM_AUTH }}
       - name: Deploy to GitHub pages
         run: .github/workflows/deploy_to_gh_pages.sh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
