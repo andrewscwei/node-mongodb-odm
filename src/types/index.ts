@@ -14,7 +14,7 @@ export type DocumentFragment<T> = Partial<Document<T>>;
 /**
  * Query for finding documents in the MongoDB database.
  */
-export type Query<T> = string | ObjectID | FilterQuery<T>;
+export type Query<T> = string | ObjectID | FilterQuery<string | ObjectID | T>;
 
 /**
  * Update document descriptor.
