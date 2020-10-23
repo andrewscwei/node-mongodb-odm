@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { ObjectID } from 'mongodb';
-import { Query, Schema, typeIsValidObjectID, DocumentFragment } from '../types';
+import { DocumentFragment, Query, Schema, typeIsValidObjectID } from '../types';
 import sanitizeDocument from './sanitizeDocument';
 
 interface SanitizeQueryOptions {
@@ -41,7 +41,7 @@ interface SanitizeQueryOptions {
  * sanitizeQuery(schema, { a: 'b', b: 'c', garbage: 'garbage' })
  * sanitizeQuery(schema, { a: 'b', b: 'c', garbage: 'garbage' }, { strict: true })
  */
-export default function sanitizeQuery<T = {}>(schema: Schema, query: Query, { strict = true }: SanitizeQueryOptions = {}): { [key: string]: any } {
+export default function sanitizeQuery<T>(schema: Schema<T>, query: Query<T>, { strict = true }: SanitizeQueryOptions = {}): { [key: string]: any } {
   if (typeIsValidObjectID(query)) {
     return { _id: query };
   }

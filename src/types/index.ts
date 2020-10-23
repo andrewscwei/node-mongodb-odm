@@ -14,12 +14,12 @@ export type DocumentFragment<T> = Partial<Document<T>>;
 /**
  * Query for finding documents in the MongoDB database.
  */
-export type Query<T = {}> = string | ObjectID | FilterQuery<T>;
+export type Query<T> = string | ObjectID | FilterQuery<T>;
 
 /**
  * Update document descriptor.
  */
-export type Update<T = {}> = UpdateQuery<DocumentFragment<T>> | Partial<{ [K in keyof Document<T>]: Document<T>[K] | undefined }>;
+export type Update<T> = UpdateQuery<DocumentFragment<T>> | Partial<{ [K in keyof Document<T>]: Document<T>[K] | undefined }>;
 
 /**
  * Data type for all field types.
@@ -27,7 +27,7 @@ export type Update<T = {}> = UpdateQuery<DocumentFragment<T>> | Partial<{ [K in 
 export type FieldType = FieldBasicType | FieldBasicType[];
 
 /**
- * Data type for acceptable field values.
+ * Data type for acceptable field values.s
  */
 export type FieldValue = undefined | FieldBasicValue | FieldBasicValue[] | { [subfield: string]: FieldValue };
 
@@ -64,7 +64,7 @@ export interface FieldSpec {
   encrypted?: boolean;
 }
 
-export interface Schema<T = any> {
+export interface Schema<T> {
   /**
    * Name of the model. Should be in upper cammel-case, i.e. `Model`.
    */
@@ -198,7 +198,7 @@ export interface ModelInsertManyOptions extends ModelValidateDocumentOptions, Co
   ignoreTimestamps?: boolean;
 }
 
-export interface ModelUpdateOneOptions extends ModelInsertOneOptions, FindOneAndReplaceOption<{}>, ReplaceOneOptions {
+export interface ModelUpdateOneOptions<T> extends ModelInsertOneOptions, FindOneAndReplaceOption<T>, ReplaceOneOptions {
   /**
    * Specifies whether updated doc is returned when update completes.
    */
@@ -216,7 +216,7 @@ export interface ModelUpdateOneOptions extends ModelInsertOneOptions, FindOneAnd
   skipHooks?: boolean;
 }
 
-export interface ModelUpdateManyOptions extends CommonOptions, FindOneAndReplaceOption<{}> {
+export interface ModelUpdateManyOptions<T> extends CommonOptions, FindOneAndReplaceOption<T> {
   /**
    * Specifies whether updated docs are returned when update completes.
    */
@@ -243,7 +243,7 @@ export interface ModelDeleteManyOptions extends CommonOptions {
   returnDocs?: boolean;
 }
 
-export interface ModelReplaceOneOptions extends FindOneAndReplaceOption<{}>, ModelDeleteOneOptions, ModelInsertOneOptions {}
+export interface ModelReplaceOneOptions<T> extends FindOneAndReplaceOption<T>, ModelDeleteOneOptions, ModelInsertOneOptions {}
 
 export interface ModelCountOptions extends ModelFindManyOptions {}
 
@@ -263,7 +263,7 @@ export interface PipelineFactoryOptions {
   pipeline?: AggregationPipeline;
 }
 
-export interface PipelineFactoryOperators {
+export interface PipelineFactoryOperators<T> {
   /**
    * Lookup stage spec.
    */
@@ -272,12 +272,12 @@ export interface PipelineFactoryOperators {
   /**
    * Match stage spec at the beginning of the pipeline.
    */
-  $match?: MatchStageFactorySpec;
+  $match?: MatchStageFactorySpec<T>;
 
   /**
    * Match stage spec appended to end of the pipeline.
    */
-  $prune?: MatchStageFactorySpec;
+  $prune?: MatchStageFactorySpec<T>;
 
   /**
    * Group stage spec.
@@ -290,7 +290,7 @@ export interface PipelineFactoryOperators {
   $sort?: SortStageFactorySpec;
 }
 
-export type MatchStageFactorySpec = Query;
+export type MatchStageFactorySpec<T> = Query<T>;
 
 export interface MatchStageFactoryOptions {
   prefix?: string;
@@ -433,7 +433,7 @@ export interface SchemaIndex {
  *
  * @returns `true` if value is an Update, `false` otherwise.
  */
-export function typeIsUpdateQuery<T = {}>(value: any): value is UpdateQuery<DocumentFragment<T>> {
+export function typeIsUpdateQuery<T>(value: any): value is UpdateQuery<DocumentFragment<T>> {
   if (!_.isPlainObject(value)) return false;
   return Object.keys(value).some(val => val.startsWith('$'));
 }

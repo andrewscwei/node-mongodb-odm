@@ -21,7 +21,7 @@ import Aggregation from './Aggregation';
  *
  * @returns Static model class.
  */
-export default <T = {}>(schema: Schema<T>) => {
+export default <T>(schema: Schema<T>) => {
   const debug = require('debug')(`mongodb-odm:model:${schema.model}`);
 
   return class {
@@ -50,6 +50,17 @@ export default <T = {}>(schema: Schema<T>) => {
      * Dictionary of value validators for this model's props.
      */
     static readonly validateProps: { [K in keyof T]?: FieldValidationStrategy<NonNullable<T[K]>> } = {};
+
+    /**
+     * Prevent instantiation of this class or any of its sub-classes because
+     * this is intended to be a static class.
+     *
+     * @throws {Error} Attempting to instantiate this model even though it is
+     *                 meant to be a static class.
+     */
+    constructor() {
+      throw new Error('This is a static class and is prohibited from instantiated');
+    }
 
     /**
      * Gets the MongoDB collection associated with this model.
@@ -119,16 +130,16 @@ export default <T = {}>(schema: Schema<T>) => {
      *
      * @throws {Error} Model class has no static property `schema` defined.
      */
-    static pipeline(queryOrOperators?: Query<T> | PipelineFactoryOperators, options?: PipelineFactoryOptions): AggregationPipeline {
+    static pipeline(queryOrOperators?: Query<T> | PipelineFactoryOperators<T>, options?: PipelineFactoryOptions): AggregationPipeline {
       if (!this.schema) throw new Error(`[${this.constructor.name}] This model has no schema, you must define this static proerty in the derived class`);
 
       // Check if the argument conforms to aggregation factory operators.
       if (queryOrOperators && Object.keys(queryOrOperators).some(val => val.startsWith('$'))) {
-        return Aggregation.pipelineFactory(this.schema, queryOrOperators as PipelineFactoryOperators, options);
+        return Aggregation.pipelineFactory(this.schema, queryOrOperators as PipelineFactoryOperators<T>, options);
       }
       // Otherwise the argument is a query for the $match stage.
       else {
-        return Aggregation.pipelineFactory(this.schema, { $match: queryOrOperators as Query }, options);
+        return Aggregation.pipelineFactory(this.schema, { $match: queryOrOperators as Query<T> }, options);
       }
     }
 
@@ -144,7 +155,7 @@ export default <T = {}>(schema: Schema<T>) => {
      * @throws {Error} No document is found with the given query.
      * @throws {Error} ID of the found document is not a valid ObjectID.
      */
-    static async identifyOneStrict(query: Query): Promise<ObjectID> {
+    static async identifyOneStrict(query: Query<T>): Promise<ObjectID> {
       const result = await this.findOne(query);
 
       if (!result) throw new Error(`[${this.schema.model}] No results found while identifying this ${this.schema.model} using the query ${JSON.stringify(query, undefined, 0)}`);
@@ -164,7 +175,7 @@ export default <T = {}>(schema: Schema<T>) => {
      *
      * @see Model.identifyOneStrict
      */
-    static async identifyOne(query: Query): Promise<ObjectID | undefined> {
+    static async identifyOne(query: Query<T>): Promise<ObjectID | undefined> {
       try {
         const o = await this.identifyOneStrict(query);
         return o;
@@ -181,7 +192,7 @@ export default <T = {}>(schema: Schema<T>) => {
      *
      * @returns Array of matching IDs.
      */
-    static async identifyMany(query?: Query): Promise<ObjectID[]> {
+    static async identifyMany(query?: Query<T>): Promise<ObjectID[]> {
       const collection = await this.getCollection();
       const res = await collection.aggregate([
         ...this.pipeline(query),
@@ -396,7 +407,7 @@ export default <T = {}>(schema: Schema<T>) => {
      *                 to hooks being skipped.
      * @throws {Error} A doc is updated but it cannot be found.
      */
-    static async updateOneStrict(query: Query<T>, update: Update<T>, options: ModelUpdateOneOptions = {}): Promise<void | Document<T>> {
+    static async updateOneStrict(query: Query<T>, update: Update<T>, options: ModelUpdateOneOptions<T> = {}): Promise<void | Document<T>> {
       if (this.schema.noUpdates === true) throw new Error(`[${this.schema.model}] Updates are disallowed for this model`);
 
       const collection = await this.getCollection();
@@ -474,7 +485,7 @@ export default <T = {}>(schema: Schema<T>) => {
      *
      * @see Model.updateOneStrict
      */
-    static async updateOne(query: Query<T>, update: Update<T>, options: ModelUpdateOneOptions = {}): Promise<boolean | Document<T> | undefined> {
+    static async updateOne(query: Query<T>, update: Update<T>, options: ModelUpdateOneOptions<T> = {}): Promise<boolean | Document<T> | undefined> {
       try {
         const o = await this.updateOneStrict(query, update, options);
 
@@ -509,7 +520,7 @@ export default <T = {}>(schema: Schema<T>) => {
      *                 updates are disabled in the schema.
      * @throws {Error} One of the updated docs are not returned.
      */
-    static async updateMany(query: Query<T>, update: Update<T>, options: ModelUpdateManyOptions = {}): Promise<Document<T>[] | boolean> {
+    static async updateMany(query: Query<T>, update: Update<T>, options: ModelUpdateManyOptions<T> = {}): Promise<Document<T>[] | boolean> {
       if ((this.schema.noUpdates === true) || (this.schema.noUpdateMany === true)) throw new Error(`[${this.schema.model}] Multiple updates are disallowed for this model`);
 
       const [q, u] = await this.beforeUpdate(query, update, options);
@@ -717,7 +728,7 @@ export default <T = {}>(schema: Schema<T>) => {
      * @throws {Error} The old document cannot be returned.
      * @throws {Error} The doc is replaced but it cannot be fetched.
      */
-    static async findAndReplaceOneStrict(query: Query<T>, replacement?: DocumentFragment<T>, options: ModelReplaceOneOptions = {}): Promise<Document<T>> {
+    static async findAndReplaceOneStrict(query: Query<T>, replacement?: DocumentFragment<T>, options: ModelReplaceOneOptions<T> = {}): Promise<Document<T>> {
       const q = await this.beforeDelete(query, options);
       const r = await this.beforeInsert(replacement || (await this.randomFields()), options);
 
@@ -758,7 +769,7 @@ export default <T = {}>(schema: Schema<T>) => {
      *
      * @see Model.findAndReplaceOneStrict
      */
-    static async findAndReplaceOne(query: Query<T>, replacement?: DocumentFragment<T>, options: ModelReplaceOneOptions = {}): Promise<Document<T> | undefined> {
+    static async findAndReplaceOne(query: Query<T>, replacement?: DocumentFragment<T>, options: ModelReplaceOneOptions<T> = {}): Promise<Document<T> | undefined> {
       try {
         const o = await this.findAndReplaceOneStrict(query, replacement, options);
         return o;
@@ -775,7 +786,7 @@ export default <T = {}>(schema: Schema<T>) => {
      *
      * @returns `true` if document exists, `false` otherwise.
      */
-    static async exists(query: Query): Promise<boolean> {
+    static async exists(query: Query<T>): Promise<boolean> {
       const id = await this.identifyOne(query);
 
       return id ? true : false;
@@ -789,7 +800,7 @@ export default <T = {}>(schema: Schema<T>) => {
      *
      * @returns The total number of documents found. The minimum is 0.
      */
-    static async count(query: Query, options: ModelCountOptions = {}): Promise<number> {
+    static async count(query: Query<T>, options: ModelCountOptions = {}): Promise<number> {
       const results = await this.findMany(query, options);
 
       return results.length;
@@ -946,7 +957,7 @@ export default <T = {}>(schema: Schema<T>) => {
      *
      * @returns A tuple of the query and the update descriptor.
      */
-    protected static async willUpdateDocument(query: Query<T>, update: Update<T>): Promise<[Query, Update<T>]> {
+    protected static async willUpdateDocument(query: Query<T>, update: Update<T>): Promise<[Query<T>, Update<T>]> {
       return [query, update];
     }
 
@@ -1052,7 +1063,7 @@ export default <T = {}>(schema: Schema<T>) => {
      *
      * @todo Handle remaining update operators.
      */
-    private static async beforeUpdate(query: Query<T>, update: Update<T>, options: ModelUpdateOneOptions | ModelUpdateManyOptions = {}): Promise<[DocumentFragment<T>, UpdateQuery<DocumentFragment<T>>]> {
+    private static async beforeUpdate(query: Query<T>, update: Update<T>, options: ModelUpdateOneOptions<T> | ModelUpdateManyOptions<T> = {}): Promise<[DocumentFragment<T>, UpdateQuery<DocumentFragment<T>>]> {
       if ((options.upsert === true) && (this.schema.allowUpserts !== true)) throw new Error(`[${this.schema.model}] Attempting to upsert a document while upserting is disallowed in the schema`);
 
       const [q, u] = await this.willUpdateDocument(query, update);
@@ -1123,7 +1134,7 @@ export default <T = {}>(schema: Schema<T>) => {
         const beforeInsert = await this.beforeInsert(_.cloneDeep(sanitizedQuery), { ...options, strict: false });
         const setOnInsert = _.omit({
           ...sanitizedUpdate.$setOnInsert || {},
-          ...beforeInsert as object,
+          ...beforeInsert,
         }, [
           ...Object.keys(sanitizedUpdate.$set || {}),
           ...Object.keys(sanitizedUpdate.$unset || {}),
@@ -1265,17 +1276,6 @@ export default <T = {}>(schema: Schema<T>) => {
           this.validateDocumentRequiredFields(doc[field], fieldSpec.type, field);
         }
       }
-    }
-
-    /**
-     * Prevent instantiation of this class or any of its sub-classes because
-     * this is intended to be a static class.
-     *
-     * @throws {Error} Attempting to instantiate this model even though it is
-     *                 meant to be a static class.
-     */
-    constructor() {
-      throw new Error('This is a static class and is prohibited from instantiated');
     }
   };
 };

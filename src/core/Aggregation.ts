@@ -20,7 +20,7 @@ export default abstract class Aggregation {
    *
    * @throws {TypeError} Invalid params or options provided.
    */
-  static pipelineFactory(schema: Schema, { $lookup, $match, $prune, $group, $sort }: PipelineFactoryOperators = {}, { prefix = '', pipeline = [] }: PipelineFactoryOptions = {}): AggregationPipeline {
+  static pipelineFactory<T>(schema: Schema<T>, { $lookup, $match, $prune, $group, $sort }: PipelineFactoryOperators<T> = {}, { prefix = '', pipeline = [] }: PipelineFactoryOptions = {}): AggregationPipeline {
     // If lookup stage is specified, add it to beginning of the pipeline.
     if ($lookup) pipeline = Aggregation.lookupStageFactory(schema, $lookup, { fromPrefix: prefix, toPrefix: prefix }).concat(pipeline);
 
@@ -62,7 +62,7 @@ export default abstract class Aggregation {
    *
    * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/match/}
    */
-  static matchStageFactory<T = {}>(schema: Schema, spec: MatchStageFactorySpec, { prefix = '' }: MatchStageFactoryOptions = {}): AggregationPipeline {
+  static matchStageFactory<T>(schema: Schema<T>, spec: MatchStageFactorySpec<T>, { prefix = '' }: MatchStageFactoryOptions = {}): AggregationPipeline {
     const sanitized = sanitizeQuery<T>(schema, spec, { strict: false });
     const query: { [key: string]: any } = {};
 
@@ -109,7 +109,7 @@ export default abstract class Aggregation {
    * @throws {Error} Field to populate doesn't have a `ref` field specified.
    * @throws {Error} Unable to find the schema for the field to populate.
    */
-  static lookupStageFactory(schema: Schema, spec: LookupStageFactorySpec, { fromPrefix = '', toPrefix = '' }: LookupStageFactoryOptions = {}): AggregationPipeline {
+  static lookupStageFactory<T>(schema: Schema<T>, spec: LookupStageFactorySpec, { fromPrefix = '', toPrefix = '' }: LookupStageFactoryOptions = {}): AggregationPipeline {
     const fields: { [fieldName: string]: FieldSpec} = schema.fields;
 
     let pipe: AggregationPipeline = [];
@@ -171,7 +171,7 @@ export default abstract class Aggregation {
    *
    * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/group/}
    */
-  static groupStageFactory(schema: Schema, spec: GroupStageFactorySpec): AggregationPipeline {
+  static groupStageFactory<T>(schema: Schema<T>, spec: GroupStageFactorySpec): AggregationPipeline {
     const pipe: AggregationPipeline = [];
 
     if (_.isString(spec)) {
@@ -198,7 +198,7 @@ export default abstract class Aggregation {
    *
    * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/sort/}
    */
-  static sortStageFactory(schema: Schema, spec: SortStageFactorySpec): AggregationPipeline {
+  static sortStageFactory<T>(schema: Schema<T>, spec: SortStageFactorySpec): AggregationPipeline {
     const pipe: AggregationPipeline = [];
     pipe.push({ $sort: spec });
 
@@ -231,7 +231,7 @@ export default abstract class Aggregation {
    *
    * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/project/}
    */
-  static projectStageFactory(schema: Schema, { toPrefix = '', fromPrefix = '', populate = {}, exclude = [] }: ProjectStageFactoryOptions = {}): AggregationPipeline {
+  static projectStageFactory<T>(schema: Schema<T>, { toPrefix = '', fromPrefix = '', populate = {}, exclude = [] }: ProjectStageFactoryOptions = {}): AggregationPipeline {
     const fields: { [fieldName: string]: FieldSpec} = schema.fields;
     const out: { [key: string]: any } = { [`${toPrefix}_id`]: `$${fromPrefix}_id` };
 
