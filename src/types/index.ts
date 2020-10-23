@@ -4,12 +4,12 @@ import { CollectionAggregationOptions, CollectionInsertManyOptions, CollectionIn
 /**
  * Full structure of a document.
  */
-export type Document<T = {}> = T & { _id: ObjectID; createdAt?: Date; updatedAt?: Date };
+export type Document<T> = T & { _id: ObjectID; createdAt?: Date; updatedAt?: Date };
 
 /**
  * Structure that represents parts of a document.
  */
-export type DocumentFragment<T = {}> = Partial<Document<T>>;
+export type DocumentFragment<T> = Partial<Document<T>>;
 
 /**
  * Query for finding documents in the MongoDB database.

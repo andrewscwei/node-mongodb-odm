@@ -24,7 +24,7 @@ interface SanitizeDocumentOptions {
  * // Returns { a: 'b', b: 'c' }
  * sanitizeDocument(schema, { a: 'b', b: 'c', garbage: 'garbage' })
  */
-export default function sanitizeDocument<T = {}>(schema: Schema, doc: DocumentFragment, { accountForDotNotation = false }: SanitizeDocumentOptions = {}): DocumentFragment<T> {
+export default function sanitizeDocument<T = {}>(schema: Schema, doc: DocumentFragment<T>, { accountForDotNotation = false }: SanitizeDocumentOptions = {}): DocumentFragment<T> {
   const o: DocumentFragment<T> = {};
 
   for (const key in doc) {

@@ -1094,13 +1094,13 @@ export default <T = {}>(schema: Schema<T>) => {
       // Determine if there are new values to add to array fields of the doc
       // (minding duplicates). If so, sanitize them.
       if (sanitizedUpdate.$addToSet) {
-        sanitizedUpdate.$addToSet = sanitizeDocument<T>(this.schema, sanitizedUpdate.$addToSet, { accountForDotNotation: true }) as SetFields<Partial<Document<T>>>;
+        sanitizedUpdate.$addToSet = sanitizeDocument<T>(this.schema, sanitizedUpdate.$addToSet as DocumentFragment<T>, { accountForDotNotation: true }) as SetFields<DocumentFragment<T>>;
       }
 
       // Determine if there are new values to add to array fields of the doc
       // (without minding duplicates). If so, sanitize them.
       if (sanitizedUpdate.$push) {
-        sanitizedUpdate.$push = sanitizeDocument<T>(this.schema, sanitizedUpdate.$push, { accountForDotNotation: true }) as PushOperator<Partial<Document<T>>>;
+        sanitizedUpdate.$push = sanitizeDocument<T>(this.schema, sanitizedUpdate.$push as DocumentFragment<T>, { accountForDotNotation: true }) as PushOperator<DocumentFragment<T>>;
       }
 
       // Format all fields in the update query.
