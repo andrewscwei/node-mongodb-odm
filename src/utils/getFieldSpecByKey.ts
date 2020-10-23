@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import { FieldSpec, typeIsFieldDescriptor } from '../types';
 
 /**

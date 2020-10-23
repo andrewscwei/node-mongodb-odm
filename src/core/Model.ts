@@ -681,8 +681,6 @@ export default <T = {}>(schema: Schema<T>) => {
 
         debug('Deleting multiple existing documents...:', 'OK', JSON.stringify(q, undefined, 0), JSON.stringify(results, undefined, 0));
 
-        const m = results.length;
-
         await this.afterDelete(results);
 
         return results;
@@ -993,8 +991,6 @@ export default <T = {}>(schema: Schema<T>) => {
      * @returns Document to be inserted/upserted to the database.
      */
     private static async beforeInsert(doc: DocumentFragment<T>, options: ModelInsertOneOptions | ModelInsertManyOptions = {}): Promise<DocumentFragment<T>> {
-      const fields = this.schema.fields;
-
       // Call event hook first.
       const d = await this.willInsertDocument(doc);
 
@@ -1196,8 +1192,8 @@ export default <T = {}>(schema: Schema<T>) => {
           await this.cascadeDelete(doc._id);
         }
       }
-      else if (typeIsValidObjectID(docs?._id)) {
-        await this.cascadeDelete(docs!._id);
+      else if (docs && typeIsValidObjectID(docs._id)) {
+        await this.cascadeDelete(docs._id);
       }
 
       await this.didDeleteDocument(docs);

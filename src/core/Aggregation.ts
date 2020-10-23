@@ -123,7 +123,7 @@ export default abstract class Aggregation {
       const ref = fields[key] && fields[key].ref;
       if (!ref) throw new Error(`[lookup(${schema}, ${spec}, ${{ fromPrefix, toPrefix }})] The field to populate does not have a reference model specified in the schema.`);
 
-      const schemaRef = db.getModel(ref!).schema;
+      const schemaRef = db.getModel(ref).schema;
       if (!schemaRef) throw new Error(`[lookup(${schema}, ${spec}, ${{ fromPrefix, toPrefix }})] Unable to find the model schema corresponding to the field to populate.`);
 
       pipe.push({

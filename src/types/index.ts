@@ -4,7 +4,7 @@ import { CollectionAggregationOptions, CollectionInsertManyOptions, CollectionIn
 /**
  * Full structure of a document.
  */
-export type Document<T = {}> = T & { _id: ObjectID; createdAt?: Date; updatedAt?: Date; };
+export type Document<T = {}> = T & { _id: ObjectID; createdAt?: Date; updatedAt?: Date };
 
 /**
  * Structure that represents parts of a document.
@@ -445,7 +445,7 @@ export function typeIsUpdateQuery<T = {}>(value: any): value is UpdateQuery<Docu
  *
  * @returns `true` if value is an identifiable document, `false` otherwise.
  */
-export function typeIsIdentifiableDocument(value: any): value is { _id: ObjectID } & { [field: string]: FieldValue; } {
+export function typeIsIdentifiableDocument(value: any): value is { _id: ObjectID } & { [field: string]: FieldValue } {
   if (_.isNil(value)) return false;
   if (!_.isPlainObject(value)) return false;
   if (!typeIsValidObjectID(value._id)) return false;

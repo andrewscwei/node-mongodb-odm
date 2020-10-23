@@ -3,7 +3,6 @@
  *       the MongoClient instance.
  */
 
-import _ from 'lodash';
 import { Collection, Db, MongoClient, MongoError, ObjectID } from 'mongodb';
 import Model from './core/Model';
 
@@ -186,7 +185,7 @@ export function getModel(modelOrCollectionName: string): ReturnType<typeof Model
  *                 collection name.
  */
 export async function getCollection(modelOrCollectionName: string): Promise<Collection> {
-  const models = config.models!;
+  const models = config.models;
 
   if (!models) throw new Error('You must register models using the #configureDb() function');
 
@@ -209,8 +208,8 @@ export async function getCollection(modelOrCollectionName: string): Promise<Coll
   if (!ModelClass) throw new Error('Unable to find collection with given model or collection name, is the model registered?');
 
   const dbInstance = await getDbInstance();
-  const schema = ModelClass!.schema;
-  const collection = await dbInstance.collection(schema.collection);
+  const schema = ModelClass.schema;
+  const collection = dbInstance.collection(schema.collection);
 
   // Ensure schema indexes.
   if (schema.indexes) {
@@ -241,3 +240,4 @@ export { default as sanitizeQuery } from './utils/sanitizeQuery';
 export { default as validateFieldValue } from './utils/validateFieldValue';
 export { Model };
 export { ObjectID };
+
