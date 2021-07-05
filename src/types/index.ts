@@ -71,15 +71,13 @@ export interface Schema<T> {
   model: string
 
   /**
-   * Name of the collection in the MongoDB. Should be in lower camel-case and
-   * pluralized, i.e. `models`.
+   * Name of the collection in the MongoDB. Should be in lower camel-case and pluralized, i.e. `models`.
    */
   collection: string
 
   /**
-   * Specifies whether timestamp fields will be automatically generated and
-   * tracked per CRUD operation. The genrated fields are `updatedAt` and
-   * `createdAt`, which are both `Date` values.
+   * Specifies whether timestamp fields will be automatically generated and tracked per CRUD operation. The genrated
+   * fields are `updatedAt` and `createdAt`, which are both `Date` values.
    */
   timestamps?: boolean
 
@@ -119,11 +117,9 @@ export interface Schema<T> {
   noDeleteMany?: boolean
 
   /**
-   * Indicates whether cascade deletion should occur if a document of this
-   * collection is deleted. This array should contain a list of model names
-   * indicating that once a document in this collection is deleted, other
-   * documents in the models listed in this array should also be deleted if
-   * it has a foreign key to the deleted document.
+   * Indicates whether cascade deletion should occur if a document of this collection is deleted. This array should
+   * contain a list of model names indicating that once a document in this collection is deleted, other documents in the
+   * models listed in this array should also be deleted if it has a foreign key to the deleted document.
    */
   cascade?: string[]
 
@@ -157,23 +153,20 @@ export interface ModelRandomFieldsOptions {
  */
 export interface ModelValidateDocumentOptions {
   /**
-   * Tells the validation process to account for required fields. That is, if
-   * this is `true` and some required fields are missing in the document to be
-   * validated, validation fails.
+   * Tells the validation process to account for required fields. That is, if this is `true` and some required fields
+   * are missing in the document to be validated, validation fails.
    */
   strict?: boolean
 
   /**
-   * Tells the validation process to account for unique indexes. That is, if
-   * this is `false` and one or more field values are not unique when it
-   * supposedly has a unique index, validation fails.
+   * Tells the validation process to account for unique indexes. That is, if this is `false` and one or more field
+   * values are not unique when it supposedly has a unique index, validation fails.
    */
   ignoreUniqueIndex?: boolean
 
   /**
-   * Tells the validation process that the document contains dot notations to
-   * in its keys. Dot notations are usually used by udate queries to update
-   * fields in an embedded doc as opposed to a top-level field.
+   * Tells the validation process that the document contains dot notations to in its keys. Dot notations are usually
+   * used by udate queries to update fields in an embedded doc as opposed to a top-level field.
    */
   accountForDotNotation?: boolean
 }
@@ -184,16 +177,14 @@ export interface ModelFindManyOptions extends CollectionAggregationOptions {}
 
 export interface ModelInsertOneOptions extends ModelValidateDocumentOptions, CollectionInsertOneOptions {
   /**
-   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are
-   * automatically generated before insertion.
+   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are automatically generated before insertion.
    */
   ignoreTimestamps?: boolean
 }
 
 export interface ModelInsertManyOptions extends ModelValidateDocumentOptions, CollectionInsertManyOptions {
   /**
-   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are
-   * automatically generated before insertion.
+   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are automatically generated before insertion.
    */
   ignoreTimestamps?: boolean
 }
@@ -205,8 +196,7 @@ export interface ModelUpdateOneOptions<T> extends ModelInsertOneOptions, FindOne
   returnDoc?: boolean
 
   /**
-   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are
-   * automatically generated before insertion.
+   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are automatically generated before insertion.
    */
   ignoreTimestamps?: boolean
 
@@ -223,8 +213,7 @@ export interface ModelUpdateManyOptions<T> extends CommonOptions, FindOneAndRepl
   returnDocs?: boolean
 
   /**
-   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are
-   * automatically generated before insertion.
+   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are automatically generated before insertion.
    */
   ignoreTimestamps?: boolean
 }
@@ -297,14 +286,11 @@ export interface MatchStageFactoryOptions {
 }
 
 /**
- * Defines fields to perform lookup on used by #lookupStageFactory(). These
- * fields must be references (i.e. model name as foreign keys) to another model.
- * The fields are represented by the keys in this object. The accepted values of
- * the keys are `true` or another object for recursive lookup of the reference
- * model's foreign keys. If the value is simply `true`, lookup will only be
- * performed on the immediate foreign key, all of its subsequent foreign keys
- * will be ignored. Spec can be nested objects. `$unwind` is immediately
- * followed after the generated  `$lookup`.
+ * Defines fields to perform lookup on used by #lookupStageFactory(). These fields must be references (i.e. model name
+ * as foreign keys) to another model. The fields are represented by the keys in this object. The accepted values of the
+ * keys are `true` or another object for recursive lookup of the reference model's foreign keys. If the value is simply
+ * `true`, lookup will only be performed on the immediate foreign key, all of its subsequent foreign keys will be
+ * ignored. Spec can be nested objects. `$unwind` is immediately followed after the generated  `$lookup`.
  */
 export interface LookupStageFactorySpec {
   [modelName: string]: boolean | LookupStageFactorySpec
@@ -323,8 +309,8 @@ export interface LookupStageFactoryOptions {
 }
 
 /**
- * Spec that define the $group stage. If this is a string, a simple $group
- * stage will be generated with `_id` equal this string.
+ * Spec that define the $group stage. If this is a string, a simple $group stage will be generated with `_id` equal this
+ * string.
  */
 export type GroupStageFactorySpec = string | { [key: string]: any }
 
@@ -344,11 +330,10 @@ export interface ProjectStageFactoryOptions {
   fromPrefix?: string
 
   /**
-   * An object containing key/value pairs representing a field belonging to this
-   * model that is a reference (aka foreign key) pointing to another model. The
-   * keys equate the name of the field while the values equate the `options`
-   * parameter for the reference models `project()` method. The values can also
-   * just be `true` to omit passing an `options` parameter.
+   * An object containing key/value pairs representing a field belonging to this model that is a reference (aka foreign
+   * key) pointing to another model. The keys equate the name of the field while the values equate the `options`
+   * parameter for the reference models `project()` method. The values can also just be `true` to omit passing an
+   * `options` parameter.
    */
   populate?: ProjectStageFactoryOptionsPopulate
 
@@ -373,21 +358,18 @@ export type FieldBasicType = typeof String | typeof Number | typeof Boolean | ty
 export type FieldBasicValue = ObjectID | string | number | boolean | Date
 
 /**
- * Function for formatting field values, in which the value to be formatted will
- * be passed into this function as its only paramenter.
+ * Function for formatting field values, in which the value to be formatted will be passed into this function as its
+ * only paramenter.
  */
 export type FieldFormatFunction<T = FieldValue> = (value: T) => T
 
 /**
- * The validation strategy can be one of several types. The behavior per type is
- * as follows:
+ * The validation strategy can be one of several types. The behavior per type is as follows:
  *   1. RegExp: The value to be validated must pass for RegExp.test().
- *   2. number: The value to be validated must be <= this number. If the value
- *              is a string, its length must be <= this number.
- *   3. any[]: The value to be validated must be one of the elements of this
- *             array.
- *   4. Function: The value to be validated will be passed into this function
- *                and it must return `true`.
+ *   2. number: The value to be validated must be <= this number. If the value is a string, its length must be <= this
+ *              number.
+ *   3. any[]: The value to be validated must be one of the elements of this array.
+ *   4. Function: The value to be validated will be passed into this function and it must return `true`.
  */
 export type FieldValidationStrategy<T = FieldValue> = RegExp | number | T[] | FieldValidationFunction<T>
 
@@ -485,8 +467,7 @@ export function typeIsFieldDescriptor(value: any): value is FieldDescriptor {
  *
  * @param value - Value to make the ObjectID from.
  *
- * @returns If successful, a new ObjectID instance will be returned. If not,
- *          `undefined` will be returned.
+ * @returns If successful, a new ObjectID instance will be returned. If not, `undefined` will be returned.
  */
 export function ObjectIDMake(value: any): ObjectID | undefined {
   if (!valueIsCompatibleObjectID(value)) return undefined
@@ -494,9 +475,8 @@ export function ObjectIDMake(value: any): ObjectID | undefined {
 }
 
 /**
- * Checks to see if a value is a valid ObjectID and returns it if it is. If not,
- * this method will check if the value is an identifiable document, and if it is
- * it will return the `_id` of the document.
+ * Checks to see if a value is a valid ObjectID and returns it if it is. If not, this method will check if the value is
+ * an identifiable document, and if it is it will return the `_id` of the document.
  *
  * @param value - Value to check.
  *

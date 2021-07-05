@@ -1,6 +1,5 @@
 /**
- * @file Static utility class with helper functions for MongoDB's aggregation
- *       framework.
+ * @file Static utility class with helper functions for MongoDB's aggregation framework.
  */
 
 import _ from 'lodash'
@@ -78,8 +77,7 @@ export default abstract class Aggregation {
    * Generates the $lookup stage of the aggregation pipeline.
    *
    * @param schema - The schema of the database collection.
-   * @param spec - Spec that defines the $lookup stage, supports looking up
-   *                nested foreign keys.
+   * @param spec - Spec that defines the $lookup stage, supports looking up nested foreign keys.
    * @param options - Additional options.
    *
    * @returns The aggregation pipeline that handles the generated $lookup stage.
@@ -103,7 +101,8 @@ export default abstract class Aggregation {
    *             { "$unwind": { "path": "$bar.subModel.subSubModel", "preserveNullAndEmptyArrays": true } }]
    * lookupStageFactory(schema, { subModel: { subSubModel: true } }, { fromPrefix: 'foo.', toPrefix: 'bar.' })
    *
-   * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/lookup/}
+   * @see
+   * {@link https://docs.mongodb.com/manual/reference/operator/aggregation/lookup/}
    *
    * @throws {TypeError} Invalid params or options provided.
    * @throws {Error} Field to populate doesn't have a `ref` field specified.

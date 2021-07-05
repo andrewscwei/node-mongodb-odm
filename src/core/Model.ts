@@ -1,8 +1,7 @@
 /**
- * @file This is a static, abstract model that provides ORM for a single MongoDB
- *       collection. Every other model must inherit this class. It sets up the
- *       ground work for basic CRUD operations, event triggers, query
- *       validations, etc. All returned documents are native JSON objects.
+ * @file This is a static, abstract model that provides ORM for a single MongoDB collection. Every other model must
+ *       inherit this class. It sets up the ground work for basic CRUD operations, event triggers, query validations,
+ *       etc. All returned documents are native JSON objects.
  */
 
 import bcrypt from 'bcrypt'
@@ -26,8 +25,7 @@ export default <T>(schema: Schema<T>) => {
 
   return class {
     /**
-     * Schema of this model. This property must be overridden in the derived
-     * class.
+     * Schema of this model. This property must be overridden in the derived class.
      */
     static readonly schema = schema
 
@@ -52,14 +50,12 @@ export default <T>(schema: Schema<T>) => {
     static readonly validateProps: { [K in keyof T]?: FieldValidationStrategy<NonNullable<T[K]>> } = {}
 
     /**
-     * Prevent instantiation of this class or any of its sub-classes because
-     * this is intended to be a static class.
+     * Prevent instantiation of this class or any of its sub-classes because this is intended to be a static class.
      *
-     * @throws {Error} Attempting to instantiate this model even though it is
-     *                 meant to be a static class.
+     * @throws {Error} Attempting to instantiate this model even though it is meant to be a static class.
      */
     constructor() {
-      throw new Error('This is a static class and is prohibited from instantiated')
+      throw new Error('This is a static class and is prohibited from being instantiated')
     }
 
     /**
@@ -78,13 +74,11 @@ export default <T>(schema: Schema<T>) => {
     }
 
     /**
-     * Generates random fields for this model. By default, only fields that are
-     * marked as required and has a random() function defined will have random
-     * values generated. Specify `includeOptionals` to generate unrequired
-     * fields as well.
+     * Generates random fields for this model. By default, only fields that are marked as required and has a random()
+     * function defined will have random values generated. Specify `includeOptionals` to generate unrequired fields as
+     * well.
      *
-     * @param fixedFields - A collection of fields that must be present in the
-     *                      output.
+     * @param fixedFields - A collection of fields that must be present in the output.
      * @param options - See `ModelRandomFieldsOptions`.
      *
      * @returns A collection of fields whose values are randomly generated.
@@ -119,11 +113,10 @@ export default <T>(schema: Schema<T>) => {
     }
 
     /**
-     * Generates an aggregation pipeline specifically for the schema associated
-     * with this schema.
+     * Generates an aggregation pipeline specifically for the schema associated with this schema.
      *
-     * @param queryOrOperators - This is either a query for the $match stage or
-     *                           operators for the aggregation factory function.
+     * @param queryOrOperators - This is either a query for the $match stage or operators for the aggregation factory
+     *                           function.
      * @param options - See `PipelineFactoryOptions`.
      *
      * @returns Aggregation pipeline.
@@ -144,11 +137,10 @@ export default <T>(schema: Schema<T>) => {
     }
 
     /**
-     * Identifies the ObjectID of exactly one document matching the given query.
-     * Error is thrown if the document cannot be identified.
+     * Identifies the ObjectID of exactly one document matching the given query. Error is thrown if the document cannot
+     * be identified.
      *
-     * @param query - Query used for the $match stage of the aggregation
-     *                pipeline.
+     * @param query - Query used for the $match stage of the aggregation pipeline.
      *
      * @returns The matching ObjectID.
      *
@@ -165,11 +157,10 @@ export default <T>(schema: Schema<T>) => {
     }
 
     /**
-     * Same as the strict identify one operation but this method swallows all
-     * errors and returns `undefined` if document canot be identified.
+     * Same as the strict identify one operation but this method swallows all errors and returns `undefined` if document
+     * canot be identified.
      *
-     * @param query - Query used for the $match stage of the aggregation
-     *                pipeline.
+     * @param query - Query used for the $match stage of the aggregation pipeline.
      *
      * @returns The matching ObjectID.
      *
@@ -209,11 +200,10 @@ export default <T>(schema: Schema<T>) => {
     }
 
     /**
-     * Finds one document from this collection using the aggregation framework.
-     * If no query is specified, a random document will be fetched.
+     * Finds one document from this collection using the aggregation framework. If no query is specified, a random
+     * document will be fetched.
      *
-     * @param query - Query used for the $match stage of the aggregation
-     *                pipeline.
+     * @param query - Query used for the $match stage of the aggregation pipeline.
      * @param options - See `module:mongodb.Collection#aggregate`.
      *
      * @returns The matching document as the fulfillment value.
@@ -240,11 +230,10 @@ export default <T>(schema: Schema<T>) => {
     }
 
     /**
-     * Same as the strict find one operation but this method swallows all errors
-     * and returns `undefined` when no document is found.
+     * Same as the strict find one operation but this method swallows all errors and returns `undefined` when no
+     * document is found.
      *
-     * @param query - Query used for the $match stage of the aggregation
-     *                pipeline.
+     * @param query - Query used for the $match stage of the aggregation pipeline.
      * @param options - See `module:mongodb.Collection#aggregate`.
      *
      * @returns The matching document as the fulfillment value.
@@ -262,11 +251,10 @@ export default <T>(schema: Schema<T>) => {
     }
 
     /**
-     * Finds multiple documents of this collection using the aggregation
-     * framework. If no query is specified, all documents are fetched.
+     * Finds multiple documents of this collection using the aggregation framework. If no query is specified, all
+     * documents are fetched.
      *
-     * @param query - Query used for the $match stage of the aggregation
-     *                pipeline.
+     * @param query - Query used for the $match stage of the aggregation pipeline.
      * @param options - See `module:mongodb.Collection#aggregate`.
      *
      * @returns The matching documents as the fulfillment value.
@@ -278,8 +266,7 @@ export default <T>(schema: Schema<T>) => {
     }
 
     /**
-     * Inserts one document into this model's collection. If `doc` is not
-     * specified, random fields will be generated.
+     * Inserts one document into this model's collection. If `doc` is not specified, random fields will be generated.
      *
      * @param doc - Document to be inserted. See `module:mongodb.Collection#insertOne`.
      * @param options - See `ModelInsertOneOptions`.
@@ -289,8 +276,7 @@ export default <T>(schema: Schema<T>) => {
      * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#insertOne}
      * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~insertWriteOpResult}
      *
-     * @throws {Error} This method is called even though insertions are disabled
-     *                 in the schema.
+     * @throws {Error} This method is called even though insertions are disabled in the schema.
      * @throws {MongoError} collection#insertOne failed.
      */
     static async insertOneStrict(doc?: DocumentFragment<T>, options?: ModelInsertOneOptions): Promise<Document<T>> {
@@ -317,8 +303,8 @@ export default <T>(schema: Schema<T>) => {
     }
 
     /**
-     * Same as the strict insert one operation except this method swallows all
-     * errors and returns `undefined` if the document cannot be inserted.
+     * Same as the strict insert one operation except this method swallows all errors and returns `undefined` if the
+     * document cannot be inserted.
      *
      * @param doc - Document to be inserted. See `module:mongodb.Collection#insertOne`.
      * @param options - See `ModelInsertOneOptions`.
@@ -383,28 +369,23 @@ export default <T>(schema: Schema<T>) => {
     }
 
     /**
-     * Updates one document matched by `query` with `update` object. Note that
-     * if upserting, all *required* fields must be in the `query` param instead
-     * of the `update` param.
+     * Updates one document matched by `query` with `update` object. Note that if upserting, all *required* fields must
+     * be in the `query` param instead of the `update` param.
      *
      * @param query - Query for the document to update.
-     * @param update - Either an object whose key/value pair represent the
-     *                 fields belonging to this model to update to, or an update
-     *                 query.
+     * @param update - Either an object whose key/value pair represent the fields belonging to this model to update to,
+     *                 or an update query.
      * @param options - See `ModelUpdateOneOptions`.
      *
-     * @returns The updated doc if `returnDoc` is set to `true`, else there is
-     *          no fulfillment value.
+     * @returns The updated doc if `returnDoc` is set to `true`, else there is no fulfillment value.
      *
      * @see {@link https://docs.mongodb.com/manual/reference/operator/update-field/}
      * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#updateOne}
      * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndUpdate}
      * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
      *
-     * @throws {Error} This method is called even though updates are disabled in
-     *                 the schema.
-     * @throws {Error} Query is invalid probably because it is not santized due
-     *                 to hooks being skipped.
+     * @throws {Error} This method is called even though updates are disabled in the schema.
+     * @throws {Error} Query is invalid probably because it is not santized due to hooks being skipped.
      * @throws {Error} A doc is updated but it cannot be found.
      */
     static async updateOneStrict(query: Query<T>, update: Update<T>, options: ModelUpdateOneOptions<T> = {}): Promise<void | Document<T>> {
@@ -469,19 +450,16 @@ export default <T>(schema: Schema<T>) => {
     }
 
     /**
-     * Same as the strict update one operation except this method swallows all
-     * errors and returns `undefined` if no document was updated (and that
-     * `returnDoc` is `true`) or `true`/`false` (if `returnDoc` is `false`).
+     * Same as the strict update one operation except this method swallows all errors and returns `undefined` if no
+     * document was updated (and that `returnDoc` is `true`) or `true`/`false` (if `returnDoc` is `false`).
      *
      * @param query - Query for the document to update.
-     * @param update - Either an object whose key/value pair represent the
-     *                 fields belonging to this model to update to, or an update
-     *                 query.
+     * @param update - Either an object whose key/value pair represent the fields belonging to this model to update to,
+     *                 or an update query.
      * @param options - See `ModelUpdateOneOptions`.
      *
-     * @returns The updated doc if `returnDoc` is set to `true`, else either
-     *          `true` or `false` depending on whether the operation was
-     *          successful.
+     * @returns The updated doc if `returnDoc` is set to `true`, else either `true` or `false` depending on whether the
+     *          operation was successful.
      *
      * @see Model.updateOneStrict
      */
@@ -502,22 +480,19 @@ export default <T>(schema: Schema<T>) => {
      * Updates multiple documents matched by `query` with `update` object.
      *
      * @param query - Query for document to update.
-     * @param update - Either an object whose key/value pair represent the
-     *                 fields belonging to this model to update to, or an update
-     *                 query.
+     * @param update - Either an object whose key/value pair represent the fields belonging to this model to update to,
+     *                 or an update query.
      * @param options - See `ModelUpdateManyOptions`.
      *
-     * @returns The updated docs if `returnDocs` is set to `true`, else `true`
-     *         or `false` depending on whether or not the operation was
-     *         successful.
+     * @returns The updated docs if `returnDocs` is set to `true`, else `true` or `false` depending on whether or not
+     *         the operation was successful.
      *
      * @see {@link https://docs.mongodb.com/manual/reference/operator/update-field/}
      * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#updateMany}
      * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndUpdate}
      * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
      *
-     * @throws {Error} This method is called even though updates or multiple
-     *                 updates are disabled in the schema.
+     * @throws {Error} This method is called even though updates or multiple updates are disabled in the schema.
      * @throws {Error} One of the updated docs are not returned.
      */
     static async updateMany(query: Query<T>, update: Update<T>, options: ModelUpdateManyOptions<T> = {}): Promise<Document<T>[] | boolean> {
@@ -585,10 +560,8 @@ export default <T>(schema: Schema<T>) => {
      * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndDelete}
      * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~deleteWriteOpResult}
      *
-     * @throws {Error} This method is called even though deletions are disabled
-     *                 in the schema.
-     * @throws {Error} Unable to return the deleted document when `returnDoc` is
-     *                 `true`.
+     * @throws {Error} This method is called even though deletions are disabled in the schema.
+     * @throws {Error} Unable to return the deleted document when `returnDoc` is `true`.
      * @throws {Error} Unable to delete document.
      */
     static async deleteOneStrict(query: Query<T>, options: ModelDeleteOneOptions = {}): Promise<Document<T> | void> {
@@ -623,14 +596,13 @@ export default <T>(schema: Schema<T>) => {
     }
 
     /**
-     * Same as the strict delete one operation except this method swallows all
-     * errors.
+     * Same as the strict delete one operation except this method swallows all errors.
      *
      * @param query - Query for document to delete.
      * @param options - See `ModelDeleteOneOptions`.
      *
-     * @returns The deleted doc if `returnDoc` is set to `true`, else `true` or
-     *         `false` depending on whether or not the operation was successful.
+     * @returns The deleted doc if `returnDoc` is set to `true`, else `true` or `false` depending on whether or not the
+     *         operation was successful.
      *
      * @see Model.deleteOneStrict
      */
@@ -656,16 +628,14 @@ export default <T>(schema: Schema<T>) => {
      * @param query - Query to match documents for deletion.
      * @param options - See `ModelDeleteManyOptions`.
      *
-     * @returns The deleted docs if `returnDocs` is set to `true`, else `true`
-     *         or `false` depending on whether or not the operation was
-     *         successful.
+     * @returns The deleted docs if `returnDocs` is set to `true`, else `true` or `false` depending on whether or not
+     *         the operation was successful.
      *
      * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#deleteMany}
      * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndDelete}
      * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~deleteWriteOpResult}
      *
-     * @throws {Error} This method is called even though deletions or multiple
-     *                 deletions are disabled in the schema.
+     * @throws {Error} This method is called even though deletions or multiple deletions are disabled in the schema.
      */
     static async deleteMany(query: Query<T>, options: ModelDeleteManyOptions = {}): Promise<boolean | Document<T>[]> {
       if ((this.schema.noDeletes === true) || (this.schema.noDeleteMany === true)) throw new Error(`[${this.schema.model}] Multiple deletions are disallowed for this model`)
@@ -712,15 +682,13 @@ export default <T>(schema: Schema<T>) => {
     }
 
     /**
-     * Replaces one document with another. If `replacement` is not specified,
-     * one with random info will be generated.
+     * Replaces one document with another. If `replacement` is not specified, one with random info will be generated.
      *
      * @param query - Query for document to replace.
      * @param replacement - The replacement document.
      * @param options - See `ModelReplaceOneOptions`.
      *
-     * @returns The replaced document (by default) or the new document
-     *         (depending on the `returnOriginal` option).
+     * @returns The replaced document (by default) or the new document (depending on the `returnOriginal` option).
      *
      * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndReplace}
      * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~findAndModifyWriteOpResult}
@@ -756,16 +724,14 @@ export default <T>(schema: Schema<T>) => {
     }
 
     /**
-     * Same as the strict find and replace one operation except this method
-     * swallows all errors.
+     * Same as the strict find and replace one operation except this method swallows all errors.
      *
      * @param query - Query for document to replace.
      * @param replacement - The replacement document.
      * @param options - See `ModelReplaceOneOptions`.
      *
-     * @returns The replaced document (by default) or the new document
-     *          (depending on the `returnOriginal` option) if available,
-     *          `undefined` otherwise.
+     * @returns The replaced document (by default) or the new document (depending on the `returnOriginal` option) if
+     *          available, `undefined` otherwise.
      *
      * @see Model.findAndReplaceOneStrict
      */
@@ -795,8 +761,7 @@ export default <T>(schema: Schema<T>) => {
     /**
      * Counts the documents that match the provided query.
      *
-     * @param query - Query used for the $match stage of the aggregation
-     *                pipeline.
+     * @param query - Query used for the $match stage of the aggregation pipeline.
      *
      * @returns The total number of documents found. The minimum is 0.
      */
@@ -807,16 +772,14 @@ export default <T>(schema: Schema<T>) => {
     }
 
     /**
-     * Returns a document whose values are formatted according to the format
-     * functions defined in the schema. If the field is marked as encrypted in
-     * the schema, this process takes care of that too.
+     * Returns a document whose values are formatted according to the format functions defined in the schema. If the
+     * field is marked as encrypted in the schema, this process takes care of that too.
      *
      * @param doc - Document to format.
      *
      * @returns The formatted document as the fulfillment value.
      *
-     * @throws {Error} A field in the document to format is not defined in the
-     *                 schema.
+     * @throws {Error} A field in the document to format is not defined in the schema.
      */
     static async formatDocument(doc: DocumentFragment<T>): Promise<DocumentFragment<T>> {
       const formattedDoc = _.cloneDeep(doc)
@@ -830,8 +793,7 @@ export default <T>(schema: Schema<T>) => {
 
         if (!fieldSpec) throw new Error(`[${this.schema.model}] Field ${key} not found in schema`)
 
-        // If the schema has a certain formatting function defined for this
-        // field, apply it.
+        // If the schema has a certain formatting function defined for this field, apply it.
         if (_.isFunction(formatter)) {
           const formattedValue = await formatter(formattedDoc[key] as any)
           formattedDoc[key] = formattedValue as any
@@ -847,13 +809,11 @@ export default <T>(schema: Schema<T>) => {
     }
 
     /**
-     * Validates a document of this collection and throws an error if validation
-     * fails. This method does not modify the document in any way. It checks for
-     * the following in order:
+     * Validates a document of this collection and throws an error if validation fails. This method does not modify the
+     * document in any way. It checks for the following in order:
      *   1. Each field is defined in the schema.
      *   2. Each field value conforms to the defined field spec.
-     *   3. Unique indexes are enforced (only if `ignoreUniqueIndex` is
-     *      disabled).
+     *   3. Unique indexes are enforced (only if `ignoreUniqueIndex` is disabled).
      *   4. No required fields are missing (only if `strict` is enabled).
      *
      * @param doc - The doc to validate.
@@ -861,13 +821,10 @@ export default <T>(schema: Schema<T>) => {
      *
      * @throws {Error} Document is not an object.
      * @throws {Error} Document is empty.
-     * @throws {Error} One of the fields in the document is not defined in the
-     *                 schema.
-     * @throws {Error} One of the fields in the document does not pass the
-     *                 validation test.
-     * @throws {Error} One of the fields has a duplicated value as another
-     *                 document in the collection (only if unique indexes are
-     *                 defined in the schema).
+     * @throws {Error} One of the fields in the document is not defined in the schema.
+     * @throws {Error} One of the fields in the document does not pass the validation test.
+     * @throws {Error} One of the fields has a duplicated value as another document in the collection (only if unique
+     *                 indexes are defined in the schema).
      * @throws {Error} Some required fields in the document are missing.
      */
     static async validateDocument(doc: DocumentFragment<T>, options: ModelValidateDocumentOptions = {}) {
@@ -876,9 +833,8 @@ export default <T>(schema: Schema<T>) => {
       for (const key in doc) {
         if (!doc.hasOwnProperty(key)) continue
 
-        // Skip validation for fields `_id`, `updatedAt` and `createdAt` since
-        // they are automatically generated, but only if validating top-level
-        // fields.
+        // Skip validation for fields `_id`, `updatedAt` and `createdAt` since they are automatically generated, but
+        // only if validating top-level fields.
         if (key === '_id') continue
         if (this.schema.timestamps && (key === 'updatedAt')) continue
         if (this.schema.timestamps && (key === 'createdAt')) continue
@@ -887,9 +843,8 @@ export default <T>(schema: Schema<T>) => {
         const fieldSpec = options.accountForDotNotation ? getFieldSpecByKey(this.schema.fields, key) : schema.fields[key as keyof T]
         if (!fieldSpec) throw new Error(`[${this.schema.model}] The field '${key}' is not defined in the ${JSON.stringify(this.schema.fields, undefined, 0)}`)
 
-        // #2 Check if field value conforms to its defined spec. Note that the
-        // key can be in dot notation because this method may also be used when
-        // applying doc updates.
+        // #2 Check if field value conforms to its defined spec. Note that the key can be in dot notation because this
+        // method may also be used when applying doc updates.
         const val = _.get(doc, key, undefined)
         const validationStrategy = _.get(this.validateProps, key, undefined)
 
@@ -927,10 +882,9 @@ export default <T>(schema: Schema<T>) => {
     }
 
     /**
-     * Handler called before an attempt to insert document into the database.
-     * This is a good place to apply any custom pre-processing to the document
-     * before it is inserted into the document. This method must return the
-     * document to be inserted.
+     * Handler called before an attempt to insert document into the database. This is a good place to apply any custom
+     * pre-processing to the document before it is inserted into the document. This method must return the document to
+     * be inserted.
      *
      * @param doc - The document to be inserted.
      * @param options - Additional options.
@@ -949,8 +903,8 @@ export default <T>(schema: Schema<T>) => {
     protected static async didInsertDocument(doc: Document<T>): Promise<void> {}
 
     /**
-     * Handler called before an attempted update operation. This method must
-     * return the query and update descriptor for the update operation.
+     * Handler called before an attempted update operation. This method must return the query and update descriptor for
+     * the update operation.
      *
      * @param query - The query for document(s) to update.
      * @param update - The update descriptor.
@@ -962,14 +916,11 @@ export default <T>(schema: Schema<T>) => {
     }
 
     /**
-     * Handler called after a document or a set of documents have been
-     * successfully updated.
+     * Handler called after a document or a set of documents have been successfully updated.
      *
-     * @param prevDoc - The document before it is updated. This is only
-     *                  available if `returnDoc` was enabled, and only for
-     *                  updateOne().
-     * @param newDocs - The updated document(s). This is only available if
-     *                  `returnDoc` or `returnDocs` was enabled.
+     * @param prevDoc - The document before it is updated. This is only available if `returnDoc` was enabled, and only
+     *                  for updateOne().
+     * @param newDocs - The updated document(s). This is only available if `returnDoc` or `returnDocs` was enabled.
      */
     protected static async didUpdateDocument(prevDoc?: Document<T>, newDocs?: Document<T> | Document<T>[]): Promise<void> {}
 
@@ -985,16 +936,14 @@ export default <T>(schema: Schema<T>) => {
     }
 
     /**
-     * Handler called after a document or a set of documents are successfully
-     * deleted.
+     * Handler called after a document or a set of documents are successfully deleted.
      *
      * @param docs - The deleted document(s) if available.
      */
     protected static async didDeleteDocument(docs?: Document<T> | Document<T>[]): Promise<void> {}
 
     /**
-     * Processes a document before it is inserted. This is also used during an
-     * upsert operation.
+     * Processes a document before it is inserted. This is also used during an upsert operation.
      *
      * @param doc - The document to be inserted/upserted.
      * @param options - See `ModelBeforeInsertOptions`.
@@ -1013,16 +962,15 @@ export default <T>(schema: Schema<T>) => {
         if (!_.isDate(o.updatedAt)) o.updatedAt = new Date()
       }
 
-      // Before inserting this document, go through each field and make sure
-      // that it has default values and that they are formatted correctly.
+      // Before inserting this document, go through each field and make sure that it has default values and that they
+      // are formatted correctly.
       for (const key in this.schema.fields) {
         if (!this.schema.fields.hasOwnProperty(key)) continue
         if (o.hasOwnProperty(key)) continue
 
         const defaultValue = this.defaultProps[key]
 
-        // Check if the field has a default value defined in the schema. If so,
-        // apply it.
+        // Check if the field has a default value defined in the schema. If so, apply it.
         if (_.isUndefined(defaultValue)) continue
 
         o[key as keyof T] = (_.isFunction(defaultValue)) ? defaultValue() as any : defaultValue as any
@@ -1031,9 +979,8 @@ export default <T>(schema: Schema<T>) => {
       // Apply format function defined in the schema if applicable.
       o = await this.formatDocument(o)
 
-      // Finally, validate the document as a final sanity check. Ignore unique
-      // indexes in this step. Let the db throw an error if the inserted doc
-      // voilates those indexes.
+      // Finally, validate the document as a final sanity check. Ignore unique indexes in this step. Let the db throw an
+      // error if the inserted doc voilates those indexes.
       await this.validateDocument(o, { ignoreUniqueIndex: true, strict: true, accountForDotNotation: false, ...options })
 
       return o
@@ -1049,8 +996,7 @@ export default <T>(schema: Schema<T>) => {
     }
 
     /**
-     * Handler invoked right before an update. This is NOT invoked on an
-     * insertion.
+     * Handler invoked right before an update. This is NOT invoked on an insertion.
      *
      * @param query - Query for document to update.
      * @param update - The update to apply.
@@ -1058,8 +1004,7 @@ export default <T>(schema: Schema<T>) => {
      *
      * @returns The modified update to apply.
      *
-     * @throws {Error} Attempting to upsert even though upserts are disabled in
-     *                 the schema.
+     * @throws {Error} Attempting to upsert even though upserts are disabled in the schema.
      *
      * @todo Handle remaining update operators.
      */
@@ -1068,17 +1013,15 @@ export default <T>(schema: Schema<T>) => {
 
       const [q, u] = await this.willUpdateDocument(query, update)
 
-      // First sanitize the inputs. We want to be able to make sure the query is
-      // valid and that the update object is a proper update query.
+      // First sanitize the inputs. We want to be able to make sure the query is valid and that the update object is a
+      // proper update query.
       const sanitizedQuery = sanitizeQuery<T>(this.schema, q) as DocumentFragment<T>
       const sanitizedUpdate = (typeIsUpdateQuery<T>(u) ? { ...u } : { $set: u }) as UpdateQuery<DocumentFragment<T>>
 
-      // Sanitize all update queries. Remap `null` or `undefined` values to
-      // `$unset`.
+      // Sanitize all update queries. Remap `null` or `undefined` values to `$unset`.
       if (sanitizedUpdate.$set) {
-        // Remember which keys are `null` or `undefined` because when the object
-        // is sanitized in the next step, all fields whose values are `null` or
-        // `undefined` will be dropped.
+        // Remember which keys are `null` or `undefined` because when the object is sanitized in the next step, all
+        // fields whose values are `null` or `undefined` will be dropped.
         const obj: { [key: string]: any } = sanitizedUpdate.$set
         const unsetFields = Object.keys(obj).filter(v => ((obj[v] === null) || (obj[v] === undefined)))
         const n = unsetFields.length
@@ -1086,8 +1029,7 @@ export default <T>(schema: Schema<T>) => {
         // Now sanitize the update object.
         sanitizedUpdate.$set = sanitizeDocument<T>(this.schema, sanitizedUpdate.$set, { accountForDotNotation: true })
 
-        // Remap the previously remembered `null` or `undefined` values to an
-        // `$unset` atomic operator.
+        // Remap the previously remembered `null` or `undefined` values to an `$unset` atomic operator.
         if (n > 0) {
           sanitizedUpdate.$unset = {}
 
@@ -1102,14 +1044,13 @@ export default <T>(schema: Schema<T>) => {
         sanitizedUpdate.$setOnInsert = sanitizeDocument<T>(this.schema, sanitizedUpdate.$setOnInsert, { accountForDotNotation: true })
       }
 
-      // Determine if there are new values to add to array fields of the doc
-      // (minding duplicates). If so, sanitize them.
+      // Determine if there are new values to add to array fields of the doc (minding duplicates). If so, sanitize them.
       if (sanitizedUpdate.$addToSet) {
         sanitizedUpdate.$addToSet = sanitizeDocument<T>(this.schema, sanitizedUpdate.$addToSet as DocumentFragment<T>, { accountForDotNotation: true }) as SetFields<DocumentFragment<T>>
       }
 
-      // Determine if there are new values to add to array fields of the doc
-      // (without minding duplicates). If so, sanitize them.
+      // Determine if there are new values to add to array fields of the doc (without minding duplicates). If so,
+      // sanitize them.
       if (sanitizedUpdate.$push) {
         sanitizedUpdate.$push = sanitizeDocument<T>(this.schema, sanitizedUpdate.$push as DocumentFragment<T>, { accountForDotNotation: true }) as PushOperator<DocumentFragment<T>>
       }
@@ -1125,10 +1066,8 @@ export default <T>(schema: Schema<T>) => {
         if (!_.isDate(sanitizedUpdate.$set.updatedAt)) sanitizedUpdate.$set = { ...sanitizedUpdate.$set, updatedAt: new Date() }
       }
 
-      // In the case of an upsert, we need to preprocess the query as if this
-      // was an insertion. We also need to tell the database to save all fields
-      // in the query to the database as well, unless they are already in the
-      // update query.
+      // In the case of an upsert, we need to preprocess the query as if this was an insertion. We also need to tell the
+      // database to save all fields in the query to the database as well, unless they are already in the update query.
       if (options.upsert === true) {
         // Make a copy of the query in case it is manipulated by the hooks.
         const beforeInsert = await this.beforeInsert(_.cloneDeep(sanitizedQuery), { ...options, strict: false })
@@ -1145,8 +1084,8 @@ export default <T>(schema: Schema<T>) => {
         }
       }
 
-      // Validate all fields in the update query. Account for dot notations to
-      // facilitate updating fields in embedded docs.
+      // Validate all fields in the update query. Account for dot notations to facilitate updating fields in embedded
+      // docs.
       if (sanitizedUpdate.$set && !_.isEmpty(sanitizedUpdate.$set)) {
         await this.validateDocument(sanitizedUpdate.$set as DocumentFragment<T>, { ignoreUniqueIndex: true, accountForDotNotation: true, ...options })
       }
@@ -1165,8 +1104,7 @@ export default <T>(schema: Schema<T>) => {
     }
 
     /**
-     * Handler invoked right after an update. This does not account for
-     * insertions.
+     * Handler invoked right after an update. This does not account for insertions.
      *
      * @param oldDoc - The original document.
      * @param newDoc - The updated document.
@@ -1211,11 +1149,9 @@ export default <T>(schema: Schema<T>) => {
     }
 
     /**
-     * Deletes documents from other collections that have a foreign key to this
-     * collection, as specified in the schema.
+     * Deletes documents from other collections that have a foreign key to this collection, as specified in the schema.
      *
-     * @param docId - The ID of the document in this collection in which other
-     *                collections are pointing to.
+     * @param docId - The ID of the document in this collection in which other collections are pointing to.
      *
      * @throws {Error} Cascade deletion is incorrectly defined in the schema.
      * @throws {Error} Cascade deletion failed because a model cannot be found.
@@ -1246,8 +1182,8 @@ export default <T>(schema: Schema<T>) => {
     }
 
     /**
-     * Validates a doc of this model to see if the required fields are in place.
-     * This process handles spec defined for embedded docs as well.
+     * Validates a doc of this model to see if the required fields are in place. This process handles spec defined for
+     * embedded docs as well.
      *
      * @param doc - The doc to validate.
      * @param fieldDescriptor - The field descriptor to validate against.
@@ -1267,8 +1203,7 @@ export default <T>(schema: Schema<T>) => {
         // If model has default props defined for this field, skip.
         if (this.defaultProps.hasOwnProperty(field)) continue
 
-        // At this point we certain that the field needs to be present in the
-        // doc, so go ahead and check if it exists.
+        // At this point we certain that the field needs to be present in the doc, so go ahead and check if it exists.
         if (!doc.hasOwnProperty(field)) throw new TypeError(`[${this.schema.model}] Missing required field "${fieldName ? `${fieldName}.` : ''}${field}"`)
 
         // Recursively check for embedded docs, if applicable.

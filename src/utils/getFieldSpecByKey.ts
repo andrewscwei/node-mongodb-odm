@@ -1,8 +1,8 @@
 import { FieldSpec, typeIsFieldDescriptor } from '../types'
 
 /**
- * Finds and returns the spec of a field in the provided schema by its key.
- * This key can be in dot notation to seek fields in embedded docs.
+ * Finds and returns the spec of a field in the provided schema by its key. This key can be in dot notation to seek
+ * fields in embedded docs.
  *
  * @returns The field spec.
  */

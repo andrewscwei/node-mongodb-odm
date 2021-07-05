@@ -1,6 +1,5 @@
 /**
- * @file Database configuration file. This file exports methods to interact with
- *       the MongoClient instance.
+ * @file Database configuration file. This file exports methods to interact with the MongoClient instance.
  */
 
 import { Collection, Db, MongoClient, MongoError, ObjectID } from 'mongodb'
@@ -43,8 +42,8 @@ process.on('SIGINT', async () => {
 })
 
 /**
- * Establishes a new connection to the database based on the initialized
- * configuration. If there already exists one, this method does nothing.
+ * Establishes a new connection to the database based on the initialized configuration. If there already exists one,
+ * this method does nothing.
  *
  * @throws {Error} ODM is not configured.
  */
@@ -171,8 +170,7 @@ export function getModel(modelOrCollectionName: string): ReturnType<typeof Model
 }
 
 /**
- * Gets the MongoDB collection associated with a model or collection name and
- * ensures the indexes defined in its schema.
+ * Gets the MongoDB collection associated with a model or collection name and ensures the indexes defined in its schema.
  *
  * @param modelOrCollectionName - The model or collection name.
  *
@@ -181,8 +179,7 @@ export function getModel(modelOrCollectionName: string): ReturnType<typeof Model
  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html}
  *
  * @throws {Error} There are no models registered.
- * @throws {Error} Unable to find the model associated with the model or
- *                 collection name.
+ * @throws {Error} Unable to find the model associated with the model or collection name.
  */
 export async function getCollection(modelOrCollectionName: string): Promise<Collection> {
   const models = config.models
