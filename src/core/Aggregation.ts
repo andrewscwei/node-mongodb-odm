@@ -3,10 +3,10 @@
  *       framework.
  */
 
-import _ from 'lodash';
-import * as db from '..';
-import { AggregationPipeline, AggregationStageDescriptor, FieldSpec, GroupStageFactorySpec, LookupStageFactoryOptions, LookupStageFactorySpec, MatchStageFactoryOptions, MatchStageFactorySpec, PipelineFactoryOperators, PipelineFactoryOptions, ProjectStageFactoryOptions, Schema, SortStageFactorySpec } from '../types';
-import sanitizeQuery from '../utils/sanitizeQuery';
+import _ from 'lodash'
+import * as db from '..'
+import { AggregationPipeline, AggregationStageDescriptor, FieldSpec, GroupStageFactorySpec, LookupStageFactoryOptions, LookupStageFactorySpec, MatchStageFactoryOptions, MatchStageFactorySpec, PipelineFactoryOperators, PipelineFactoryOptions, ProjectStageFactoryOptions, Schema, SortStageFactorySpec } from '../types'
+import sanitizeQuery from '../utils/sanitizeQuery'
 
 export default abstract class Aggregation {
   /**
@@ -22,21 +22,21 @@ export default abstract class Aggregation {
    */
   static pipelineFactory<T>(schema: Schema<T>, { $lookup, $match, $prune, $group, $sort }: PipelineFactoryOperators<T> = {}, { prefix = '', pipeline = [] }: PipelineFactoryOptions = {}): AggregationPipeline {
     // If lookup stage is specified, add it to beginning of the pipeline.
-    if ($lookup) pipeline = Aggregation.lookupStageFactory(schema, $lookup, { fromPrefix: prefix, toPrefix: prefix }).concat(pipeline);
+    if ($lookup) pipeline = Aggregation.lookupStageFactory(schema, $lookup, { fromPrefix: prefix, toPrefix: prefix }).concat(pipeline)
 
     // If match stage is specified, add it to the beginning of the pipeline.
-    if ($match) pipeline = Aggregation.matchStageFactory(schema, $match, { prefix }).concat(pipeline);
+    if ($match) pipeline = Aggregation.matchStageFactory(schema, $match, { prefix }).concat(pipeline)
 
     // If prune stage is specified, add it to the end of the pipeline.
-    if ($prune) pipeline = pipeline.concat(Aggregation.matchStageFactory(schema, $prune));
+    if ($prune) pipeline = pipeline.concat(Aggregation.matchStageFactory(schema, $prune))
 
     // If group stage is specified, add it to the end of the pipeline.
-    if ($group) pipeline = pipeline.concat(Aggregation.groupStageFactory(schema, $group));
+    if ($group) pipeline = pipeline.concat(Aggregation.groupStageFactory(schema, $group))
 
     // If sort stage is specified, add it to the end of the pipeline.
-    if ($sort) pipeline = pipeline.concat(Aggregation.sortStageFactory(schema, $sort));
+    if ($sort) pipeline = pipeline.concat(Aggregation.sortStageFactory(schema, $sort))
 
-    return pipeline;
+    return pipeline
   }
 
   /**
@@ -63,15 +63,15 @@ export default abstract class Aggregation {
    * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/match/}
    */
   static matchStageFactory<T>(schema: Schema<T>, spec: MatchStageFactorySpec<T>, { prefix = '' }: MatchStageFactoryOptions = {}): AggregationPipeline {
-    const sanitized = sanitizeQuery<T>(schema, spec, { strict: false });
-    const query: { [key: string]: any } = {};
+    const sanitized = sanitizeQuery<T>(schema, spec, { strict: false })
+    const query: { [key: string]: any } = {}
 
     for (const key in sanitized) {
-      if (!sanitized.hasOwnProperty(key)) continue;
-      query[`${prefix}${key}`] = (sanitized as any)[key as keyof T];
+      if (!sanitized.hasOwnProperty(key)) continue
+      query[`${prefix}${key}`] = (sanitized as any)[key as keyof T]
     }
 
-    return [{ $match: query }];
+    return [{ $match: query }]
   }
 
   /**
@@ -110,21 +110,21 @@ export default abstract class Aggregation {
    * @throws {Error} Unable to find the schema for the field to populate.
    */
   static lookupStageFactory<T>(schema: Schema<T>, spec: LookupStageFactorySpec, { fromPrefix = '', toPrefix = '' }: LookupStageFactoryOptions = {}): AggregationPipeline {
-    const fields: { [fieldName: string]: FieldSpec} = schema.fields;
+    const fields: { [fieldName: string]: FieldSpec} = schema.fields
 
-    let pipe: AggregationPipeline = [];
+    let pipe: AggregationPipeline = []
 
     for (const key in spec) {
-      if (!spec.hasOwnProperty(key)) continue;
+      if (!spec.hasOwnProperty(key)) continue
 
-      const val = spec[key];
-      if (!((val === true) || (typeof val === 'object'))) throw new TypeError(`[lookup(${schema}, ${spec}, ${{ fromPrefix, toPrefix }})] Invalid populate properties.`);
+      const val = spec[key]
+      if (!((val === true) || (typeof val === 'object'))) throw new TypeError(`[lookup(${schema}, ${spec}, ${{ fromPrefix, toPrefix }})] Invalid populate properties.`)
 
-      const ref = fields[key] && fields[key].ref;
-      if (!ref) throw new Error(`[lookup(${schema}, ${spec}, ${{ fromPrefix, toPrefix }})] The field to populate does not have a reference model specified in the schema.`);
+      const ref = fields[key] && fields[key].ref
+      if (!ref) throw new Error(`[lookup(${schema}, ${spec}, ${{ fromPrefix, toPrefix }})] The field to populate does not have a reference model specified in the schema.`)
 
-      const schemaRef = db.getModel(ref).schema;
-      if (!schemaRef) throw new Error(`[lookup(${schema}, ${spec}, ${{ fromPrefix, toPrefix }})] Unable to find the model schema corresponding to the field to populate.`);
+      const schemaRef = db.getModel(ref).schema
+      if (!schemaRef) throw new Error(`[lookup(${schema}, ${spec}, ${{ fromPrefix, toPrefix }})] Unable to find the model schema corresponding to the field to populate.`)
 
       pipe.push({
         $lookup: {
@@ -133,24 +133,24 @@ export default abstract class Aggregation {
           foreignField: '_id',
           as: `${toPrefix}${key}`,
         },
-      });
+      })
 
       pipe.push({
         $unwind: {
           path: `$${toPrefix}${key}`,
           preserveNullAndEmptyArrays: true,
         },
-      });
+      })
 
       if (!_.isBoolean(val)) {
         pipe = pipe.concat(Aggregation.lookupStageFactory(schemaRef, val, {
           fromPrefix: `${toPrefix}${key}.`,
           toPrefix: `${toPrefix}${key}.`,
-        }));
+        }))
       }
     }
 
-    return pipe;
+    return pipe
   }
 
   /**
@@ -172,16 +172,16 @@ export default abstract class Aggregation {
    * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/group/}
    */
   static groupStageFactory<T>(schema: Schema<T>, spec: GroupStageFactorySpec): AggregationPipeline {
-    const pipe: AggregationPipeline = [];
+    const pipe: AggregationPipeline = []
 
     if (_.isString(spec)) {
-      pipe.push({ $group: { _id: `$${spec}` } });
+      pipe.push({ $group: { _id: `$${spec}` } })
     }
     else {
-      pipe.push({ $group: spec });
+      pipe.push({ $group: spec })
     }
 
-    return pipe;
+    return pipe
   }
 
   /**
@@ -199,10 +199,10 @@ export default abstract class Aggregation {
    * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/sort/}
    */
   static sortStageFactory<T>(schema: Schema<T>, spec: SortStageFactorySpec): AggregationPipeline {
-    const pipe: AggregationPipeline = [];
-    pipe.push({ $sort: spec });
+    const pipe: AggregationPipeline = []
+    pipe.push({ $sort: spec })
 
-    return pipe;
+    return pipe
   }
 
   /**
@@ -232,28 +232,28 @@ export default abstract class Aggregation {
    * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/project/}
    */
   static projectStageFactory<T>(schema: Schema<T>, { toPrefix = '', fromPrefix = '', populate = {}, exclude = [] }: ProjectStageFactoryOptions = {}): AggregationPipeline {
-    const fields: { [fieldName: string]: FieldSpec} = schema.fields;
-    const out: { [key: string]: any } = { [`${toPrefix}_id`]: `$${fromPrefix}_id` };
+    const fields: { [fieldName: string]: FieldSpec} = schema.fields
+    const out: { [key: string]: any } = { [`${toPrefix}_id`]: `$${fromPrefix}_id` }
 
     for (const key in fields) {
-      if (!schema.fields.hasOwnProperty(key)) continue;
-      if (exclude.indexOf(key) > -1) continue;
+      if (!schema.fields.hasOwnProperty(key)) continue
+      if (exclude.indexOf(key) > -1) continue
 
-      const populateOpts = populate[key];
+      const populateOpts = populate[key]
 
-      if (populateOpts === false) continue;
+      if (populateOpts === false) continue
 
-      const populateRef = fields[key].ref;
-      const populateSchema = (!_.isNil(populateOpts) && !_.isNil(populateRef)) ? db.getModel(populateRef).schema : undefined;
+      const populateRef = fields[key].ref
+      const populateSchema = (!_.isNil(populateOpts) && !_.isNil(populateRef)) ? db.getModel(populateRef).schema : undefined
 
-      out[`${toPrefix}${key}`] = _.isNil(populateSchema) ? `$${fromPrefix}${key}` : (Aggregation.projectStageFactory(populateSchema, populateOpts === true ? undefined : populateOpts) as AggregationStageDescriptor[])[0]['$project'];
+      out[`${toPrefix}${key}`] = _.isNil(populateSchema) ? `$${fromPrefix}${key}` : (Aggregation.projectStageFactory(populateSchema, populateOpts === true ? undefined : populateOpts) as AggregationStageDescriptor[])[0]['$project']
     }
 
     if (schema.timestamps) {
-      if (exclude.indexOf('updatedAt') < 0) out[`${toPrefix}updatedAt`] = `$${fromPrefix}updatedAt`;
-      if (exclude.indexOf('createdAt') < 0) out[`${toPrefix}createdAt`] = `$${fromPrefix}createdAt`;
+      if (exclude.indexOf('updatedAt') < 0) out[`${toPrefix}updatedAt`] = `$${fromPrefix}updatedAt`
+      if (exclude.indexOf('createdAt') < 0) out[`${toPrefix}createdAt`] = `$${fromPrefix}createdAt`
     }
 
-    return [{ $project: out }];
+    return [{ $project: out }]
   }
 }

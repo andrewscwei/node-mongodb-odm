@@ -3,44 +3,44 @@
  *       the MongoClient instance.
  */
 
-import { Collection, Db, MongoClient, MongoError, ObjectID } from 'mongodb';
-import Model from './core/Model';
+import { Collection, Db, MongoClient, MongoError, ObjectID } from 'mongodb'
+import Model from './core/Model'
 
-const debug = require('debug')('mongodb-odm');
+const debug = require('debug')('mongodb-odm')
 
 export interface Configuration {
-  host: string;
-  name: string;
-  replicaSet?: string;
-  username?: string;
-  password?: string;
-  models?: { [modelName: string]: any };
+  host: string
+  name: string
+  replicaSet?: string
+  username?: string
+  password?: string
+  models?: { [modelName: string]: any }
 }
 
 /**
  * Global MongoDB client instance.
  */
-let client: MongoClient;
+let client: MongoClient
 
 /**
  * Global db configuration options.
  */
-let config: Configuration;
+let config: Configuration
 
 /**
  * Collection lookup dictionary.
  */
-let collections: { [collectionName: string]: Collection } = {};
+let collections: { [collectionName: string]: Collection } = {}
 
 // Be sure to disconnect the database if the app terminates.
 process.on('SIGINT', async () => {
   if (client) {
-    await disconnectFromDb();
-    debug('Handling SIGINT error...', 'OK', 'MongoDB client disconnected due to app termination');
+    await disconnectFromDb()
+    debug('Handling SIGINT error...', 'OK', 'MongoDB client disconnected due to app termination')
   }
 
-  process.exit(0);
-});
+  process.exit(0)
+})
 
 /**
  * Establishes a new connection to the database based on the initialized
@@ -49,60 +49,60 @@ process.on('SIGINT', async () => {
  * @throws {Error} ODM is not configured.
  */
 export async function connectToDb(): Promise<void> {
-  if (isDbConnected()) return;
+  if (isDbConnected()) return
 
-  if (!config) throw new Error('You must configure connection options by calling #configureDb()');
+  if (!config) throw new Error('You must configure connection options by calling #configureDb()')
 
   // Resolve the authentication string.
-  const authentication = (config.username && config.password) ? `${config.username}:${config.password}` : undefined;
+  const authentication = (config.username && config.password) ? `${config.username}:${config.password}` : undefined
 
   // Database client URL.
-  const url = `mongodb://${authentication ? `${authentication}@` : ''}${config.host}/${config.name}${config.replicaSet ? `?replicaSet=${config.replicaSet}` : ''}`;
+  const url = `mongodb://${authentication ? `${authentication}@` : ''}${config.host}/${config.name}${config.replicaSet ? `?replicaSet=${config.replicaSet}` : ''}`
 
   client = await MongoClient.connect(url, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-  });
+  })
 
-  const connection = client.db(config.name);
+  const connection = client.db(config.name)
 
-  debug('Establishing MongoDB client connection...', 'OK', url);
+  debug('Establishing MongoDB client connection...', 'OK', url)
 
   connection.on('authenticated', () => {
-    debug('Authenticating MongoDB servers...', 'OK');
-  });
+    debug('Authenticating MongoDB servers...', 'OK')
+  })
 
   connection.on('close', (err: MongoError) => {
-    debug('Terminating MongoDB client...', 'OK');
-  });
+    debug('Terminating MongoDB client...', 'OK')
+  })
 
   connection.on('error', (err: MongoError) => {
-    debug('Handling client error...', 'ERR');
-  });
+    debug('Handling client error...', 'ERR')
+  })
 
   connection.on('fullsetup', () => {
-    debug('Completing full setup of connection...', 'OK');
-  });
+    debug('Completing full setup of connection...', 'OK')
+  })
 
   connection.on('parseError', (err: MongoError) => {
-    debug('Handling parse error...', 'ERR');
-  });
+    debug('Handling parse error...', 'ERR')
+  })
 
   connection.on('reconnect', () => {
-    debug('Reconnecting to MongoDB client...', 'OK');
-  });
+    debug('Reconnecting to MongoDB client...', 'OK')
+  })
 
   connection.on('timeout', (err: MongoError) => {
-    debug('Receiving MongoDB client timeout...', 'ERR');
-  });
+    debug('Receiving MongoDB client timeout...', 'ERR')
+  })
 }
 
 /**
  * Disconnects the existing database client.
  */
 export async function disconnectFromDb(): Promise<void> {
-  if (!client) return;
-  await client.close();
+  if (!client) return
+  await client.close()
 }
 
 /**
@@ -111,9 +111,9 @@ export async function disconnectFromDb(): Promise<void> {
  * @returns `true` if connected, `false` otherwise.
  */
 export function isDbConnected(): boolean {
-  if (!client) return false;
-  if (!client.isConnected()) return false;
-  return true;
+  if (!client) return false
+  if (!client.isConnected()) return false
+  return true
 }
 
 /**
@@ -122,9 +122,9 @@ export function isDbConnected(): boolean {
  * @param options - Configuration options.
  */
 export function configureDb(options: Configuration) {
-  debug('Configuring ODM... OK', options);
-  config = options;
-  collections = {};
+  debug('Configuring ODM... OK', options)
+  config = options
+  collections = {}
 }
 
 /**
@@ -133,13 +133,13 @@ export function configureDb(options: Configuration) {
  * @returns The database instance.
  */
 export async function getDbInstance(): Promise<Db> {
-  if (client) return client.db(config.name);
+  if (client) return client.db(config.name)
 
-  debug('No MongoDB client, begin establishing connection');
+  debug('No MongoDB client, begin establishing connection')
 
-  await connectToDb();
+  await connectToDb()
 
-  return getDbInstance();
+  return getDbInstance()
 }
 
 /**
@@ -153,21 +153,21 @@ export async function getDbInstance(): Promise<Db> {
  * @throws {Error} No model found with the provided name.
  */
 export function getModel(modelOrCollectionName: string): ReturnType<typeof Model> {
-  const models = config.models;
+  const models = config.models
 
-  if (!models) throw new Error('You must register models using the #configureDb() function');
+  if (!models) throw new Error('You must register models using the #configureDb() function')
 
-  if (models.hasOwnProperty(modelOrCollectionName)) return models[modelOrCollectionName];
+  if (models.hasOwnProperty(modelOrCollectionName)) return models[modelOrCollectionName]
 
   for (const key in models) {
-    if (!models.hasOwnProperty(key)) continue;
+    if (!models.hasOwnProperty(key)) continue
 
-    const ModelClass = models[key];
+    const ModelClass = models[key]
 
-    if (ModelClass.schema.collection === modelOrCollectionName) return ModelClass;
+    if (ModelClass.schema.collection === modelOrCollectionName) return ModelClass
   }
 
-  throw new Error('No model found for given model/collection name');
+  throw new Error('No model found for given model/collection name')
 }
 
 /**
@@ -185,59 +185,59 @@ export function getModel(modelOrCollectionName: string): ReturnType<typeof Model
  *                 collection name.
  */
 export async function getCollection(modelOrCollectionName: string): Promise<Collection> {
-  const models = config.models;
+  const models = config.models
 
-  if (!models) throw new Error('You must register models using the #configureDb() function');
+  if (!models) throw new Error('You must register models using the #configureDb() function')
 
   // TODO: Indexes are lost somehow, comment this out temporarily.
   // if (!!collections[modelOrCollectionName]) {
   //   return collections[modelOrCollectionName];
   // }
 
-  let ModelClass: ReturnType<typeof Model> | undefined;
+  let ModelClass: ReturnType<typeof Model> | undefined
 
   for (const key in models) {
-    if (!models.hasOwnProperty(key)) continue;
+    if (!models.hasOwnProperty(key)) continue
 
     if ((models[key].schema.model === modelOrCollectionName) || (models[key].schema.collection === modelOrCollectionName)) {
-      ModelClass = models[key];
-      break;
+      ModelClass = models[key]
+      break
     }
   }
 
-  if (!ModelClass) throw new Error('Unable to find collection with given model or collection name, is the model registered?');
+  if (!ModelClass) throw new Error('Unable to find collection with given model or collection name, is the model registered?')
 
-  const dbInstance = await getDbInstance();
-  const schema = ModelClass.schema;
-  const collection = dbInstance.collection(schema.collection);
+  const dbInstance = await getDbInstance()
+  const schema = ModelClass.schema
+  const collection = dbInstance.collection(schema.collection)
 
   // Ensure schema indexes.
   if (schema.indexes) {
     for (const index of schema.indexes) {
-      const spec = index.spec || {};
-      const options = index.options || {};
+      const spec = index.spec || {}
+      const options = index.options || {}
 
       if (!options.hasOwnProperty('background')) {
-        options.background = true;
+        options.background = true
       }
 
-      await collection.createIndex(spec, options);
+      await collection.createIndex(spec, options)
     }
   }
 
-  collections[schema.model] = collection;
-  collections[schema.collection] = collection;
+  collections[schema.model] = collection
+  collections[schema.collection] = collection
 
-  return collection;
+  return collection
 }
 
-export { default as Aggregation } from './core/Aggregation';
-export * from './types';
-export { default as getFieldSpecByKey } from './utils/getFieldSpecByKey';
-export { default as mapValuesToObjectIDs } from './utils/mapValuesToObjectIDs';
-export { default as sanitizeDocument } from './utils/sanitizeDocument';
-export { default as sanitizeQuery } from './utils/sanitizeQuery';
-export { default as validateFieldValue } from './utils/validateFieldValue';
-export { Model };
-export { ObjectID };
+export { default as Aggregation } from './core/Aggregation'
+export * from './types'
+export { default as getFieldSpecByKey } from './utils/getFieldSpecByKey'
+export { default as mapValuesToObjectIDs } from './utils/mapValuesToObjectIDs'
+export { default as sanitizeDocument } from './utils/sanitizeDocument'
+export { default as sanitizeQuery } from './utils/sanitizeQuery'
+export { default as validateFieldValue } from './utils/validateFieldValue'
+export { Model }
+export { ObjectID }
 

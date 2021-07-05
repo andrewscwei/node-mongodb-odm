@@ -1,4 +1,4 @@
-import { FieldSpec, typeIsFieldDescriptor } from '../types';
+import { FieldSpec, typeIsFieldDescriptor } from '../types'
 
 /**
  * Finds and returns the spec of a field in the provided schema by its key.
@@ -7,19 +7,19 @@ import { FieldSpec, typeIsFieldDescriptor } from '../types';
  * @returns The field spec.
  */
 export default function getFieldSpecByKey(fieldDescriptor: { [key: string]: FieldSpec }, key: string): FieldSpec | undefined {
-  const keys = key.split('.');
-  const k = keys.shift();
+  const keys = key.split('.')
+  const k = keys.shift()
 
-  if (!k) return undefined;
-  if (!fieldDescriptor.hasOwnProperty(k)) return undefined;
+  if (!k) return undefined
+  if (!fieldDescriptor.hasOwnProperty(k)) return undefined
 
-  const o = fieldDescriptor[k];
+  const o = fieldDescriptor[k]
 
   if (keys.length === 0) {
-    return o;
+    return o
   }
   else {
-    if (!typeIsFieldDescriptor(o.type)) return undefined;
-    return getFieldSpecByKey(o.type, keys.join('.'));
+    if (!typeIsFieldDescriptor(o.type)) return undefined
+    return getFieldSpecByKey(o.type, keys.join('.'))
   }
 }

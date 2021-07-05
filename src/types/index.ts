@@ -1,40 +1,40 @@
-import _ from 'lodash';
-import { CollectionAggregationOptions, CollectionInsertManyOptions, CollectionInsertOneOptions, CommonOptions, FilterQuery, FindOneAndReplaceOption, IndexOptions, ObjectID, ReplaceOneOptions, UpdateQuery } from 'mongodb';
+import _ from 'lodash'
+import { CollectionAggregationOptions, CollectionInsertManyOptions, CollectionInsertOneOptions, CommonOptions, FilterQuery, FindOneAndReplaceOption, IndexOptions, ObjectID, ReplaceOneOptions, UpdateQuery } from 'mongodb'
 
 /**
  * Full structure of a document.
  */
-export type Document<T> = T & { _id: ObjectID; createdAt?: Date; updatedAt?: Date };
+export type Document<T> = T & { _id: ObjectID; createdAt?: Date; updatedAt?: Date }
 
 /**
  * Structure that represents parts of a document.
  */
-export type DocumentFragment<T> = Partial<Document<T>>;
+export type DocumentFragment<T> = Partial<Document<T>>
 
 /**
  * Query for finding documents in the MongoDB database.
  */
-export type Query<T> = string | ObjectID | FilterQuery<string | ObjectID | T>;
+export type Query<T> = string | ObjectID | FilterQuery<string | ObjectID | T>
 
 /**
  * Update document descriptor.
  */
-export type Update<T> = UpdateQuery<DocumentFragment<T>> | Partial<{ [K in keyof Document<T>]: Document<T>[K] | undefined }>;
+export type Update<T> = UpdateQuery<DocumentFragment<T>> | Partial<{ [K in keyof Document<T>]: Document<T>[K] | undefined }>
 
 /**
  * Data type for all field types.
  */
-export type FieldType = FieldBasicType | FieldBasicType[];
+export type FieldType = FieldBasicType | FieldBasicType[]
 
 /**
  * Data type for acceptable field values.s
  */
-export type FieldValue = undefined | FieldBasicValue | FieldBasicValue[] | { [subfield: string]: FieldValue };
+export type FieldValue = undefined | FieldBasicValue | FieldBasicValue[] | { [subfield: string]: FieldValue }
 
 /**
  * Data type for field descriptors.
  */
-export type FieldDescriptor<T = { [key: string]: any }> = { [K in keyof T]: FieldSpec };
+export type FieldDescriptor<T = { [key: string]: any }> = { [K in keyof T]: FieldSpec }
 
 /**
  * Specification for defining a field in the MongoDB collection.
@@ -43,80 +43,80 @@ export interface FieldSpec {
   /**
    * @see FieldType
    */
-  type: FieldType | FieldDescriptor;
+  type: FieldType | FieldDescriptor
 
   /**
    * When the type is an ObjectID, that means th is field is a foreign key to
    * another collection. This `ref` value indicates the name of model in which
    * the foreign key belongs to.
    */
-  ref?: string;
+  ref?: string
 
   /**
    * Specifies if this field is required (will be checked during validation
    * process).
    */
-  required?: boolean;
+  required?: boolean
 
   /**
    * Specifies if this field should be encrypted.
    */
-  encrypted?: boolean;
+  encrypted?: boolean
 }
 
 export interface Schema<T> {
   /**
    * Name of the model. Should be in upper cammel-case, i.e. `Model`.
    */
-  model: string;
+  model: string
 
   /**
    * Name of the collection in the MongoDB. Should be in lower camel-case and
    * pluralized, i.e. `models`.
    */
-  collection: string;
+  collection: string
 
   /**
    * Specifies whether timestamp fields will be automatically generated and
    * tracked per CRUD operation. The genrated fields are `updatedAt` and
    * `createdAt`, which are both `Date` values.
    */
-  timestamps?: boolean;
+  timestamps?: boolean
 
   /**
    * Specifies whether upserting is allowed.
    */
-  allowUpserts?: boolean;
+  allowUpserts?: boolean
 
   /**
    * Specifies whether any form of insertion is disabled.
    */
-  noInserts?: boolean;
+  noInserts?: boolean
 
   /**
    * Specifies whether multiple simultaneous insertions are disabled.
    */
-  noInsertMany?: boolean;
+  noInsertMany?: boolean
 
   /**
    * Specifies whether any form of updates is disabled.
    */
-  noUpdates?: boolean;
+  noUpdates?: boolean
 
   /**
    * Specifies whether multiple simultaneous updates are disabled.
    */
-  noUpdateMany?: boolean;
+  noUpdateMany?: boolean
 
   /**
    * Specifies whether any form of deletions is disabled.
    */
-  noDeletes?: boolean;
+  noDeletes?: boolean
 
   /**
    * Specifies whether multiple simultaneous deletions are disabled.
    */
-  noDeleteMany?: boolean;
+  noDeleteMany?: boolean
 
   /**
    * Indicates whether cascade deletion should occur if a document of this
@@ -125,21 +125,21 @@ export interface Schema<T> {
    * documents in the models listed in this array should also be deleted if
    * it has a foreign key to the deleted document.
    */
-  cascade?: string[];
+  cascade?: string[]
 
   /**
    * Defines document fields.
    *
    * @see FieldSpec
    */
-  fields: FieldDescriptor<Required<T>>;
+  fields: FieldDescriptor<Required<T>>
 
   /**
    * Defines the indexes of this collection.
    *
    * @see SchemaIndex
    */
-  indexes?: SchemaIndex[];
+  indexes?: SchemaIndex[]
 }
 
 /**
@@ -149,7 +149,7 @@ export interface ModelRandomFieldsOptions {
   /**
    * Specifies whether optional fields will be generated as well.
    */
-  includeOptionals?: boolean;
+  includeOptionals?: boolean
 }
 
 /**
@@ -161,21 +161,21 @@ export interface ModelValidateDocumentOptions {
    * this is `true` and some required fields are missing in the document to be
    * validated, validation fails.
    */
-  strict?: boolean;
+  strict?: boolean
 
   /**
    * Tells the validation process to account for unique indexes. That is, if
    * this is `false` and one or more field values are not unique when it
    * supposedly has a unique index, validation fails.
    */
-  ignoreUniqueIndex?: boolean;
+  ignoreUniqueIndex?: boolean
 
   /**
    * Tells the validation process that the document contains dot notations to
    * in its keys. Dot notations are usually used by udate queries to update
    * fields in an embedded doc as opposed to a top-level field.
    */
-  accountForDotNotation?: boolean;
+  accountForDotNotation?: boolean
 }
 
 export interface ModelFindOneOptions extends CollectionAggregationOptions {}
@@ -187,7 +187,7 @@ export interface ModelInsertOneOptions extends ModelValidateDocumentOptions, Col
    * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are
    * automatically generated before insertion.
    */
-  ignoreTimestamps?: boolean;
+  ignoreTimestamps?: boolean
 }
 
 export interface ModelInsertManyOptions extends ModelValidateDocumentOptions, CollectionInsertManyOptions {
@@ -195,52 +195,52 @@ export interface ModelInsertManyOptions extends ModelValidateDocumentOptions, Co
    * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are
    * automatically generated before insertion.
    */
-  ignoreTimestamps?: boolean;
+  ignoreTimestamps?: boolean
 }
 
 export interface ModelUpdateOneOptions<T> extends ModelInsertOneOptions, FindOneAndReplaceOption<T>, ReplaceOneOptions {
   /**
    * Specifies whether updated doc is returned when update completes.
    */
-  returnDoc?: boolean;
+  returnDoc?: boolean
 
   /**
    * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are
    * automatically generated before insertion.
    */
-  ignoreTimestamps?: boolean;
+  ignoreTimestamps?: boolean
 
   /**
    * Specifies whether beforeUpdate() and afterUpdate() hooks are skipped.
    */
-  skipHooks?: boolean;
+  skipHooks?: boolean
 }
 
 export interface ModelUpdateManyOptions<T> extends CommonOptions, FindOneAndReplaceOption<T> {
   /**
    * Specifies whether updated docs are returned when update completes.
    */
-  returnDocs?: boolean;
+  returnDocs?: boolean
 
   /**
    * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are
    * automatically generated before insertion.
    */
-  ignoreTimestamps?: boolean;
+  ignoreTimestamps?: boolean
 }
 
 export interface ModelDeleteOneOptions extends CommonOptions {
   /**
    * Specifies whether deleted doc is returned when deletion completes.
    */
-  returnDoc?: boolean;
+  returnDoc?: boolean
 }
 
 export interface ModelDeleteManyOptions extends CommonOptions {
   /**
    * Specifies whether deleted docs are returned when deletion completes.
    */
-  returnDocs?: boolean;
+  returnDocs?: boolean
 }
 
 export interface ModelReplaceOneOptions<T> extends FindOneAndReplaceOption<T>, ModelDeleteOneOptions, ModelInsertOneOptions {}
@@ -249,51 +249,51 @@ export interface ModelCountOptions extends ModelFindManyOptions {}
 
 export interface AggregationStageDescriptor {
   [stageName: string]: {
-    [key: string]: any;
-  };
+    [key: string]: any
+  }
 }
 
-export type AggregationPipeline = AggregationStageDescriptor[];
+export type AggregationPipeline = AggregationStageDescriptor[]
 
 export interface PipelineFactoryOptions {
   // Prefix for document attributes.
-  prefix?: string;
+  prefix?: string
 
   // Pipeline to work with.
-  pipeline?: AggregationPipeline;
+  pipeline?: AggregationPipeline
 }
 
 export interface PipelineFactoryOperators<T> {
   /**
    * Lookup stage spec.
    */
-  $lookup?: LookupStageFactorySpec;
+  $lookup?: LookupStageFactorySpec
 
   /**
    * Match stage spec at the beginning of the pipeline.
    */
-  $match?: MatchStageFactorySpec<T>;
+  $match?: MatchStageFactorySpec<T>
 
   /**
    * Match stage spec appended to end of the pipeline.
    */
-  $prune?: MatchStageFactorySpec<T>;
+  $prune?: MatchStageFactorySpec<T>
 
   /**
    * Group stage spec.
    */
-  $group?: GroupStageFactorySpec;
+  $group?: GroupStageFactorySpec
 
   /**
    * Sort stage spec appended to the end of the pipeline.
    */
-  $sort?: SortStageFactorySpec;
+  $sort?: SortStageFactorySpec
 }
 
-export type MatchStageFactorySpec<T> = Query<T>;
+export type MatchStageFactorySpec<T> = Query<T>
 
 export interface MatchStageFactoryOptions {
-  prefix?: string;
+  prefix?: string
 }
 
 /**
@@ -307,41 +307,41 @@ export interface MatchStageFactoryOptions {
  * followed after the generated  `$lookup`.
  */
 export interface LookupStageFactorySpec {
-  [modelName: string]: boolean | LookupStageFactorySpec;
+  [modelName: string]: boolean | LookupStageFactorySpec
 }
 
 export interface LookupStageFactoryOptions {
   /**
    * Prefix for current attributes to look up.
    */
-  fromPrefix?: string;
+  fromPrefix?: string
 
   /**
    * Prefix for looked up attributes to save to.
    */
-  toPrefix?: string;
+  toPrefix?: string
 }
 
 /**
  * Spec that define the $group stage. If this is a string, a simple $group
  * stage will be generated with `_id` equal this string.
  */
-export type GroupStageFactorySpec = string | { [key: string]: any };
+export type GroupStageFactorySpec = string | { [key: string]: any }
 
 export interface SortStageFactorySpec {
-  [key: string]: any;
+  [key: string]: any
 }
 
 export interface ProjectStageFactoryOptions {
   /**
    * Prefix for current attributes.
    */
-  toPrefix?: string;
+  toPrefix?: string
 
   /**
    * Prefix for target attributes after project.
    */
-  fromPrefix?: string;
+  fromPrefix?: string
 
   /**
    * An object containing key/value pairs representing a field belonging to this
@@ -350,33 +350,33 @@ export interface ProjectStageFactoryOptions {
    * parameter for the reference models `project()` method. The values can also
    * just be `true` to omit passing an `options` parameter.
    */
-  populate?: ProjectStageFactoryOptionsPopulate;
+  populate?: ProjectStageFactoryOptionsPopulate
 
   /**
    * Schema fields to exclude.
    */
-  exclude?: string[];
+  exclude?: string[]
 }
 
 export interface ProjectStageFactoryOptionsPopulate {
-  [modelName: string]: boolean | ProjectStageFactoryOptionsPopulate;
+  [modelName: string]: boolean | ProjectStageFactoryOptionsPopulate
 }
 
 /**
  * Data type for basic field types.
  */
-export type FieldBasicType = typeof String | typeof Number | typeof Boolean | typeof Date | typeof ObjectID | typeof Array;
+export type FieldBasicType = typeof String | typeof Number | typeof Boolean | typeof Date | typeof ObjectID | typeof Array
 
 /**
  * Data type for basic field value.
  */
-export type FieldBasicValue = ObjectID | string | number | boolean | Date;
+export type FieldBasicValue = ObjectID | string | number | boolean | Date
 
 /**
  * Function for formatting field values, in which the value to be formatted will
  * be passed into this function as its only paramenter.
  */
-export type FieldFormatFunction<T = FieldValue> = (value: T) => T;
+export type FieldFormatFunction<T = FieldValue> = (value: T) => T
 
 /**
  * The validation strategy can be one of several types. The behavior per type is
@@ -389,23 +389,23 @@ export type FieldFormatFunction<T = FieldValue> = (value: T) => T;
  *   4. Function: The value to be validated will be passed into this function
  *                and it must return `true`.
  */
-export type FieldValidationStrategy<T = FieldValue> = RegExp | number | T[] | FieldValidationFunction<T>;
+export type FieldValidationStrategy<T = FieldValue> = RegExp | number | T[] | FieldValidationFunction<T>
 
 /**
  * Function for validating field values, in which the value to be validated
  * is passed into the function as its only argument.
  */
-export type FieldValidationFunction<T = FieldValue> = (value: T) => boolean;
+export type FieldValidationFunction<T = FieldValue> = (value: T) => boolean
 
 /**
  * Function for generating a random value for the associated field.
  */
-export type FieldRandomValueFunction<T = FieldValue> = () => T;
+export type FieldRandomValueFunction<T = FieldValue> = () => T
 
 /**
  * Function for generating a default value for the associated field.
  */
-export type FieldDefaultValueFunction<T = FieldValue> = () => T;
+export type FieldDefaultValueFunction<T = FieldValue> = () => T
 
 /**
  * Describes the indexes to be created in the associated collection.
@@ -416,14 +416,14 @@ export interface SchemaIndex {
    *
    * @see {@link https://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#createIndex}
    */
-  spec: { [key: string]: any };
+  spec: { [key: string]: any }
 
   /**
    * Options to be passed to Collection#createIndex.
    *
    * @see {@link https://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#createIndex}
    */
-  options?: IndexOptions;
+  options?: IndexOptions
 }
 
 /**
@@ -434,8 +434,8 @@ export interface SchemaIndex {
  * @returns `true` if value is an Update, `false` otherwise.
  */
 export function typeIsUpdateQuery<T>(value: any): value is UpdateQuery<DocumentFragment<T>> {
-  if (!_.isPlainObject(value)) return false;
-  return Object.keys(value).some(val => val.startsWith('$'));
+  if (!_.isPlainObject(value)) return false
+  return Object.keys(value).some(val => val.startsWith('$'))
 }
 
 /**
@@ -446,10 +446,10 @@ export function typeIsUpdateQuery<T>(value: any): value is UpdateQuery<DocumentF
  * @returns `true` if value is an identifiable document, `false` otherwise.
  */
 export function typeIsIdentifiableDocument(value: any): value is { _id: ObjectID } & { [field: string]: FieldValue } {
-  if (_.isNil(value)) return false;
-  if (!_.isPlainObject(value)) return false;
-  if (!typeIsValidObjectID(value._id)) return false;
-  return true;
+  if (_.isNil(value)) return false
+  if (!_.isPlainObject(value)) return false
+  if (!typeIsValidObjectID(value._id)) return false
+  return true
 }
 
 /**
@@ -460,11 +460,11 @@ export function typeIsIdentifiableDocument(value: any): value is { _id: ObjectID
  * @returns `true` if valie is an ObjectID, `false` otherwise.
  */
 export function typeIsValidObjectID(value: any): value is ObjectID {
-  if (_.isNil(value)) return false;
-  if (!(value instanceof ObjectID)) return false;
-  if (!ObjectID.isValid(value)) return false;
+  if (_.isNil(value)) return false
+  if (!(value instanceof ObjectID)) return false
+  if (!ObjectID.isValid(value)) return false
 
-  return true;
+  return true
 }
 
 /**
@@ -475,9 +475,9 @@ export function typeIsValidObjectID(value: any): value is ObjectID {
  * @returns `true` or `false`.
  */
 export function typeIsFieldDescriptor(value: any): value is FieldDescriptor {
-  if (!_.isPlainObject(value)) return false;
+  if (!_.isPlainObject(value)) return false
 
-  return true;
+  return true
 }
 
 /**
@@ -489,8 +489,8 @@ export function typeIsFieldDescriptor(value: any): value is FieldDescriptor {
  *          `undefined` will be returned.
  */
 export function ObjectIDMake(value: any): ObjectID | undefined {
-  if (!valueIsCompatibleObjectID(value)) return undefined;
-  return new ObjectID(value);
+  if (!valueIsCompatibleObjectID(value)) return undefined
+  return new ObjectID(value)
 }
 
 /**
@@ -503,9 +503,9 @@ export function ObjectIDMake(value: any): ObjectID | undefined {
  * @returns ObjectID or `undefined` if none are found.
  */
 export function ObjectIDGet(value: any): ObjectID | undefined {
-  if (valueIsCompatibleObjectID(value)) return value;
-  if (typeIsIdentifiableDocument(value)) return value._id;
-  return undefined;
+  if (valueIsCompatibleObjectID(value)) return value
+  if (typeIsIdentifiableDocument(value)) return value._id
+  return undefined
 }
 
 /**
@@ -517,13 +517,13 @@ export function ObjectIDGet(value: any): ObjectID | undefined {
  * @returns `true` if they are equal ObjectID's, `false` otherwise.
  */
 export function ObjectIDEqual(value1: any, value2: any): boolean {
-  const objectId1 = ObjectIDGet(value1);
-  const objectId2 = ObjectIDGet(value2);
+  const objectId1 = ObjectIDGet(value1)
+  const objectId2 = ObjectIDGet(value2)
 
-  if (!objectId1) return false;
-  if (!objectId2) return false;
+  if (!objectId1) return false
+  if (!objectId2) return false
 
-  return objectId1.equals(objectId2);
+  return objectId1.equals(objectId2)
 }
 
 /**
@@ -534,17 +534,17 @@ export function ObjectIDEqual(value1: any, value2: any): boolean {
  * @returns `true` or `false`.
  */
 export function valueIsCompatibleObjectID(value: any): boolean {
-  if (_.isNil(value)) return false;
-  if (!ObjectID.isValid(value)) return false;
-  if (value instanceof ObjectID) return true;
+  if (_.isNil(value)) return false
+  if (!ObjectID.isValid(value)) return false
+  if (value instanceof ObjectID) return true
 
   try {
-    const objectId = new ObjectID(value);
-    if (objectId.toHexString() !== String(value)) return false;
+    const objectId = new ObjectID(value)
+    if (objectId.toHexString() !== String(value)) return false
   }
   catch (err) {
-    return false;
+    return false
   }
 
-  return true;
+  return true
 }

@@ -1,14 +1,14 @@
-import _ from 'lodash';
-import { ObjectID } from 'mongodb';
-import { DocumentFragment, Query, Schema, typeIsValidObjectID } from '../types';
-import sanitizeDocument from './sanitizeDocument';
+import _ from 'lodash'
+import { ObjectID } from 'mongodb'
+import { DocumentFragment, Query, Schema, typeIsValidObjectID } from '../types'
+import sanitizeDocument from './sanitizeDocument'
 
 interface SanitizeQueryOptions {
   /**
    * If set to `true`, fields that are not specified in the schema will be
    * deleted as part of the sanitizing process.
    */
-  strict?: boolean;
+  strict?: boolean
 }
 
 /**
@@ -43,15 +43,15 @@ interface SanitizeQueryOptions {
  */
 export default function sanitizeQuery<T>(schema: Schema<T>, query: Query<T>, { strict = true }: SanitizeQueryOptions = {}): { [key: string]: any } {
   if (typeIsValidObjectID(query)) {
-    return { _id: query };
+    return { _id: query }
   }
   else if (_.isString(query)) {
-    return { _id: new ObjectID(query) };
+    return { _id: new ObjectID(query) }
   }
   else if (strict) {
-    return sanitizeDocument<T>(schema, query as DocumentFragment<T>, { accountForDotNotation: true });
+    return sanitizeDocument<T>(schema, query as DocumentFragment<T>, { accountForDotNotation: true })
   }
   else {
-    return query;
+    return query
   }
 }
