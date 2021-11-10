@@ -8,6 +8,7 @@ import { AggregationPipeline, AggregationStageDescriptor, FieldSpec, GroupStageF
 import sanitizeQuery from '../utils/sanitizeQuery'
 
 export default abstract class Aggregation {
+
   /**
    * Generates a pipeline to pass into the aggregation framework.
    *

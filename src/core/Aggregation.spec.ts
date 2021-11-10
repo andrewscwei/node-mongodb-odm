@@ -7,8 +7,8 @@ import { describe } from 'mocha'
 import { ObjectID } from 'mongodb'
 import { configureDb } from '..'
 import Aggregation from '../core/Aggregation'
-import { AggregationStageDescriptor, Schema, typeIsValidObjectID } from '../types'
-import Model from './Model'
+import { AggregationStageDescriptor, Document, ModelDeleteManyOptions, Query, Schema, typeIsValidObjectID } from '../types'
+import Model from './modelFactory'
 
 describe('core/Aggregation', () => {
   before(async () => {
@@ -277,17 +277,25 @@ const BazSchema: Schema<BazProps> = {
   }],
 }
 
+
 class Baz extends Model(BazSchema) {
+
   static randomProps = {
     aString: () => Faker.random.alphaNumeric(10),
   }
 
   static defaultProps = {
-    aNumber: () => Faker.random.number(),
+    aNumber: () => Faker.datatype.number(),
     aBoolean: true,
   }
 
   static formatProps = {
     aFormattedString: (v: string) => v.toUpperCase(),
+  }
+
+  /** @inheritdoc */
+  static async deleteMany(query: Query<BazProps>, options?: ModelDeleteManyOptions): Promise<boolean | Document<BazProps>[]> {
+
+    return true
   }
 }

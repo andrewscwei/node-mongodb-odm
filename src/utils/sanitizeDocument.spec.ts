@@ -1,7 +1,7 @@
 import assert from 'assert'
 import Faker from 'faker'
 import { describe, it } from 'mocha'
-import Model from '../core/Model'
+import Model from '../core/modelFactory'
 import { Schema } from '../types'
 import sanitizeDocument from '../utils/sanitizeDocument'
 
@@ -73,7 +73,7 @@ class Baz extends Model(BazSchema) {
   }
 
   static defaultProps = {
-    aNumber: () => Faker.random.number(),
+    aNumber: () => Faker.datatype.number(),
     aBoolean: true,
   }
 

@@ -9,7 +9,7 @@
  */
 
 import { Collection, Db, MongoClient, MongoError, ObjectID } from 'mongodb'
-import Model from './core/Model'
+import Model from './core/modelFactory'
 
 const debug = require('debug')('mongodb-odm')
 

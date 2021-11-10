@@ -4,7 +4,7 @@ import assert from 'assert'
 import Faker from 'faker'
 import { describe, it } from 'mocha'
 import { ObjectID } from 'mongodb'
-import Model from '../core/Model'
+import Model from '../core/modelFactory'
 import { DocumentFragment, Schema } from '../types'
 import sanitizeQuery from '../utils/sanitizeQuery'
 
@@ -94,7 +94,7 @@ class Baz extends Model(BazSchema) {
   }
 
   static defaultProps = {
-    aNumber: () => Faker.random.number(),
+    aNumber: () => Faker.datatype.number(),
     aBoolean: true,
   }
 
