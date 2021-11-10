@@ -1,3 +1,9 @@
+/** @license node-mongodb-odm
+ * © Andrew Wei
+ * This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
+ */
+
 /**
  * @file Database configuration file. This file exports methods to interact with the MongoClient instance.
  */
@@ -237,4 +243,3 @@ export { default as sanitizeQuery } from './utils/sanitizeQuery'
 export { default as validateFieldValue } from './utils/validateFieldValue'
 export { Model }
 export { ObjectID }
-
