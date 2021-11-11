@@ -1,7 +1,7 @@
 /**
- * @file This is a static, abstract model that provides ORM for a single MongoDB collection. Every other model must
- *       inherit this class. It sets up the ground work for basic CRUD operations, event triggers, query validations,
- *       etc. All returned documents are native JSON objects.
+ * @file This is a static, abstract model that provides ORM for a single MongoDB collection. Every
+ *       other model must inherit this class. It sets up the ground work for basic CRUD operations,
+ *       event triggers, query validations, etc. All returned documents are native JSON objects.
  */
 
 import bcrypt from 'bcrypt'
@@ -260,7 +260,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
         }
 
         // Need to keep the original doc for the didUpdateDocument() hook.
-        const res = await collection.findOneAndUpdate(q as { [key: string]: any }, u, { ...opts, returnOriginal: true })
+        const res = await collection.findOneAndUpdate(q as { [key: string]: any }, u, { ...opts, returnDocument: 'before' })
 
         debug('Updating an existing document...', 'OK', JSON.stringify(q, undefined, 0), JSON.stringify(u, undefined, 0), JSON.stringify(opts, undefined, 0), JSON.stringify(res, undefined, 0))
 
@@ -350,7 +350,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
         else {
           for (let i = 0; i < n; i++) {
             const doc = docs[i]
-            const result = await collection.findOneAndUpdate({ _id: doc._id }, u, { returnOriginal: false, ...opts })
+            const result = await collection.findOneAndUpdate({ _id: doc._id }, u, { returnDocument: 'after', ...opts })
 
             if (result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to update many documents`)
             if (!result.value) throw new Error(`[${this.schema.model}] Unable to update many documents`)
@@ -487,7 +487,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
       const r = await this.beforeInsert(replacement || (await this.randomFields()), opts)
 
       const collection = await this.getCollection()
-      const results = await collection.findOneAndReplace(q, r, { ...opts, returnOriginal: true })
+      const results = await collection.findOneAndReplace(q, r, { ...opts, returnDocument: 'before' })
 
       debug('Replacing an existing document...', 'OK', JSON.stringify(q, undefined, 0), JSON.stringify(r, undefined, 0), JSON.stringify(results, undefined, 0))
 
@@ -506,7 +506,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
       await this.afterDelete(results.value)
       await this.afterInsert(newDoc)
 
-      return (opts.returnOriginal === true) ? oldDoc : newDoc
+      return (opts.returnDocument === 'before') ? oldDoc : newDoc
     }
 
     /** @inheritdoc */
@@ -571,8 +571,8 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
       for (const key in doc) {
         if (!doc.hasOwnProperty(key)) continue
 
-        // Skip validation for fields `_id`, `updatedAt` and `createdAt` since they are automatically generated, but
-        // only if validating top-level fields.
+        // Skip validation for fields `_id`, `updatedAt` and `createdAt` since they are
+        // automatically generated, but only if validating top-level fields.
         if (key === '_id') continue
         if (this.schema.timestamps && (key === 'updatedAt')) continue
         if (this.schema.timestamps && (key === 'createdAt')) continue
@@ -581,8 +581,8 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
         const fieldSpec = options.accountForDotNotation ? getFieldSpecByKey(this.schema.fields, key) : schema.fields[key as keyof T]
         if (!fieldSpec) throw new Error(`[${this.schema.model}] The field '${key}' is not defined in the ${JSON.stringify(this.schema.fields, undefined, 0)}`)
 
-        // #2 Check if field value conforms to its defined spec. Note that the key can be in dot notation because this
-        // method may also be used when applying doc updates.
+        // #2 Check if field value conforms to its defined spec. Note that the key can be in dot
+        // notation because this method may also be used when applying doc updates.
         const val = _.get(doc, key, undefined)
         const validationStrategy = _.get(this.validateProps, key, undefined)
 
@@ -620,9 +620,9 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /**
-     * Handler called before an attempt to insert document into the database. This is a good place to apply any custom
-     * pre-processing to the document before it is inserted into the document. This method must return the document to
-     * be inserted.
+     * Handler called before an attempt to insert document into the database. This is a good place
+     * to apply any custom pre-processing to the document before it is inserted into the document.
+     * This method must return the document to be inserted.
      *
      * @param doc - The document to be inserted.
      * @param options - Additional options.
@@ -641,8 +641,8 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     protected static async didInsertDocument(doc: Document<T>): Promise<void> {}
 
     /**
-     * Handler called before an attempted update operation. This method must return the query and update descriptor for
-     * the update operation.
+     * Handler called before an attempted update operation. This method must return the query and
+     * update descriptor for the update operation.
      *
      * @param query - The query for document(s) to update.
      * @param update - The update descriptor.
@@ -656,9 +656,10 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     /**
      * Handler called after a document or a set of documents have been successfully updated.
      *
-     * @param prevDoc - The document before it is updated. This is only available if `returnDoc` was enabled, and only
-     *                  for updateOne().
-     * @param newDocs - The updated document(s). This is only available if `returnDoc` or `returnDocs` was enabled.
+     * @param prevDoc - The document before it is updated. This is only available if `returnDoc` was
+     *                  enabled, and only for updateOne().
+     * @param newDocs - The updated document(s). This is only available if `returnDoc` or
+     *                  `returnDocs` was enabled.
      */
     protected static async didUpdateDocument(prevDoc?: Document<T>, newDocs?: Document<T> | Document<T>[]): Promise<void> {}
 
@@ -700,8 +701,8 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
         if (!_.isDate(o.updatedAt)) o.updatedAt = new Date() as any
       }
 
-      // Before inserting this document, go through each field and make sure that it has default values and that they
-      // are formatted correctly.
+      // Before inserting this document, go through each field and make sure that it has default
+      // values and that they are formatted correctly.
       for (const key in this.schema.fields) {
         if (!this.schema.fields.hasOwnProperty(key)) continue
         if (o.hasOwnProperty(key)) continue
@@ -717,8 +718,8 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
       // Apply format function defined in the schema if applicable.
       o = await this.formatDocument(o)
 
-      // Finally, validate the document as a final sanity check. Ignore unique indexes in this step. Let the db throw an
-      // error if the inserted doc voilates those indexes.
+      // Finally, validate the document as a final sanity check. Ignore unique indexes in this step.
+      // Let the db throw an error if the inserted doc voilates those indexes.
       await this.validateDocument(o, { ignoreUniqueIndex: true, strict: true, accountForDotNotation: false, ...options })
 
       return o
@@ -751,14 +752,15 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
 
       const [q, u] = await this.willUpdateDocument(query, update)
 
-      // First sanitize the inputs. We want to be able to make sure the query is valid and that the update object is a
-      // proper update query.
+      // First sanitize the inputs. We want to be able to make sure the query is valid and that the
+      // update object is a proper update query.
       const sanitizedQuery = sanitizeQuery<T>(this.schema, q) as DocumentFragment<T>
       const sanitizedUpdate = (typeIsUpdateQuery<T>(u) ? { ...u } : { $set: u }) as UpdateQuery<DocumentFragment<T>>
 
       // Sanitize all update queries. Remap `null` or `undefined` values to `$unset`.
       if (sanitizedUpdate.$set) {
-        // Remember which keys are `null` or `undefined` because when the object is sanitized in the next step, all
+        // Remember which keys are `null` or `undefined` because when the object is sanitized in the
+        // next step, all
         // fields whose values are `null` or `undefined` will be dropped.
         const obj: { [key: string]: any } = sanitizedUpdate.$set
         const unsetFields = Object.keys(obj).filter(v => ((obj[v] === null) || (obj[v] === undefined)))
@@ -767,7 +769,8 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
         // Now sanitize the update object.
         sanitizedUpdate.$set = sanitizeDocument<T>(this.schema, sanitizedUpdate.$set, { accountForDotNotation: true })
 
-        // Remap the previously remembered `null` or `undefined` values to an `$unset` atomic operator.
+        // Remap the previously remembered `null` or `undefined` values to an `$unset` atomic
+        // operator.
         if (n > 0) {
           sanitizedUpdate.$unset = {}
 
@@ -782,13 +785,14 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
         sanitizedUpdate.$setOnInsert = sanitizeDocument<T>(this.schema, sanitizedUpdate.$setOnInsert, { accountForDotNotation: true })
       }
 
-      // Determine if there are new values to add to array fields of the doc (minding duplicates). If so, sanitize them.
+      // Determine if there are new values to add to array fields of the doc (minding duplicates).
+      // If so, sanitize them.
       if (sanitizedUpdate.$addToSet) {
         sanitizedUpdate.$addToSet = sanitizeDocument<T>(this.schema, sanitizedUpdate.$addToSet as DocumentFragment<T>, { accountForDotNotation: true }) as SetFields<DocumentFragment<T>>
       }
 
-      // Determine if there are new values to add to array fields of the doc (without minding duplicates). If so,
-      // sanitize them.
+      // Determine if there are new values to add to array fields of the doc (without minding
+      // duplicates). If so, sanitize them.
       if (sanitizedUpdate.$push) {
         sanitizedUpdate.$push = sanitizeDocument<T>(this.schema, sanitizedUpdate.$push as DocumentFragment<T>, { accountForDotNotation: true }) as PushOperator<DocumentFragment<T>>
       }
@@ -804,8 +808,9 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
         if (!_.isDate(sanitizedUpdate.$set.updatedAt)) sanitizedUpdate.$set = { ...sanitizedUpdate.$set, updatedAt: new Date() }
       }
 
-      // In the case of an upsert, we need to preprocess the query as if this was an insertion. We also need to tell the
-      // database to save all fields in the query to the database as well, unless they are already in the update query.
+      // In the case of an upsert, we need to preprocess the query as if this was an insertion. We
+      // also need to tell the database to save all fields in the query to the database as well,
+      // unless they are already in the update query.
       if (options.upsert === true) {
         // Make a copy of the query in case it is manipulated by the hooks.
         const beforeInsert = await this.beforeInsert(_.cloneDeep(sanitizedQuery), { ...options, strict: false })
@@ -887,9 +892,11 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /**
-     * Deletes documents from other collections that have a foreign key to this collection, as specified in the schema.
+     * Deletes documents from other collections that have a foreign key to this collection, as
+     * specified in the schema.
      *
-     * @param docId - The ID of the document in this collection in which other collections are pointing to.
+     * @param docId - The ID of the document in this collection in which other collections are
+     * pointing to.
      *
      * @throws {Error} Cascade deletion is incorrectly defined in the schema.
      * @throws {Error} Cascade deletion failed because a model cannot be found.
@@ -920,8 +927,8 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /**
-     * Validates a doc of this model to see if the required fields are in place. This process handles spec defined for
-     * embedded docs as well.
+     * Validates a doc of this model to see if the required fields are in place. This process
+     * handles spec defined for embedded docs as well.
      *
      * @param doc - The doc to validate.
      * @param fieldDescriptor - The field descriptor to validate against.

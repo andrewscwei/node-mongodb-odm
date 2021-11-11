@@ -61,8 +61,8 @@ export default interface Model<T> {
   /**
    * Generates an aggregation pipeline specifically for the schema associated with this schema.
    *
-   * @param queryOrOperators - This is either a query for the $match stage or operators for the aggregation factory
-   *                           function.
+   * @param queryOrOperators - This is either a query for the $match stage or operators for the
+   *                           aggregation factory function.
    * @param options - See `PipelineFactoryOptions`.
    *
    * @returns Aggregation pipeline.
@@ -72,8 +72,8 @@ export default interface Model<T> {
   pipeline(queryOrOperators?: Query<T> | PipelineFactoryOperators<T>, options?: PipelineFactoryOptions): AggregationPipeline
 
   /**
-   * Identifies the ObjectID of exactly one document matching the given query. Error is thrown if the document cannot
-   * be identified.
+   * Identifies the ObjectID of exactly one document matching the given query. Error is thrown if
+   * the document cannot be identified.
    *
    * @param query - Query used for the $match stage of the aggregation pipeline.
    *
@@ -85,8 +85,8 @@ export default interface Model<T> {
   identifyOneStrict(query: Query<T>): Promise<ObjectID>
 
   /**
-   * Same as the strict identify one operation but this method swallows all errors and returns `undefined` if document
-   * canot be identified.
+   * Same as the strict identify one operation but this method swallows all errors and returns
+   * `undefined` if document canot be identified.
    *
    * @param query - Query used for the $match stage of the aggregation pipeline.
    *
@@ -106,8 +106,8 @@ export default interface Model<T> {
   identifyMany(query?: Query<T>): Promise<ObjectID[]>
 
   /**
-   * Finds one document from this collection using the aggregation framework. If no query is specified, a random
-   * document will be fetched.
+   * Finds one document from this collection using the aggregation framework. If no query is
+   * specified, a random document will be fetched.
    *
    * @param query - Query used for the $match stage of the aggregation pipeline.
    * @param options - See `module:mongodb.Collection#aggregate`.
@@ -120,8 +120,8 @@ export default interface Model<T> {
   findOneStrict<R = T>(query?: Query<T>, options?: ModelFindOneOptions): Promise<Document<R>>
 
   /**
-   * Same as the strict find one operation but this method swallows all errors and returns `undefined` when no
-   * document is found.
+   * Same as the strict find one operation but this method swallows all errors and returns
+   * `undefined` when no document is found.
    *
    * @param query - Query used for the $match stage of the aggregation pipeline.
    * @param options - See `module:mongodb.Collection#aggregate`.
@@ -133,8 +133,8 @@ export default interface Model<T> {
   findOne<R = T>(query?: Query<T>, options?: ModelFindOneOptions): Promise<Document<R> | undefined>
 
   /**
-   * Finds multiple documents of this collection using the aggregation framework. If no query is specified, all
-   * documents are fetched.
+   * Finds multiple documents of this collection using the aggregation framework. If no query is
+   * specified, all documents are fetched.
    *
    * @param query - Query used for the $match stage of the aggregation pipeline.
    * @param options - See `module:mongodb.Collection#aggregate`.
@@ -162,8 +162,8 @@ export default interface Model<T> {
   insertOneStrict(doc?: DocumentFragment<T>, options?: ModelInsertOneOptions): Promise<Document<T>>
 
   /**
-   * Same as the strict insert one operation except this method swallows all errors and returns `undefined` if the
-   * document cannot be inserted.
+   * Same as the strict insert one operation except this method swallows all errors and returns
+   * `undefined` if the document cannot be inserted.
    *
    * @param doc - Document to be inserted. See `module:mongodb.Collection#insertOne`.
    * @param options - See `ModelInsertOneOptions`.
@@ -194,38 +194,42 @@ export default interface Model<T> {
   insertMany(docs: DocumentFragment<T>[], options?: ModelInsertManyOptions): Promise<Document<T>[]>
 
   /**
-   * Updates one document matched by `query` with `update` object. Note that if upserting, all *required* fields must
-   * be in the `query` param instead of the `update` param.
+   * Updates one document matched by `query` with `update` object. Note that if upserting, all
+   * *required* fields must be in the `query` param instead of the `update` param.
    *
    * @param query - Query for the document to update.
-   * @param update - Either an object whose key/value pair represent the fields belonging to this model to update to,
-   *                 or an update query.
+   * @param update - Either an object whose key/value pair represent the fields belonging to this
+   *                 model to update to, or an update query.
    * @param options - See `ModelUpdateOneOptions`.
    *
    * @returns The updated doc if `returnDoc` is set to `true`, else there is no fulfillment value.
    *
    * @see {@link https://docs.mongodb.com/manual/reference/operator/update-field/}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#updateOne}
-   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndUpdate}
-   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
+   * @see
+   * {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndUpdate}
+   * @see
+   * {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
    *
    * @throws {Error} This method is called even though updates are disabled in the schema.
-   * @throws {Error} Query is invalid probably because it is not santized due to hooks being skipped.
+   * @throws {Error} Query is invalid probably because it is not santized due to hooks being
+   * skipped.
    * @throws {Error} A doc is updated but it cannot be found.
    */
   updateOneStrict(query: Query<T>, update: Update<T>, options?: ModelUpdateOneOptions<T>): Promise<void | Document<T>>
 
   /**
-   * Same as the strict update one operation except this method swallows all errors and returns `undefined` if no
-   * document was updated (and that `returnDoc` is `true`) or `true`/`false` (if `returnDoc` is `false`).
+   * Same as the strict update one operation except this method swallows all errors and returns
+   * `undefined` if no document was updated (and that `returnDoc` is `true`) or `true`/`false` (if
+   * `returnDoc` is `false`).
    *
    * @param query - Query for the document to update.
-   * @param update - Either an object whose key/value pair represent the fields belonging to this model to update to,
-   *                 or an update query.
+   * @param update - Either an object whose key/value pair represent the fields belonging to this
+   *                 model to update to, or an update query.
    * @param options - See `ModelUpdateOneOptions`.
    *
-   * @returns The updated doc if `returnDoc` is set to `true`, else either `true` or `false` depending on whether the
-   *          operation was successful.
+   * @returns The updated doc if `returnDoc` is set to `true`, else either `true` or `false`
+   *          depending on whether the operation was successful.
    *
    * @see Model.updateOneStrict
    */
@@ -235,19 +239,22 @@ export default interface Model<T> {
    * Updates multiple documents matched by `query` with `update` object.
    *
    * @param query - Query for document to update.
-   * @param update - Either an object whose key/value pair represent the fields belonging to this model to update to,
-   *                 or an update query.
+   * @param update - Either an object whose key/value pair represent the fields belonging to this
+   *                 model to update to, or an update query.
    * @param options - See `ModelUpdateManyOptions`.
    *
-   * @returns The updated docs if `returnDocs` is set to `true`, else `true` or `false` depending on whether or not
-   *         the operation was successful.
+   * @returns The updated docs if `returnDocs` is set to `true`, else `true` or `false` depending on
+   *          whether or not the operation was successful.
    *
    * @see {@link https://docs.mongodb.com/manual/reference/operator/update-field/}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#updateMany}
-   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndUpdate}
-   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
+   * @see
+   * {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndUpdate}
+   * @see
+   * {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
    *
-   * @throws {Error} This method is called even though updates or multiple updates are disabled in the schema.
+   * @throws {Error} This method is called even though updates or multiple updates are disabled in
+   * the schema.
    * @throws {Error} One of the updated docs are not returned.
    */
   updateMany(query: Query<T>, update: Update<T>, options?: ModelUpdateManyOptions<T>): Promise<Document<T>[] | boolean>
@@ -276,8 +283,8 @@ export default interface Model<T> {
    * @param query - Query for document to delete.
    * @param options - See `ModelDeleteOneOptions`.
    *
-   * @returns The deleted doc if `returnDoc` is set to `true`, else `true` or `false` depending on whether or not the
-   *         operation was successful.
+   * @returns The deleted doc if `returnDoc` is set to `true`, else `true` or `false` depending on
+   *          whether or not the operation was successful.
    *
    * @see Model.deleteOneStrict
    */
@@ -289,28 +296,35 @@ export default interface Model<T> {
    * @param query - Query to match documents for deletion.
    * @param options - See `ModelDeleteManyOptions`.
    *
-   * @returns The deleted docs if `returnDocs` is set to `true`, else `true` or `false` depending on whether or not
-   *         the operation was successful.
+   * @returns The deleted docs if `returnDocs` is set to `true`, else `true` or `false` depending on
+   *          whether or not the operation was successful.
    *
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#deleteMany}
-   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndDelete}
-   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~deleteWriteOpResult}
+   * @see
+   * {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndDelete}
+   * @see
+   * {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~deleteWriteOpResult}
    *
-   * @throws {Error} This method is called even though deletions or multiple deletions are disabled in the schema.
+   * @throws {Error} This method is called even though deletions or multiple deletions are disabled
+   *                 in the schema.
    */
   deleteMany(query: Query<T>, options?: ModelDeleteManyOptions): Promise<boolean | Document<T>[]>
 
   /**
-   * Replaces one document with another. If `replacement` is not specified, one with random info will be generated.
+   * Replaces one document with another. If `replacement` is not specified, one with random info
+   * will be generated.
    *
    * @param query - Query for document to replace.
    * @param replacement - The replacement document.
    * @param options - See `ModelReplaceOneOptions`.
    *
-   * @returns The replaced document (by default) or the new document (depending on the `returnOriginal` option).
+   * @returns The replaced document (by default) or the new document (depending on the
+   *          `returnDocument` option).
    *
-   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndReplace}
-   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~findAndModifyWriteOpResult}
+   * @see
+   * {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndReplace}
+   * @see
+   * {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~findAndModifyWriteOpResult}
    *
    * @throws {Error} The old document cannot be returned.
    * @throws {Error} The doc is replaced but it cannot be fetched.
@@ -324,8 +338,8 @@ export default interface Model<T> {
    * @param replacement - The replacement document.
    * @param options - See `ModelReplaceOneOptions`.
    *
-   * @returns The replaced document (by default) or the new document (depending on the `returnOriginal` option) if
-   *          available, `undefined` otherwise.
+   * @returns The replaced document (by default) or the new document (depending on the
+   *          `returnDocument` option) if available, `undefined` otherwise.
    *
    * @see Model.findAndReplaceOneStrict
    */
@@ -350,8 +364,8 @@ export default interface Model<T> {
   count(query: Query<T>, options?: ModelCountOptions): Promise<number>
 
   /**
-   * Returns a document whose values are formatted according to the format functions defined in the schema. If the
-   * field is marked as encrypted in the schema, this process takes care of that too.
+   * Returns a document whose values are formatted according to the format functions defined in the
+   * schema. If the field is marked as encrypted in the schema, this process takes care of that too.
    *
    * @param doc - Document to format.
    *
@@ -362,8 +376,8 @@ export default interface Model<T> {
   formatDocument(doc: DocumentFragment<T>): Promise<DocumentFragment<T>>
 
   /**
-   * Validates a document of this collection and throws an error if validation fails. This method does not modify the
-   * document in any way. It checks for the following in order:
+   * Validates a document of this collection and throws an error if validation fails. This method
+   * does not modify the document in any way. It checks for the following in order:
    *   1. Each field is defined in the schema.
    *   2. Each field value conforms to the defined field spec.
    *   3. Unique indexes are enforced (only if `ignoreUniqueIndex` is disabled).
@@ -376,8 +390,8 @@ export default interface Model<T> {
    * @throws {Error} Document is empty.
    * @throws {Error} One of the fields in the document is not defined in the schema.
    * @throws {Error} One of the fields in the document does not pass the validation test.
-   * @throws {Error} One of the fields has a duplicated value as another document in the collection (only if unique
-   *                 indexes are defined in the schema).
+   * @throws {Error} One of the fields has a duplicated value as another document in the collection
+   *                 (only if unique indexes are defined in the schema).
    * @throws {Error} Some required fields in the document are missing.
    */
   validateDocument(doc: DocumentFragment<T>, options: ModelValidateDocumentOptions): Promise<void>

@@ -302,7 +302,7 @@ describe('core/Model', () => {
 
     await Bar.insertOne({ aString: s })
 
-    const doc = await Bar.findAndReplaceOneStrict({ aString: s }, { aString: t }, { returnOriginal: true })
+    const doc = await Bar.findAndReplaceOneStrict({ aString: s }, { aString: t }, { returnDocument: 'before' })
 
     assert(!_.isNil(doc))
     assert(doc.aString === s)
@@ -314,7 +314,7 @@ describe('core/Model', () => {
 
     await Bar.insertOne({ aString: s })
 
-    const doc = await Bar.findAndReplaceOneStrict({ aString: s }, { aString: t }, { returnOriginal: false })
+    const doc = await Bar.findAndReplaceOneStrict({ aString: s }, { aString: t }, { returnDocument: 'after' })
 
     assert(!_.isNil(doc))
     assert(doc.aString === t)

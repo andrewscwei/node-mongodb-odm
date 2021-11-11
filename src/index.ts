@@ -5,10 +5,11 @@
  */
 
 /**
- * @file Database configuration file. This file exports methods to interact with the MongoClient instance.
+ * @file Database configuration file. This file exports methods to interact with the MongoClient
+ * instance.
  */
 
-import { Collection, Db, MongoClient, MongoError, ObjectID } from 'mongodb'
+import { Collection, Db, MongoClient } from 'mongodb'
 import Model from './core/modelFactory'
 
 const debug = require('debug')('mongodb-odm')
@@ -48,8 +49,8 @@ process.on('SIGINT', async () => {
 })
 
 /**
- * Establishes a new connection to the database based on the initialized configuration. If there already exists one,
- * this method does nothing.
+ * Establishes a new connection to the database based on the initialized configuration. If there
+ * already exists one, this method does nothing.
  *
  * @throws {Error} ODM is not configured.
  */
@@ -69,37 +70,7 @@ export async function connectToDb(): Promise<void> {
     useUnifiedTopology: true,
   })
 
-  const connection = client.db(config.name)
-
   debug('Establishing MongoDB client connection...', 'OK', url)
-
-  connection.on('authenticated', () => {
-    debug('Authenticating MongoDB servers...', 'OK')
-  })
-
-  connection.on('close', (err: MongoError) => {
-    debug('Terminating MongoDB client...', 'OK')
-  })
-
-  connection.on('error', (err: MongoError) => {
-    debug('Handling client error...', 'ERR')
-  })
-
-  connection.on('fullsetup', () => {
-    debug('Completing full setup of connection...', 'OK')
-  })
-
-  connection.on('parseError', (err: MongoError) => {
-    debug('Handling parse error...', 'ERR')
-  })
-
-  connection.on('reconnect', () => {
-    debug('Reconnecting to MongoDB client...', 'OK')
-  })
-
-  connection.on('timeout', (err: MongoError) => {
-    debug('Receiving MongoDB client timeout...', 'ERR')
-  })
 }
 
 /**
@@ -176,7 +147,8 @@ export function getModel(modelOrCollectionName: string): ReturnType<typeof Model
 }
 
 /**
- * Gets the MongoDB collection associated with a model or collection name and ensures the indexes defined in its schema.
+ * Gets the MongoDB collection associated with a model or collection name and ensures the indexes
+ * defined in its schema.
  *
  * @param modelOrCollectionName - The model or collection name.
  *
@@ -242,4 +214,3 @@ export { default as sanitizeDocument } from './utils/sanitizeDocument'
 export { default as sanitizeQuery } from './utils/sanitizeQuery'
 export { default as validateFieldValue } from './utils/validateFieldValue'
 export { Model }
-export { ObjectID }
