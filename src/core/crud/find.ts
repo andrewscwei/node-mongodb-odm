@@ -1,11 +1,11 @@
 import _ from 'lodash'
 import { CollectionAggregationOptions } from 'mongodb'
 import * as db from '../..'
-import { AggregationPipeline, Document, AnyFilter, Schema } from '../../types'
+import { AggregationPipeline, AnyFilter, Document, Schema } from '../../types'
 import Aggregation from '../Aggregation'
 
-export async function findOne<T, R = T>(schema: Schema<T>, query: AnyFilter<T>, options: CollectionAggregationOptions = {}): Promise<Document<R>> {
-  const docs = await findMany<T, R>(schema, query, options)
+export async function findOne<T, R = T>(schema: Schema<T>, filter: AnyFilter<T> | AggregationPipeline, options: CollectionAggregationOptions = {}): Promise<Document<R>> {
+  const docs = await findMany<T, R>(schema, filter, options)
 
   if (docs.length === 0) throw new Error(`[${schema.model}] No document found with provided query`)
 
@@ -21,17 +21,16 @@ export async function findOneRandom<T, R = T>(schema: Schema<T>): Promise<Docume
   return docs[0]
 }
 
-export async function findMany<T, R = T>(schema: Schema<T>, queryOrPipeline: AnyFilter<T> | AggregationPipeline, options: CollectionAggregationOptions = {}): Promise<Document<R>[]> {
+export async function findMany<T, R = T>(schema: Schema<T>, filter: AnyFilter<T> | AggregationPipeline, options: CollectionAggregationOptions = {}): Promise<Document<R>[]> {
   const collection = await db.getCollection(schema.collection)
 
   let pipeline: AggregationPipeline
 
-  if (_.isArray(queryOrPipeline)) {
-    pipeline = queryOrPipeline
+  if (_.isArray(filter)) {
+    pipeline = filter
   }
   else {
-    const query = queryOrPipeline
-    pipeline = Aggregation.pipelineFactory(schema, { $match: query })
+    pipeline = Aggregation.pipelineFactory(schema, { $match: filter })
   }
 
   const docs = await collection.aggregate(pipeline, options).toArray()

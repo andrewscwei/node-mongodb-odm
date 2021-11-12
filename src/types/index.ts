@@ -176,9 +176,9 @@ export interface ModelValidateDocumentOptions {
   accountForDotNotation?: boolean
 }
 
-export interface ModelFindOneOptions extends CollectionAggregationOptions {}
+export type ModelFindOneOptions = CollectionAggregationOptions & {}
 
-export interface ModelFindManyOptions extends CollectionAggregationOptions {}
+export type ModelFindManyOptions = CollectionAggregationOptions & {}
 
 export interface ModelInsertOneOptions extends ModelValidateDocumentOptions, CollectionInsertOneOptions {
   /**
@@ -207,11 +207,6 @@ export interface ModelUpdateOneOptions<T> extends ModelInsertOneOptions, FindOne
    * generated before insertion.
    */
   ignoreTimestamps?: boolean
-
-  /**
-   * Specifies whether beforeUpdate() and afterUpdate() hooks are skipped.
-   */
-  skipHooks?: boolean
 }
 
 export interface ModelUpdateManyOptions<T> extends CommonOptions, FindOneAndReplaceOption<T> {
@@ -419,6 +414,11 @@ export interface SchemaIndex {
   options?: IndexOptions
 }
 
+export function typeIsAggregationPipeline(value: any): value is AggregationPipeline {
+  if (_.isArray(value)) return true
+  return false
+}
+
 /**
  * Checks if a value is an UpdateQuery.
  *
@@ -541,3 +541,4 @@ export function valueIsCompatibleObjectID(value: any): boolean {
 
   return true
 }
+

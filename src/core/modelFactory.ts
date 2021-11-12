@@ -8,7 +8,7 @@ import bcrypt from 'bcrypt'
 import _ from 'lodash'
 import { Collection, FilterQuery, ObjectID, UpdateQuery } from 'mongodb'
 import * as db from '..'
-import { AggregationPipeline, Document, DocumentFragment, FieldDefaultValueFunction, FieldDescriptor, FieldFormatFunction, FieldRandomValueFunction, FieldSpec, FieldValidationStrategy, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOperators, PipelineFactoryOptions, AnyFilter, Schema, typeIsFieldDescriptor, typeIsValidObjectID, AnyUpdate } from '../types'
+import { AggregationPipeline, AnyFilter, AnyUpdate, Document, DocumentFragment, FieldDefaultValueFunction, FieldDescriptor, FieldFormatFunction, FieldRandomValueFunction, FieldSpec, FieldValidationStrategy, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOperators, PipelineFactoryOptions, Schema, typeIsAggregationPipeline, typeIsFieldDescriptor, typeIsValidObjectID } from '../types'
 import getFieldSpecByKey from '../utils/getFieldSpecByKey'
 import sanitizeDocument from '../utils/sanitizeDocument'
 import sanitizeFilter from '../utils/sanitizeFilter'
@@ -97,14 +97,14 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async identifyOneStrict(query: AnyFilter<T>): Promise<ObjectID> {
-      return CRUD.identifyOne(this.schema, query)
+    static async identifyOneStrict(filter: AnyFilter<T>): Promise<ObjectID> {
+      return CRUD.identifyOne(this.schema, filter)
     }
 
     /** @inheritdoc */
-    static async identifyOne(query: AnyFilter<T>): Promise<ObjectID | undefined> {
+    static async identifyOne(filter: AnyFilter<T>): Promise<ObjectID | undefined> {
       try {
-        return await this.identifyOneStrict(query)
+        return await this.identifyOneStrict(filter)
       }
       catch (err) {
         return undefined
@@ -112,19 +112,24 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async identifyMany(query?: AnyFilter<T>): Promise<ObjectID[]> {
-      return query ? CRUD.identifyMany(this.schema, query) : CRUD.identifyAll(this.schema)
+    static async identifyMany(filter?: AnyFilter<T>): Promise<ObjectID[]> {
+      return filter ? CRUD.identifyMany(this.schema, filter) : CRUD.identifyAll(this.schema)
     }
 
     /** @inheritdoc */
-    static async findOneStrict<R = T>(query?: AnyFilter<T>, options: ModelFindOneOptions = {}): Promise<Document<R>> {
-      return query ? CRUD.findOne(this.schema, query, options) : CRUD.findOneRandom(this.schema)
+    static async findOneStrict<R = T>(filter?: AnyFilter<T> | AggregationPipeline, options: ModelFindOneOptions = {}): Promise<Document<R>> {
+      if (filter) {
+        return CRUD.findOne(this.schema, typeIsAggregationPipeline(filter) ? filter : this.pipeline(filter), options)
+      }
+      else {
+        return CRUD.findOneRandom(this.schema)
+      }
     }
 
     /** @inheritdoc */
-    static async findOne<R = T>(query?: AnyFilter<T>, options: ModelFindOneOptions = {}): Promise<Document<R> | undefined> {
+    static async findOne<R = T>(filter?: AnyFilter<T> | AggregationPipeline, options: ModelFindOneOptions = {}): Promise<Document<R> | undefined> {
       try {
-        return await this.findOneStrict<R>(query, options)
+        return await this.findOneStrict<R>(filter, options)
       }
       catch (err) {
         return undefined
@@ -132,8 +137,13 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async findMany<R = T>(query?: AnyFilter<T>, options: ModelFindManyOptions = {}): Promise<Document<R>[]> {
-      return query ? CRUD.findMany(this.schema, this.pipeline(query), options) : CRUD.findAll(this.schema)
+    static async findMany<R = T>(filter?: AnyFilter<T> | AggregationPipeline, options: ModelFindManyOptions = {}): Promise<Document<R>[]> {
+      if (filter) {
+        return CRUD.findMany(this.schema, typeIsAggregationPipeline(filter) ? filter : this.pipeline(filter), options)
+      }
+      else {
+        return CRUD.findAll(this.schema)
+      }
     }
 
     /** @inheritdoc */
@@ -178,14 +188,14 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     static async updateOneStrict(query: AnyFilter<T>, update: AnyUpdate<T>, options: ModelUpdateOneOptions<T> = {}): Promise<void | Document<T>> {
       if (this.schema.noUpdates === true) throw new Error(`[${this.schema.model}] Updates are disallowed for this model`)
 
-      const [q, u] = (options.skipHooks === true) ? [query, update] : await this.beforeUpdate(query, update, options)
+      const [q, u] = await this.beforeUpdate(query, update, options)
 
       if (options.returnDoc === true) {
         const [oldDoc, newDoc] = await CRUD.findOneAndUpdate(this.schema, q, u, options)
 
         debug('Updating an existing document...', 'OK', q, u, options, oldDoc, newDoc)
 
-        if (options.skipHooks !== true) await this.afterUpdate(oldDoc, newDoc)
+        await this.afterUpdate(oldDoc, newDoc)
 
         return newDoc
       }
@@ -194,7 +204,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
 
         debug('Updating an existing document...', 'OK', q, u, options)
 
-        if (options.skipHooks !== true) await this.afterUpdate()
+        await this.afterUpdate()
       }
     }
 
