@@ -3,18 +3,21 @@ import { ObjectID } from 'mongodb'
 import { DocumentFragment, Query, Schema, typeIsValidObjectID } from '../types'
 import sanitizeDocument from './sanitizeDocument'
 
-interface SanitizeQueryOptions {
+type SanitizeQueryOptions = {
   /**
-   * If set to `true`, fields that are not specified in the schema will be deleted as part of the sanitizing process.
+   * If set to `true`, fields that are not specified in the schema will be deleted as part of the
+   * sanitizing process.
    */
   strict?: boolean
 }
 
 /**
- * Magically transforms any supported value into a valid input for querying db collections. Note that this process does
- * not perform any data validation. The transformation process includes the following:
+ * Magically transforms any supported value into a valid input for querying db collections. Note
+ * that this process does not perform any data validation. The transformation process includes the
+ * following:
  *   1. Wraps an ObjectID instance or string representing an ObjectID into a proper query.
- *   2. If strict mode is enabled, the provided schema will be used to strip out all extraneous fields from the input.
+ *   2. If strict mode is enabled, the provided schema will be used to strip out all extraneous
+ *      fields from the input.
  *      @see sanitizeDocument
  *
  * @param schema - The collection schema.

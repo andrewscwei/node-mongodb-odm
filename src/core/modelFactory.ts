@@ -6,14 +6,16 @@
 
 import bcrypt from 'bcrypt'
 import _ from 'lodash'
-import { Collection, FilterQuery, ObjectID, PushOperator, SetFields, UpdateQuery } from 'mongodb'
+import { Collection, FilterQuery, ObjectID, UpdateQuery } from 'mongodb'
 import * as db from '..'
-import { AggregationPipeline, Document, DocumentFragment, FieldDefaultValueFunction, FieldDescriptor, FieldFormatFunction, FieldRandomValueFunction, FieldSpec, FieldValidationStrategy, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOperators, PipelineFactoryOptions, Query, Schema, typeIsFieldDescriptor, typeIsUpdateQuery, typeIsValidObjectID, Update } from '../types'
+import { AggregationPipeline, Document, DocumentFragment, FieldDefaultValueFunction, FieldDescriptor, FieldFormatFunction, FieldRandomValueFunction, FieldSpec, FieldValidationStrategy, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOperators, PipelineFactoryOptions, Query, Schema, typeIsFieldDescriptor, typeIsValidObjectID, Update } from '../types'
 import getFieldSpecByKey from '../utils/getFieldSpecByKey'
 import sanitizeDocument from '../utils/sanitizeDocument'
 import sanitizeQuery from '../utils/sanitizeQuery'
+import sanitizeUpdate from '../utils/sanitizeUpdate'
 import validateFieldValue from '../utils/validateFieldValue'
 import Aggregation from './Aggregation'
+import * as CRUD from './crud'
 import Model from './Model'
 
 /**
@@ -50,8 +52,6 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
 
     /** @inheritdoc */
     static async getCollection(): Promise<Collection> {
-      if (!this.schema) throw new Error(`[${this.constructor.name}] This model has no schema, you must define this static property in the derived class`)
-
       return db.getCollection(this.schema.collection)
     }
 
@@ -64,15 +64,14 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
       for (const key in this.randomProps) {
         if (!fields.hasOwnProperty(key)) continue
 
-        // If `includeOptionals` is not set, skip all the optional fields.
         if (!includeOptionals && !fields[key].required) continue
 
-        const func = this.randomProps[key]
+        const fn = this.randomProps[key]
 
-        if (!_.isFunction(func)) throw new Error(`[${this.schema.model}] Property "${key}" in randomProps must be a function`)
+        if (!_.isFunction(fn)) throw new Error(`[${this.schema.model}] Property "${key}" in randomProps must be a function`)
 
         // Use provided random function if provided in the schema.
-        o[key] = func() as any
+        o[key] = fn() as any
       }
 
       for (const key in fixedFields) {
@@ -99,19 +98,13 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
 
     /** @inheritdoc */
     static async identifyOneStrict(query: Query<T>): Promise<ObjectID> {
-      const result = await this.findOne(query)
-
-      if (!result) throw new Error(`[${this.schema.model}] No results found while identifying this ${this.schema.model} using the query ${JSON.stringify(query, undefined, 0)}`)
-      if (!ObjectID.isValid(result._id)) throw new Error(`[${this.schema.model}] ID of ${result} is not a valid ObjectID`)
-
-      return result._id
+      return CRUD.identifyOne(this.schema, query)
     }
 
     /** @inheritdoc */
     static async identifyOne(query: Query<T>): Promise<ObjectID | undefined> {
       try {
-        const o = await this.identifyOneStrict(query)
-        return o
+        return await this.identifyOneStrict(query)
       }
       catch (err) {
         return undefined
@@ -120,49 +113,18 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
 
     /** @inheritdoc */
     static async identifyMany(query?: Query<T>): Promise<ObjectID[]> {
-      const collection = await this.getCollection()
-      const res = await collection.aggregate([
-        ...this.pipeline(query),
-        {
-          $group: {
-            _id: undefined,
-            ids: { $addToSet: '$_id' },
-          },
-        },
-      ]).toArray()
-
-      if (res.length === 0) return []
-      return res[0].ids || []
+      return query ? CRUD.identifyMany(this.schema, query) : CRUD.identifyAll(this.schema)
     }
 
     /** @inheritdoc */
-    static async findOneStrict<R = T>(query?: Query<T>, options?: ModelFindOneOptions): Promise<Document<R>> {
-      const opts = options ?? {}
-
-      if (!query) {
-        const collection = await this.getCollection()
-        const results = await collection.aggregate(this.pipeline().concat([{ $sample: { size: 1 } }])).toArray()
-
-        if (results.length !== 1) throw new Error(`[${this.schema.model}] More or less than 1 random document found even though only 1 was supposed to be found.`)
-
-        return results[0]
-      }
-      else {
-        const results = await this.findMany<R>(query, opts)
-
-        if (results.length === 0) throw new Error(`[${this.schema.model}] No document found with provided query`)
-
-        return results[0]
-      }
+    static async findOneStrict<R = T>(query?: Query<T>, options: ModelFindOneOptions = {}): Promise<Document<R>> {
+      return query ? CRUD.findOne(this.schema, query, options) : CRUD.findOneRandom(this.schema)
     }
 
     /** @inheritdoc */
-    static async findOne<R = T>(query?: Query<T>, options?: ModelFindOneOptions): Promise<Document<R> | undefined> {
-      const opts = options ?? {}
-
+    static async findOne<R = T>(query?: Query<T>, options: ModelFindOneOptions = {}): Promise<Document<R> | undefined> {
       try {
-        const o = await this.findOneStrict<R>(query, opts)
-        return o
+        return await this.findOneStrict<R>(query, options)
       }
       catch (err) {
         return undefined
@@ -170,45 +132,24 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async findMany<R = T>(query?: Query<T>, options?: ModelFindManyOptions): Promise<Document<R>[]> {
-      const opts = options ?? {}
-      const collection = await this.getCollection()
-      const results = await collection.aggregate(this.pipeline(query), opts).toArray()
-      return results
+    static async findMany<R = T>(query?: Query<T>, options: ModelFindManyOptions = {}): Promise<Document<R>[]> {
+      return query ? CRUD.findMany(this.schema, this.pipeline(query), options) : CRUD.findAll(this.schema)
     }
 
     /** @inheritdoc */
-    static async insertOneStrict(doc?: DocumentFragment<T>, options?: ModelInsertOneOptions): Promise<Document<T>> {
-      if (this.schema.noInserts === true) throw new Error(`[${this.schema.model}] Insertions are disallowed for this model`)
+    static async insertOneStrict(doc?: DocumentFragment<T>, options: ModelInsertOneOptions = {}): Promise<Document<T>> {
+      if (schema.noInserts === true) throw new Error(`[${this.schema.model}] Insertions are disallowed for this model`)
 
-      const opts = options ?? {}
-
-      // Apply before insert handler.
-      const t = await this.beforeInsert(doc || (await this.randomFields()), { strict: true, ...opts })
-
-      const collection = await this.getCollection()
-      const results = await collection.insertOne(t, opts).catch(error => { throw error })
-
-      debug('Inserting new document...', 'OK', JSON.stringify(t, undefined, 0), JSON.stringify(results, undefined, 0))
-
-      if (results.result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to insert document`)
-      if (results.ops.length > 1) throw new Error(`[${this.schema.model}] Somehow insertOne() op inserted more than 1 document`)
-      if (results.ops.length < 1) throw new Error(`[${this.schema.model}] Unable to insert document`)
-
-      const o = results.ops[0] as Document<T>
-
-      // Apply after insert handler.
-      await this.afterInsert(o)
-
-      return o
+      const docToInsert = await this.beforeInsert(doc ?? (await this.randomFields()), { strict: true, ...options })
+      const result = await CRUD.insertOne(this.schema, docToInsert, options)
+      await this.afterInsert(result)
+      return result
     }
 
-    static async insertOne(doc?: DocumentFragment<T>, options?: ModelInsertOneOptions): Promise<Document<T> | undefined> {
-      const opts = options ?? {}
-
+    /** @inheritdoc */
+    static async insertOne(doc?: DocumentFragment<T>, options: ModelInsertOneOptions = {}): Promise<Document<T> | undefined> {
       try {
-        const o = await this.insertOneStrict(doc, opts)
-        return o
+        return await this.insertOneStrict(doc, options)
       }
       catch (err) {
         return undefined
@@ -216,163 +157,83 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async insertMany(docs: DocumentFragment<T>[], options?: ModelInsertManyOptions): Promise<Document<T>[]> {
+    static async insertMany(docs: DocumentFragment<T>[], options: ModelInsertManyOptions = {}): Promise<Document<T>[]> {
       if ((this.schema.noInserts === true) || (this.schema.noInsertMany === true)) throw new Error(`[${this.schema.model}] Multiple insertions are disallowed for this model`)
 
-      const opts = options ?? {}
-      const n = docs.length
-      const t: typeof docs = new Array(n)
+      const docsToInsert = await Promise.all(docs.map(doc => this.beforeInsert(doc)))
+      const insertedDocs = await CRUD.insertMany(this.schema, docsToInsert, options)
 
-      // Apply before insert handler to each document.
+      debug('Inserting multiple documents...', 'OK', docsToInsert, insertedDocs)
+
+      const n = insertedDocs.length
+
       for (let i = 0; i < n; i++) {
-        t[i] = await this.beforeInsert(docs[i])
+        await this.afterInsert(insertedDocs[i])
       }
 
-      const collection = await this.getCollection()
-      const results = await collection.insertMany(t, opts)
-
-      debug('Inserting multiple documents...', 'OK', JSON.stringify(t, undefined, 0), JSON.stringify(results, undefined, 0))
-
-      if (results.result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to insert many documents`)
-
-      const o = results.ops as Document<T>[]
-      const m = o.length
-
-      for (let i = 0; i < m; i++) {
-        await this.afterInsert(o[i])
-      }
-
-      return o
+      return insertedDocs
     }
 
     /** @inheritdoc */
-    static async updateOneStrict(query: Query<T>, update: Update<T>, options?: ModelUpdateOneOptions<T>): Promise<void | Document<T>> {
+    static async updateOneStrict(query: Query<T>, update: Update<T>, options: ModelUpdateOneOptions<T> = {}): Promise<void | Document<T>> {
       if (this.schema.noUpdates === true) throw new Error(`[${this.schema.model}] Updates are disallowed for this model`)
 
-      const opts = options ?? {}
+      const [q, u] = (options.skipHooks === true) ? [query, update] : await this.beforeUpdate(query, update, options)
 
-      const collection = await this.getCollection()
-      const [q, u] = (opts.skipHooks === true) ? [query, update] : await this.beforeUpdate(query, update, opts)
+      if (options.returnDoc === true) {
+        const [oldDoc, newDoc] = await CRUD.findOneAndUpdate(this.schema, q, u, options)
 
-      if (opts.returnDoc === true) {
-        if (!_.isPlainObject(q)) {
-          throw new Error(`[${this.schema.model}] Invalid query, maybe it is not sanitized? This could happen if you enabled skipHooks in the options, in which case you will need to sanitize the query yourself`)
-        }
+        debug('Updating an existing document...', 'OK', q, u, options, oldDoc, newDoc)
 
-        // Need to keep the original doc for the didUpdateDocument() hook.
-        const res = await collection.findOneAndUpdate(q as { [key: string]: any }, u, { ...opts, returnDocument: 'before' })
-
-        debug('Updating an existing document...', 'OK', JSON.stringify(q, undefined, 0), JSON.stringify(u, undefined, 0), JSON.stringify(opts, undefined, 0), JSON.stringify(res, undefined, 0))
-
-        if (res.ok !== 1) throw new Error(`[${this.schema.model}] Update failed`)
-
-        let oldDoc
-        let newDoc
-
-        // Handle upserts properly.
-        if (!res.lastErrorObject.upserted) {
-          oldDoc = res.value
-
-          if (!oldDoc) throw new Error(`[${this.schema.model}] Unable to return the old document before the update`)
-
-          newDoc = await this.findOne<T>(oldDoc._id)
-        }
-        else {
-          newDoc = await this.findOne<T>(res.lastErrorObject.upserted)
-        }
-
-        if (!newDoc) {
-          throw new Error(`[${this.schema.model}] Unable to find the updated doc`)
-        }
-
-        if (opts.skipHooks !== true) {
-          await this.afterUpdate(oldDoc, newDoc)
-        }
+        if (options.skipHooks !== true) await this.afterUpdate(oldDoc, newDoc)
 
         return newDoc
       }
       else {
-        if (!_.isPlainObject(q)) {
-          throw new Error(`[${this.schema.model}] Invalid query, maybe it is not sanitized? This could happen if you enabled skipHooks in the options, in which case you will need to sanitize the query yourself`)
-        }
+        await CRUD.updateOne(this.schema, q, u, options)
 
-        const res = await collection.updateOne(q as { [key: string]: any }, u, opts)
+        debug('Updating an existing document...', 'OK', q, u, options)
 
-        debug('Updating an existing document...', 'OK', JSON.stringify(q, undefined, 0), JSON.stringify(u, undefined, 0), JSON.stringify(opts, undefined, 0), JSON.stringify(res, undefined, 0))
-
-        if (res.result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to update the document`)
-        if (res.result.n <= 0) throw new Error(`[${this.schema.model}] Unable to update the document`)
-
-        if (opts.skipHooks !== true) {
-          await this.afterUpdate()
-        }
+        if (options.skipHooks !== true) await this.afterUpdate()
       }
     }
 
     /** @inheritdoc */
-    static async updateOne(query: Query<T>, update: Update<T>, options?: ModelUpdateOneOptions<T>): Promise<boolean | Document<T> | undefined> {
-      const opts = options ?? {}
-
+    static async updateOne(query: Query<T>, update: Update<T>, options: ModelUpdateOneOptions<T> = {}): Promise<boolean | Document<T> | undefined> {
       try {
-        const o = await this.updateOneStrict(query, update, opts)
+        const docOrUndefined = await this.updateOneStrict(query, update, options)
 
-        if (o && opts.returnDoc) return o
-
-        return true
-      }
-      catch (err) {
-        return opts.returnDoc ? undefined : false
-      }
-    }
-
-    /** @inheritdoc */
-    static async updateMany(query: Query<T>, update: Update<T>, options?: ModelUpdateManyOptions<T>): Promise<Document<T>[] | boolean> {
-      if ((this.schema.noUpdates === true) || (this.schema.noUpdateMany === true)) throw new Error(`[${this.schema.model}] Multiple updates are disallowed for this model`)
-
-      const opts = options ?? {}
-      const [q, u] = await this.beforeUpdate(query, update, opts)
-      const collection = await this.getCollection()
-
-      if (opts.returnDocs === true) {
-        const docs = await this.findMany<T>(q)
-        const n = docs.length
-        const results: Document<T>[] = []
-
-        if ((n <= 0) && (opts.upsert === true)) {
-          const res = await this.updateOne(q, u, { ...opts, returnDoc: true, skipHooks: true })
-
-          if (_.isBoolean(res) || _.isNil(res)) {
-            throw new Error(`[${this.schema.model}] Error upserting document during an updateMany operation`)
-          }
-
-          results.push(res)
+        if (docOrUndefined !== undefined && options.returnDoc === true) {
+          return docOrUndefined
         }
         else {
-          for (let i = 0; i < n; i++) {
-            const doc = docs[i]
-            const result = await collection.findOneAndUpdate({ _id: doc._id }, u, { returnDocument: 'after', ...opts })
-
-            if (result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to update many documents`)
-            if (!result.value) throw new Error(`[${this.schema.model}] Unable to update many documents`)
-
-            results.push(result.value)
-          }
-
-          debug('Updating multiple existing documents...', 'OK', JSON.stringify(q, undefined, 0), JSON.stringify(u, undefined, 0), JSON.stringify(opts, undefined, 0), JSON.stringify(results, undefined, 0))
+          return true
         }
+      }
+      catch (err) {
+        return options.returnDoc === true ? undefined : false
+      }
+    }
 
-        await this.afterUpdate(undefined, results)
+    /** @inheritdoc */
+    static async updateMany(query: Query<T>, update: Update<T>, options: ModelUpdateManyOptions<T> = {}): Promise<Document<T>[] | boolean> {
+      if ((this.schema.noUpdates === true) || (this.schema.noUpdateMany === true)) throw new Error(`[${this.schema.model}] Multiple updates are disallowed for this model`)
 
-        return results
+      const [q, u] = await this.beforeUpdate(query, update, options)
+
+      if (options.returnDocs === true) {
+        const [oldDocs, newDocs] = await CRUD.findManyAndUpdate(this.schema, q, u, options)
+
+        debug('Updating multiple existing documents...', 'OK', q, u, options, newDocs)
+
+        await this.afterUpdate(oldDocs, newDocs)
+
+        return newDocs
       }
       else {
-        const results = await collection.updateMany(q, u, opts)
+        const results = await CRUD.updateMany(this.schema, q, u, options)
 
-        debug('Updating multiple existing documents...', 'OK', JSON.stringify(q, undefined, 0), JSON.stringify(u, undefined, 0), JSON.stringify(opts, undefined, 0), JSON.stringify(results, undefined, 0))
-
-        if (results.result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to update many documents`)
-
-        if (results.result.n <= 0) return false
+        debug('Updating multiple existing documents...', 'OK', q, u, options, results)
 
         await this.afterUpdate()
 
@@ -381,98 +242,65 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async deleteOneStrict(query: Query<T>, options?: ModelDeleteOneOptions): Promise<Document<T> | void> {
+    static async deleteOneStrict(query: Query<T>, options: ModelDeleteOneOptions = {}): Promise<Document<T> | void> {
       if (this.schema.noDeletes === true) throw new Error(`[${this.schema.model}] Deletions are disallowed for this model`)
 
-      const opts = options ?? {}
+      const q = await this.beforeDelete(query, options)
 
-      const q = await this.beforeDelete(query, opts)
+      if (options.returnDoc === true) {
+        const deletedDoc = await CRUD.findAndDeleteOne(this.schema, q, options)
 
-      const collection = await this.getCollection()
+        debug('Deleting an existing document...', 'OK', query, deletedDoc)
 
-      if (opts.returnDoc === true) {
-        const results = await collection.findOneAndDelete(q)
+        await this.afterDelete(deletedDoc)
 
-        debug('Deleting an existing document...', 'OK', JSON.stringify(query, undefined, 0), JSON.stringify(results, undefined, 0))
-
-        if (results.ok !== 1) throw new Error(`[${this.schema.model}] Unable to delete document`)
-        if (!results.value) throw new Error(`[${this.schema.model}] Unable to return deleted document`)
-
-        await this.afterDelete(results.value)
-
-        return results.value
+        return deletedDoc
       }
       else {
-        const results = await collection.deleteOne(q, opts)
+        await CRUD.deleteOne(this.schema, q, options)
 
-        debug('Deleting an existing document...', 'OK', JSON.stringify(query, undefined, 0), JSON.stringify(results, undefined, 0))
-
-        if (results.result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to delete document`)
-        if (!_.isNumber(results.result.n) || (results.result.n <= 0)) throw new Error(`[${this.schema.model}] Unable to delete document`)
+        debug('Deleting an existing document...', 'OK', query)
 
         await this.afterDelete()
       }
     }
 
     /** @inheritdoc */
-    static async deleteOne(query: Query<T>, options?: ModelDeleteOneOptions): Promise<Document<T> | boolean | undefined> {
-      const opts = options ?? {}
-
+    static async deleteOne(query: Query<T>, options: ModelDeleteOneOptions = {}): Promise<Document<T> | boolean | undefined> {
       try {
-        const o = await this.deleteOneStrict(query, opts)
+        const docOrUndefined = await this.deleteOneStrict(query, options)
 
-        if (opts.returnDoc && o) {
-          return o
+        if (docOrUndefined !== undefined && options.returnDoc === true) {
+          return docOrUndefined
         }
         else {
           return true
         }
       }
       catch (err) {
-        return opts.returnDoc ? undefined : false
+        return options.returnDoc === true ? undefined : false
       }
     }
 
     /** @inheritdoc */
-    static async deleteMany(query: Query<T>, options?: ModelDeleteManyOptions): Promise<boolean | Document<T>[]> {
+    static async deleteMany(query: Query<T>, options: ModelDeleteManyOptions = {}): Promise<boolean | Document<T>[]> {
       if ((this.schema.noDeletes === true) || (this.schema.noDeleteMany === true)) throw new Error(`[${this.schema.model}] Multiple deletions are disallowed for this model`)
 
-      const opts = options ?? {}
+      const q = await this.beforeDelete(query, options)
 
-      const q = await this.beforeDelete(query, opts)
+      if (options.returnDocs === true) {
+        const deletedDocs = await CRUD.findManyAndDelete(this.schema, q, options)
 
-      const collection = await this.getCollection()
+        debug('Deleting multiple existing documents...:', 'OK', q, deletedDocs)
 
-      if (opts.returnDocs === true) {
-        const docs = await this.findMany<T>(q)
-        const n = docs.length
-        const results: Document<T>[] = []
+        await this.afterDelete(deletedDocs)
 
-        for (let i = 0; i < n; i++) {
-          const doc = docs[i]
-          const result = await collection.findOneAndDelete({ _id: doc._id })
-
-          if (result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to delete documents`)
-
-          if (result.value) {
-            results.push(result.value)
-          }
-        }
-
-        debug('Deleting multiple existing documents...:', 'OK', JSON.stringify(q, undefined, 0), JSON.stringify(results, undefined, 0))
-
-        await this.afterDelete(results)
-
-        return results
+        return deletedDocs
       }
       else {
-        const results = await collection.deleteMany(q, { ...opts })
+        await CRUD.deleteMany(this.schema, q, options)
 
-        debug('Deleting multiple existing documents...:', 'OK', JSON.stringify(q, undefined, 0), JSON.stringify(results, undefined, 0))
-
-        if (results.result.ok !== 1) throw new Error(`[${this.schema.model}] Unable to delete documents`)
-
-        if (!_.isNumber(results.result.n) || (results.result.n <= 0)) return false
+        debug('Deleting multiple existing documents...:', 'OK', q)
 
         await this.afterDelete()
 
@@ -481,41 +309,24 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async findAndReplaceOneStrict(query: Query<T>, replacement?: DocumentFragment<T>, options?: ModelReplaceOneOptions<T>): Promise<Document<T>> {
-      const opts = options ?? {}
-      const q = await this.beforeDelete(query, opts)
-      const r = await this.beforeInsert(replacement || (await this.randomFields()), opts)
+    static async findAndReplaceOneStrict(query: Query<T>, replacement?: DocumentFragment<T>, options: ModelReplaceOneOptions<T> = {}): Promise<Document<T>> {
+      const q = await this.beforeDelete(query, options)
+      const r = await this.beforeInsert(replacement || (await this.randomFields()), options)
 
-      const collection = await this.getCollection()
-      const results = await collection.findOneAndReplace(q, r, { ...opts, returnDocument: 'before' })
+      const [oldDoc, newDoc] = await CRUD.findOneAndReplace(this.schema, q, r, options)
 
-      debug('Replacing an existing document...', 'OK', JSON.stringify(q, undefined, 0), JSON.stringify(r, undefined, 0), JSON.stringify(results, undefined, 0))
+      debug('Replacing an existing document...', 'OK', q, r, oldDoc, newDoc)
 
-      if (results.ok !== 1) throw new Error(`[${this.schema.model}] Unable to find and replace document`)
-
-      const oldDoc = results.value
-
-      if (!oldDoc) throw new Error(`[${this.schema.model}] Unable to return the old document`)
-
-      const newDoc = await this.findOne<T>(r)
-
-      if (!newDoc) {
-        throw new Error(`[${this.schema.model}] Document is replaced but unable to find the new document in the database`)
-      }
-
-      await this.afterDelete(results.value)
+      await this.afterDelete(oldDoc)
       await this.afterInsert(newDoc)
 
-      return (opts.returnDocument === 'before') ? oldDoc : newDoc
+      return options.returnDocument === 'before' ? oldDoc : newDoc
     }
 
     /** @inheritdoc */
-    static async findAndReplaceOne(query: Query<T>, replacement?: DocumentFragment<T>, options?: ModelReplaceOneOptions<T>): Promise<Document<T> | undefined> {
-      const opts = options ?? {}
-
+    static async findAndReplaceOne(query: Query<T>, replacement?: DocumentFragment<T>, options: ModelReplaceOneOptions<T> = {}): Promise<Document<T> | undefined> {
       try {
-        const o = await this.findAndReplaceOneStrict(query, replacement, opts)
-        return o
+        return await this.findAndReplaceOneStrict(query, replacement, options)
       }
       catch (err) {
         return undefined
@@ -755,62 +566,16 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
       // First sanitize the inputs. We want to be able to make sure the query is valid and that the
       // update object is a proper update query.
       const sanitizedQuery = sanitizeQuery<T>(this.schema, q) as DocumentFragment<T>
-      const sanitizedUpdate = (typeIsUpdateQuery<T>(u) ? { ...u } : { $set: u }) as UpdateQuery<DocumentFragment<T>>
-
-      // Sanitize all update queries. Remap `null` or `undefined` values to `$unset`.
-      if (sanitizedUpdate.$set) {
-        // Remember which keys are `null` or `undefined` because when the object is sanitized in the
-        // next step, all
-        // fields whose values are `null` or `undefined` will be dropped.
-        const obj: { [key: string]: any } = sanitizedUpdate.$set
-        const unsetFields = Object.keys(obj).filter(v => ((obj[v] === null) || (obj[v] === undefined)))
-        const n = unsetFields.length
-
-        // Now sanitize the update object.
-        sanitizedUpdate.$set = sanitizeDocument<T>(this.schema, sanitizedUpdate.$set, { accountForDotNotation: true })
-
-        // Remap the previously remembered `null` or `undefined` values to an `$unset` atomic
-        // operator.
-        if (n > 0) {
-          sanitizedUpdate.$unset = {}
-
-          for (let i = 0; i < n; i++) {
-            (sanitizedUpdate.$unset as any)[unsetFields[i]] = ''
-          }
-        }
-      }
-
-      // Determine if there are values to set upon upsert. If so, sanitize them.
-      if (sanitizedUpdate.$setOnInsert) {
-        sanitizedUpdate.$setOnInsert = sanitizeDocument<T>(this.schema, sanitizedUpdate.$setOnInsert, { accountForDotNotation: true })
-      }
-
-      // Determine if there are new values to add to array fields of the doc (minding duplicates).
-      // If so, sanitize them.
-      if (sanitizedUpdate.$addToSet) {
-        sanitizedUpdate.$addToSet = sanitizeDocument<T>(this.schema, sanitizedUpdate.$addToSet as DocumentFragment<T>, { accountForDotNotation: true }) as SetFields<DocumentFragment<T>>
-      }
-
-      // Determine if there are new values to add to array fields of the doc (without minding
-      // duplicates). If so, sanitize them.
-      if (sanitizedUpdate.$push) {
-        sanitizedUpdate.$push = sanitizeDocument<T>(this.schema, sanitizedUpdate.$push as DocumentFragment<T>, { accountForDotNotation: true }) as PushOperator<DocumentFragment<T>>
-      }
+      const sanitizedUpdate = sanitizeUpdate(this.schema, u, options)
 
       // Format all fields in the update query.
       if (sanitizedUpdate.$set) {
         sanitizedUpdate.$set = await this.formatDocument(sanitizedUpdate.$set as Document<T>)
       }
 
-      // Add updated timestamps if applicable.
-      if ((this.schema.timestamps === true) && (options.ignoreTimestamps !== true)) {
-        if (!sanitizedUpdate.$set) sanitizedUpdate.$set = {}
-        if (!_.isDate(sanitizedUpdate.$set.updatedAt)) sanitizedUpdate.$set = { ...sanitizedUpdate.$set, updatedAt: new Date() }
-      }
-
       // In the case of an upsert, we need to preprocess the query as if this was an insertion. We
-      // also need to tell the database to save all fields in the query to the database as well,
-      // unless they are already in the update query.
+      // also need to tell the database to save all fields in the query as well, unless they are
+      // already in the update query.
       if (options.upsert === true) {
         // Make a copy of the query in case it is manipulated by the hooks.
         const beforeInsert = await this.beforeInsert(_.cloneDeep(sanitizedQuery), { ...options, strict: false })
@@ -833,17 +598,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
         await this.validateDocument(sanitizedUpdate.$set as DocumentFragment<T>, { ignoreUniqueIndex: true, accountForDotNotation: true, ...options })
       }
 
-      // Strip empty objects.
-      const { $set, $setOnInsert, $addToSet, $push, ...rest } = sanitizedUpdate
-      const finalizedUpdate = {
-        ...rest,
-        ..._.isEmpty($set) ? {} : { $set },
-        ..._.isEmpty($setOnInsert) ? {} : { $setOnInsert },
-        ..._.isEmpty($addToSet) ? {} : { $addToSet },
-        ..._.isEmpty($push) ? {} : { $push },
-      }
-
-      return [sanitizedQuery, finalizedUpdate]
+      return [sanitizedQuery, sanitizedUpdate]
     }
 
     /**

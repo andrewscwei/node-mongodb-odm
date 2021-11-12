@@ -2,15 +2,16 @@ import _ from 'lodash'
 import { DocumentFragment, Schema } from '../types'
 import getFieldSpecByKey from './getFieldSpecByKey'
 
-interface SanitizeDocumentOptions {
+type SanitizeDocumentOptions = {
   /**
-   * If set to `true`, fields in dot notated format will be further investigated to account for fields in embedded docs.
+   * If set to `true`, fields in the form of a dot delimited string will be treated as nested
+   * fields.
    */
   accountForDotNotation?: boolean
 }
 
 /**
- * Sanitizes a partial document by removing all extraneous fields from it according to the provided schema.
+ * Removes all extraneous fields from a document fragment according to the provided schema.
  *
  * @param schema - The collection schema.
  * @param doc - The partial document to sanitize.
@@ -22,7 +23,7 @@ interface SanitizeDocumentOptions {
  * // Returns { a: 'b', b: 'c' }
  * sanitizeDocument(schema, { a: 'b', b: 'c', garbage: 'garbage' })
  */
-export default function sanitizeDocument<T>(schema: Schema<T>, doc: DocumentFragment<T>, { accountForDotNotation = false }: SanitizeDocumentOptions = {}): DocumentFragment<T> {
+export default function sanitizeDocument<T>(schema: Schema<T>, doc: DocumentFragment<any>, { accountForDotNotation = false }: SanitizeDocumentOptions = {}): DocumentFragment<T> {
   const o: DocumentFragment<T> = {}
 
   for (const key in doc) {
@@ -35,9 +36,9 @@ export default function sanitizeDocument<T>(schema: Schema<T>, doc: DocumentFrag
     if ((key !== '_id') && accountForDotNotation && !getFieldSpecByKey(schema.fields, key)) continue
 
     // Ignore fields with `undefined` or `null` values.
-    if (_.isNil((doc as any)[key])) continue
+    if (_.isNil(doc[key])) continue
 
-    o[key as keyof T] = (doc as any)[key]
+    o[key as keyof T] = doc[key]
   }
 
   return o

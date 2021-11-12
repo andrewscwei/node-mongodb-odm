@@ -11,42 +11,61 @@ import { FieldSpec, FieldType, FieldValidationStrategy, FieldValue, typeIsValidO
  *
  * @throws {TypeError} Value is marked as required in the spec but it is null or undefined.
  * @throws {TypeError} Value is supposed to be a string but it is not.
- * @throws {TypeError} String value does not conform to the RegExp validator (only if validator is a RegExp).
+ * @throws {TypeError} String value does not conform to the RegExp validator (only if validator is a
+ *                     RegExp).
  * @throws {TypeError} Length of string value exceeds the limit (only if validator is a number).
- * @throws {TypeError} String value is not an element of a set of strings (only if validator is an array).
+ * @throws {TypeError} String value is not an element of a set of strings (only if validator is an
+ *                     array).
  * @throws {TypeError} Value is supposed to be a number but it is not.
- * @throws {TypeError} Number value should not have a RegExp validator (only if validator is a RegExp).
+ * @throws {TypeError} Number value should not have a RegExp validator (only if validator is a
+ *                     RegExp).
  * @throws {TypeError} Number value exceeds the maximum (only if validator is a number).
- * @throws {TypeError} Number value is not an element of a set of numbers (only if validator is an array).
+ * @throws {TypeError} Number value is not an element of a set of numbers (only if validator is an
+ *                     array).
  * @throws {TypeError} Value is supposed to be a boolean but it is not.
- * @throws {TypeError} Boolean value should not have a RegExp validator (only if validator is a RegExp).
- * @throws {TypeError} Boolean value should not have a number validator (only if validator is a number).
- * @throws {TypeError} Boolean value is not an element of a set of booleans (only if validator is an array).
+ * @throws {TypeError} Boolean value should not have a RegExp validator (only if validator is a
+ *                     RegExp).
+ * @throws {TypeError} Boolean value should not have a number validator (only if validator is a
+ *                     number).
+ * @throws {TypeError} Boolean value is not an element of a set of booleans (only if validator is an
+ *                     array).
  * @throws {TypeError} Value is supposed to be a date but it is not.
- * @throws {TypeError} Date value should not have a RegExp validator (only if validator is a RegExp).
- * @throws {TypeError} Date value should not have a number validator (only if validator is a number).
- * @throws {TypeError} Date value should not have an array validator (only if validator is an array).
+ * @throws {TypeError} Date value should not have a RegExp validator (only if validator is a
+ *                     RegExp).
+ * @throws {TypeError} Date value should not have a number validator (only if validator is a
+ *                     number).
+ * @throws {TypeError} Date value should not have an array validator (only if validator is an
+ *                     array).
  * @throws {TypeError} Value is supposed to be an array but it is not.
- * @throws {TypeError} Array value should not have a RegExp validator (only if validator is a RegExp).
- * @throws {TypeError} Array value should not have a number validator (only if validator is a number).
- * @throws {TypeError} Array value should not have an array validator (only if validator is an array).
+ * @throws {TypeError} Array value should not have a RegExp validator (only if validator is a
+ *                     RegExp).
+ * @throws {TypeError} Array value should not have a number validator (only if validator is a
+ *                     number).
+ * @throws {TypeError} Array value should not have an array validator (only if validator is an
+ *                     array).
  * @throws {TypeError} Value is supposed to be an ObjectID but it is not.
- * @throws {TypeError} ObjectID value should not have a RegExp validator (only if validator is a RegExp).
- * @throws {TypeError} ObjectID value should not have a number validator (only if validator is a number).
- * @throws {TypeError} ObjectID value should not have an array validator (only if validator is an array).
+ * @throws {TypeError} ObjectID value should not have a RegExp validator (only if validator is a
+ *                     RegExp).
+ * @throws {TypeError} ObjectID value should not have a number validator (only if validator is a
+ *                     number).
+ * @throws {TypeError} ObjectID value should not have an array validator (only if validator is an
+ *                     array).
  * @throws {TypeError} Incorrect definition of a typed array type in the spec.
  * @throws {TypeError} Value is supposed to be a typed array but it is not even an array.
  * @throws {TypeError} One or more values in the typed array is not of the correct type.
  * @throws {TypeError} Value is supposed to be an object but it is not.
- * @throws {TypeError} Object value should not have a RegExp validator (only if validator is a RegExp).
- * @throws {TypeError} Object value should not have a number validator (only if validator is a number).
- * @throws {TypeError} Object value should not have an array validator (only if validator is an array).
+ * @throws {TypeError} Object value should not have a RegExp validator (only if validator is a
+ *                     RegExp).
+ * @throws {TypeError} Object value should not have a number validator (only if validator is a
+ *                     number).
+ * @throws {TypeError} Object value should not have an array validator (only if validator is an
+ *                     array).
  * @throws {TypeError} One or more sub-fields of an object value is not valid.
  * @throws {TypeError} Value fails custom validation function (only if validator is a function).
  */
 export default function validateFieldValue<T = FieldValue>(value: T, spec: FieldSpec, strategy?: FieldValidationStrategy<T>) {
-  // Check if value is `undefined` or `null`, then respond accordingly depending
-  // on whether or not it is a required value.
+  // Check if value is `undefined` or `null`, then respond accordingly depending on whether or not
+  // it is a required value.
   if (_.isNil(value)) {
     if (spec.required) {
       throw new TypeError('The value is marked as required but it is null or undefined')
@@ -147,8 +166,8 @@ export default function validateFieldValue<T = FieldValue>(value: T, spec: Field
       if (spec.type.length !== 1) throw new TypeError(`Incorrect definition of a typed array type ${spec.type}: when specifying a type as an array of another type, wrap the type with [], hence a one-element array`)
       if (!_.isArray(value)) throw new TypeError(`The value "${value}" is expected to be a typed array but instead it is a(n) ${typeof value}`)
 
-      // Ensure that every element within the array conforms to the specified
-      // type and passes the validation test.
+      // Ensure that every element within the array conforms to the specified type and passes the
+      // validation test.
       for (const item of value) {
         validateFieldValue(item, {
           ...spec,

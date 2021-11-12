@@ -1,0 +1,81 @@
+import _ from 'lodash'
+import { UpdateQuery } from 'mongodb'
+import { DocumentFragment, Schema, typeIsUpdateQuery, Update } from '../types'
+import sanitizeDocument from './sanitizeDocument'
+
+type SanitizeUpdateOptions = {
+  ignoreTimestamps?: boolean
+}
+
+/**
+ * Transforms the generic update descriptor specific to this library to an `UpdateQuery` object that
+ * is readable by the MongoDB driver.
+ *
+ * @param update The update object to sanitize.
+ *
+ * @returns The `UpdateQuery` object that can be passed to the MongoDB driver to perform updates.
+ *
+ * @throws
+ */
+export default function sanitizeUpdate<T>(schema: Schema<T>, update: Readonly<Update<T>>, { ignoreTimestamps = false }: SanitizeUpdateOptions = {}): UpdateQuery<DocumentFragment<T>> {
+  let out: UpdateQuery<DocumentFragment<T>>
+
+  if (typeIsUpdateQuery<T>(update)) {
+    out = _.cloneDeep(update)
+  }
+  else {
+    out = {
+      $set: _.cloneDeep(update)
+    }
+  }
+
+  // Sanitize the `$set` operator, but first remember which keys are `null` or `undefined` because
+  // when the operator is sanitized by `sanitizeDocument` in the subsequent step, those keys will
+  // be dropped.
+  const setOperator: Record<string, any> = out.$set ?? {}
+  const unsetFields = Object.keys(setOperator).filter(key => ((setOperator[key] === null) || (setOperator[key] === undefined)))
+
+  // Add updated timestamps if applicable.
+  if ((schema.timestamps === true) && (ignoreTimestamps !== true) && !_.isDate(setOperator.updatedAt)) {
+    setOperator.updatedAt = new Date()
+  }
+
+  // Now sanitize the `$set` operator.
+  out.$set = sanitizeDocument<T>(schema, setOperator, { accountForDotNotation: true }) as typeof out.$set
+
+  // Relocate the previously remembered `null` or `undefined` values to the `$unset` operator.
+  const unsetOperator: Record<string, any> = out.$unset ?? {}
+
+  for (const key of unsetFields) {
+    unsetOperator[key] = ''
+  }
+
+  out.$unset = unsetOperator as typeof out.$unset
+
+  // Sanitize all fields in the `$setOnInsert` operator, if any.
+  if (out.$setOnInsert) {
+    out.$setOnInsert = sanitizeDocument<T>(schema, out.$setOnInsert, { accountForDotNotation: true }) as typeof out.$setOnInsert
+  }
+
+  // Sanitize all fields in the `$addToSet` operator, if any. The `$addToSet` operator automatically
+  // ignores duplicates.
+  if (out.$addToSet) {
+    out.$addToSet = sanitizeDocument<T>(schema, out.$addToSet, { accountForDotNotation: true }) as typeof out.$addToSet
+  }
+
+  // Sanitize all fields in the `$push` operator, if any. The `$push` operator does not mind
+  // duplicates.
+  if (out.$push) {
+    out.$push = sanitizeDocument<T>(schema, out.$push, { accountForDotNotation: true }) as typeof out.$push
+  }
+
+  // Strip empty operators.
+  let key: keyof typeof out
+
+  for (key in out) {
+    if (!_.isEmpty(out[key])) continue
+    delete out[key]
+  }
+
+  return out
+}
