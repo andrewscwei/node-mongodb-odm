@@ -16,14 +16,14 @@ export type Document<T> = T & {
 export type DocumentFragment<T> = Partial<Document<T>>
 
 /**
- * Query for finding documents in the MongoDB database.
+ * Supported filter types for finding documents in the MongoDB database.
  */
-export type Query<T> = string | ObjectID | FilterQuery<string | ObjectID | T>
+export type AnyFilter<T> = FilterQuery<string | ObjectID | T> | ObjectID | string
 
 /**
- * Update document descriptor.
+ * Supported update descriptor types.
  */
-export type Update<T> = UpdateQuery<DocumentFragment<T>> | Partial<{ [K in keyof Document<T>]: Document<T>[K] | undefined }>
+export type AnyUpdate<T> = UpdateQuery<DocumentFragment<T>> | Partial<{ [K in keyof Document<T>]: Document<T>[K] | undefined }>
 
 /**
  * Data type for all field types.
@@ -288,7 +288,7 @@ export interface PipelineFactoryOperators<T> {
   $sort?: SortStageFactorySpec
 }
 
-export type MatchStageFactorySpec<T> = Query<T>
+export type MatchStageFactorySpec<T> = AnyFilter<T>
 
 export interface MatchStageFactoryOptions {
   prefix?: string
@@ -424,7 +424,7 @@ export interface SchemaIndex {
  *
  * @param value - Value to check.
  *
- * @returns `true` if value is an Update, `false` otherwise.
+ * @returns `true` if value is an AnyUpdate, `false` otherwise.
  */
 export function typeIsUpdateQuery<T>(value: any): value is UpdateQuery<DocumentFragment<T>> {
   if (!_.isPlainObject(value)) return false

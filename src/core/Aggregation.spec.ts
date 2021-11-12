@@ -7,7 +7,7 @@ import { describe } from 'mocha'
 import { ObjectID } from 'mongodb'
 import { configureDb } from '..'
 import Aggregation from '../core/Aggregation'
-import { AggregationStageDescriptor, Document, ModelDeleteManyOptions, Query, Schema, typeIsValidObjectID } from '../types'
+import { AggregationStageDescriptor, Document, ModelDeleteManyOptions, AnyFilter, Schema, typeIsValidObjectID } from '../types'
 import Model from './modelFactory'
 
 describe('core/Aggregation', () => {
@@ -294,7 +294,7 @@ class Baz extends Model(BazSchema) {
   }
 
   /** @inheritdoc */
-  static async deleteMany(query: Query<BazProps>, options?: ModelDeleteManyOptions): Promise<boolean | Document<BazProps>[]> {
+  static async deleteMany(query: AnyFilter<BazProps>, options?: ModelDeleteManyOptions): Promise<boolean | Document<BazProps>[]> {
 
     return true
   }

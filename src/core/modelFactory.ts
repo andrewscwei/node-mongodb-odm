@@ -8,10 +8,10 @@ import bcrypt from 'bcrypt'
 import _ from 'lodash'
 import { Collection, FilterQuery, ObjectID, UpdateQuery } from 'mongodb'
 import * as db from '..'
-import { AggregationPipeline, Document, DocumentFragment, FieldDefaultValueFunction, FieldDescriptor, FieldFormatFunction, FieldRandomValueFunction, FieldSpec, FieldValidationStrategy, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOperators, PipelineFactoryOptions, Query, Schema, typeIsFieldDescriptor, typeIsValidObjectID, Update } from '../types'
+import { AggregationPipeline, Document, DocumentFragment, FieldDefaultValueFunction, FieldDescriptor, FieldFormatFunction, FieldRandomValueFunction, FieldSpec, FieldValidationStrategy, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOperators, PipelineFactoryOptions, AnyFilter, Schema, typeIsFieldDescriptor, typeIsValidObjectID, AnyUpdate } from '../types'
 import getFieldSpecByKey from '../utils/getFieldSpecByKey'
 import sanitizeDocument from '../utils/sanitizeDocument'
-import sanitizeQuery from '../utils/sanitizeQuery'
+import sanitizeFilter from '../utils/sanitizeFilter'
 import sanitizeUpdate from '../utils/sanitizeUpdate'
 import validateFieldValue from '../utils/validateFieldValue'
 import Aggregation from './Aggregation'
@@ -83,7 +83,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static pipeline(queryOrOperators?: Query<T> | PipelineFactoryOperators<T>, options?: PipelineFactoryOptions): AggregationPipeline {
+    static pipeline(queryOrOperators?: AnyFilter<T> | PipelineFactoryOperators<T>, options?: PipelineFactoryOptions): AggregationPipeline {
       if (!this.schema) throw new Error(`[${this.constructor.name}] This model has no schema, you must define this static proerty in the derived class`)
 
       // Check if the argument conforms to aggregation factory operators.
@@ -92,17 +92,17 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
       }
       // Otherwise the argument is a query for the $match stage.
       else {
-        return Aggregation.pipelineFactory(this.schema, { $match: queryOrOperators as Query<T> }, options)
+        return Aggregation.pipelineFactory(this.schema, { $match: queryOrOperators as AnyFilter<T> }, options)
       }
     }
 
     /** @inheritdoc */
-    static async identifyOneStrict(query: Query<T>): Promise<ObjectID> {
+    static async identifyOneStrict(query: AnyFilter<T>): Promise<ObjectID> {
       return CRUD.identifyOne(this.schema, query)
     }
 
     /** @inheritdoc */
-    static async identifyOne(query: Query<T>): Promise<ObjectID | undefined> {
+    static async identifyOne(query: AnyFilter<T>): Promise<ObjectID | undefined> {
       try {
         return await this.identifyOneStrict(query)
       }
@@ -112,17 +112,17 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async identifyMany(query?: Query<T>): Promise<ObjectID[]> {
+    static async identifyMany(query?: AnyFilter<T>): Promise<ObjectID[]> {
       return query ? CRUD.identifyMany(this.schema, query) : CRUD.identifyAll(this.schema)
     }
 
     /** @inheritdoc */
-    static async findOneStrict<R = T>(query?: Query<T>, options: ModelFindOneOptions = {}): Promise<Document<R>> {
+    static async findOneStrict<R = T>(query?: AnyFilter<T>, options: ModelFindOneOptions = {}): Promise<Document<R>> {
       return query ? CRUD.findOne(this.schema, query, options) : CRUD.findOneRandom(this.schema)
     }
 
     /** @inheritdoc */
-    static async findOne<R = T>(query?: Query<T>, options: ModelFindOneOptions = {}): Promise<Document<R> | undefined> {
+    static async findOne<R = T>(query?: AnyFilter<T>, options: ModelFindOneOptions = {}): Promise<Document<R> | undefined> {
       try {
         return await this.findOneStrict<R>(query, options)
       }
@@ -132,7 +132,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async findMany<R = T>(query?: Query<T>, options: ModelFindManyOptions = {}): Promise<Document<R>[]> {
+    static async findMany<R = T>(query?: AnyFilter<T>, options: ModelFindManyOptions = {}): Promise<Document<R>[]> {
       return query ? CRUD.findMany(this.schema, this.pipeline(query), options) : CRUD.findAll(this.schema)
     }
 
@@ -175,7 +175,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async updateOneStrict(query: Query<T>, update: Update<T>, options: ModelUpdateOneOptions<T> = {}): Promise<void | Document<T>> {
+    static async updateOneStrict(query: AnyFilter<T>, update: AnyUpdate<T>, options: ModelUpdateOneOptions<T> = {}): Promise<void | Document<T>> {
       if (this.schema.noUpdates === true) throw new Error(`[${this.schema.model}] Updates are disallowed for this model`)
 
       const [q, u] = (options.skipHooks === true) ? [query, update] : await this.beforeUpdate(query, update, options)
@@ -199,7 +199,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async updateOne(query: Query<T>, update: Update<T>, options: ModelUpdateOneOptions<T> = {}): Promise<boolean | Document<T> | undefined> {
+    static async updateOne(query: AnyFilter<T>, update: AnyUpdate<T>, options: ModelUpdateOneOptions<T> = {}): Promise<boolean | Document<T> | undefined> {
       try {
         const docOrUndefined = await this.updateOneStrict(query, update, options)
 
@@ -216,7 +216,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async updateMany(query: Query<T>, update: Update<T>, options: ModelUpdateManyOptions<T> = {}): Promise<Document<T>[] | boolean> {
+    static async updateMany(query: AnyFilter<T>, update: AnyUpdate<T>, options: ModelUpdateManyOptions<T> = {}): Promise<Document<T>[] | boolean> {
       if ((this.schema.noUpdates === true) || (this.schema.noUpdateMany === true)) throw new Error(`[${this.schema.model}] Multiple updates are disallowed for this model`)
 
       const [q, u] = await this.beforeUpdate(query, update, options)
@@ -242,7 +242,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async deleteOneStrict(query: Query<T>, options: ModelDeleteOneOptions = {}): Promise<Document<T> | void> {
+    static async deleteOneStrict(query: AnyFilter<T>, options: ModelDeleteOneOptions = {}): Promise<Document<T> | void> {
       if (this.schema.noDeletes === true) throw new Error(`[${this.schema.model}] Deletions are disallowed for this model`)
 
       const q = await this.beforeDelete(query, options)
@@ -266,7 +266,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async deleteOne(query: Query<T>, options: ModelDeleteOneOptions = {}): Promise<Document<T> | boolean | undefined> {
+    static async deleteOne(query: AnyFilter<T>, options: ModelDeleteOneOptions = {}): Promise<Document<T> | boolean | undefined> {
       try {
         const docOrUndefined = await this.deleteOneStrict(query, options)
 
@@ -283,7 +283,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async deleteMany(query: Query<T>, options: ModelDeleteManyOptions = {}): Promise<boolean | Document<T>[]> {
+    static async deleteMany(query: AnyFilter<T>, options: ModelDeleteManyOptions = {}): Promise<boolean | Document<T>[]> {
       if ((this.schema.noDeletes === true) || (this.schema.noDeleteMany === true)) throw new Error(`[${this.schema.model}] Multiple deletions are disallowed for this model`)
 
       const q = await this.beforeDelete(query, options)
@@ -309,7 +309,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async findAndReplaceOneStrict(query: Query<T>, replacement?: DocumentFragment<T>, options: ModelReplaceOneOptions<T> = {}): Promise<Document<T>> {
+    static async findAndReplaceOneStrict(query: AnyFilter<T>, replacement?: DocumentFragment<T>, options: ModelReplaceOneOptions<T> = {}): Promise<Document<T>> {
       const q = await this.beforeDelete(query, options)
       const r = await this.beforeInsert(replacement || (await this.randomFields()), options)
 
@@ -324,7 +324,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async findAndReplaceOne(query: Query<T>, replacement?: DocumentFragment<T>, options: ModelReplaceOneOptions<T> = {}): Promise<Document<T> | undefined> {
+    static async findAndReplaceOne(query: AnyFilter<T>, replacement?: DocumentFragment<T>, options: ModelReplaceOneOptions<T> = {}): Promise<Document<T> | undefined> {
       try {
         return await this.findAndReplaceOneStrict(query, replacement, options)
       }
@@ -334,14 +334,14 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async exists(query: Query<T>): Promise<boolean> {
+    static async exists(query: AnyFilter<T>): Promise<boolean> {
       const id = await this.identifyOne(query)
 
       return id ? true : false
     }
 
     /** @inheritdoc */
-    static async count(query: Query<T>, options: ModelCountOptions = {}): Promise<number> {
+    static async count(query: AnyFilter<T>, options: ModelCountOptions = {}): Promise<number> {
       const results = await this.findMany(query, options)
 
       return results.length
@@ -460,7 +460,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
      *
      * @returns A tuple of the query and the update descriptor.
      */
-    protected static async willUpdateDocument(query: Query<T>, update: Update<T>): Promise<[Query<T>, Update<T>]> {
+    protected static async willUpdateDocument(query: AnyFilter<T>, update: AnyUpdate<T>): Promise<[AnyFilter<T>, AnyUpdate<T>]> {
       return [query, update]
     }
 
@@ -481,7 +481,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
      *
      * @returns The document to be deleted.
      */
-    protected static async willDeleteDocument(query: Query<T>): Promise<Query<T>> {
+    protected static async willDeleteDocument(query: AnyFilter<T>): Promise<AnyFilter<T>> {
       return query
     }
 
@@ -548,7 +548,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     /**
      * Handler invoked right before an update. This is NOT invoked on an insertion.
      *
-     * @param query - Query for document to update.
+     * @param query - AnyFilter for document to update.
      * @param update - The update to apply.
      * @param options - See `ModelUpdateOneOptions` and `ModelUpdateManyOptions`.
      *
@@ -558,14 +558,14 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
      *
      * @todo Handle remaining update operators.
      */
-    private static async beforeUpdate(query: Query<T>, update: Update<T>, options: ModelUpdateOneOptions<T> | ModelUpdateManyOptions<T> = {}): Promise<[DocumentFragment<T>, UpdateQuery<DocumentFragment<T>>]> {
+    private static async beforeUpdate(query: AnyFilter<T>, update: AnyUpdate<T>, options: ModelUpdateOneOptions<T> | ModelUpdateManyOptions<T> = {}): Promise<[DocumentFragment<T>, UpdateQuery<DocumentFragment<T>>]> {
       if ((options.upsert === true) && (this.schema.allowUpserts !== true)) throw new Error(`[${this.schema.model}] Attempting to upsert a document while upserting is disallowed in the schema`)
 
       const [q, u] = await this.willUpdateDocument(query, update)
 
       // First sanitize the inputs. We want to be able to make sure the query is valid and that the
       // update object is a proper update query.
-      const sanitizedQuery = sanitizeQuery<T>(this.schema, q) as DocumentFragment<T>
+      const sanitizedQuery = sanitizeFilter<T>(this.schema, q) as DocumentFragment<T>
       const sanitizedUpdate = sanitizeUpdate(this.schema, u, options)
 
       // Format all fields in the update query.
@@ -614,15 +614,15 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     /**
      * Handler invoked right before a deletion.
      *
-     * @param query - Query for document to delete.
+     * @param query - AnyFilter for document to delete.
      * @param options - See `ModelDeleteOneOptions` and `ModelDeleteManyOptions`.
      *
      * @returns The processed query for deletion.
      */
-    private static async beforeDelete(query: Query<T>, options: ModelDeleteOneOptions | ModelDeleteManyOptions): Promise<FilterQuery<T>> {
+    private static async beforeDelete(query: AnyFilter<T>, options: ModelDeleteOneOptions | ModelDeleteManyOptions): Promise<FilterQuery<T>> {
       const q = await this.willDeleteDocument(query)
 
-      return sanitizeQuery<T>(this.schema, q) as FilterQuery<T>
+      return sanitizeFilter<T>(this.schema, q) as FilterQuery<T>
     }
 
     /**

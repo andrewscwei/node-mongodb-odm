@@ -5,7 +5,7 @@
 import _ from 'lodash'
 import * as db from '..'
 import { AggregationPipeline, AggregationStageDescriptor, FieldSpec, GroupStageFactorySpec, LookupStageFactoryOptions, LookupStageFactorySpec, MatchStageFactoryOptions, MatchStageFactorySpec, PipelineFactoryOperators, PipelineFactoryOptions, ProjectStageFactoryOptions, Schema, SortStageFactorySpec } from '../types'
-import sanitizeQuery from '../utils/sanitizeQuery'
+import sanitizeFilter from '../utils/sanitizeFilter'
 
 export default abstract class Aggregation {
 
@@ -63,7 +63,7 @@ export default abstract class Aggregation {
    * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/match/}
    */
   static matchStageFactory<T>(schema: Schema<T>, spec: MatchStageFactorySpec<T>, { prefix = '' }: MatchStageFactoryOptions = {}): AggregationPipeline {
-    const sanitized = sanitizeQuery<T>(schema, spec, { strict: false })
+    const sanitized = sanitizeFilter<T>(schema, spec, { strict: false })
     const query: { [key: string]: any } = {}
 
     for (const key in sanitized) {

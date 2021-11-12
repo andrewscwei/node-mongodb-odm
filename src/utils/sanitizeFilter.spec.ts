@@ -6,13 +6,13 @@ import { describe, it } from 'mocha'
 import { ObjectID } from 'mongodb'
 import Model from '../core/modelFactory'
 import { DocumentFragment, Schema } from '../types'
-import sanitizeQuery from '../utils/sanitizeQuery'
+import sanitizeFilter from './sanitizeFilter'
 
-describe('utils/sanitizeQuery', () => {
+describe('utils/sanitizeFilter', () => {
   it('can generate valid queries based on an Object ID string', () => {
     const objectId = new ObjectID()
 
-    const actual = sanitizeQuery<BazProps>(Baz.schema, objectId.toHexString())
+    const actual = sanitizeFilter<BazProps>(Baz.schema, objectId.toHexString())
     const expected = { _id: objectId }
 
     assert.deepStrictEqual(Object.keys(actual), Object.keys(expected))
@@ -22,7 +22,7 @@ describe('utils/sanitizeQuery', () => {
   it('can generate valid queries based on an Object ID', () => {
     const objectId = new ObjectID()
 
-    const actual = sanitizeQuery<BazProps>(Baz.schema, objectId)
+    const actual = sanitizeFilter<BazProps>(Baz.schema, objectId)
     const expected = { _id: objectId }
 
     assert.deepStrictEqual(Object.keys(actual), Object.keys(expected))
@@ -37,7 +37,7 @@ describe('utils/sanitizeQuery', () => {
       aString: 'baz',
     }
 
-    const actual = sanitizeQuery<BazProps>(Baz.schema, {
+    const actual = sanitizeFilter<BazProps>(Baz.schema, {
       ...expected,
       anExtraneousField: 'baz',
     })
@@ -53,7 +53,7 @@ describe('utils/sanitizeQuery', () => {
       aString: 'baz',
     }
 
-    const actual = sanitizeQuery<BazProps>(Baz.schema, {
+    const actual = sanitizeFilter<BazProps>(Baz.schema, {
       ...expected,
       anExtraneousField: 'baz',
     }, {

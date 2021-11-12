@@ -1,5 +1,5 @@
 import { Collection, ObjectID } from 'mongodb'
-import { AggregationPipeline, Document, DocumentFragment, FieldDefaultValueFunction, FieldFormatFunction, FieldRandomValueFunction, FieldValidationStrategy, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOperators, PipelineFactoryOptions, Query, Schema, Update } from '../types'
+import { AggregationPipeline, Document, DocumentFragment, FieldDefaultValueFunction, FieldFormatFunction, FieldRandomValueFunction, FieldValidationStrategy, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOperators, PipelineFactoryOptions, AnyFilter, Schema, AnyUpdate } from '../types'
 
 type ModelImpl = {}
 
@@ -69,47 +69,47 @@ export default interface Model<T> {
    *
    * @throws {Error} Model class has no static property `schema` defined.
    */
-  pipeline(queryOrOperators?: Query<T> | PipelineFactoryOperators<T>, options?: PipelineFactoryOptions): AggregationPipeline
+  pipeline(queryOrOperators?: AnyFilter<T> | PipelineFactoryOperators<T>, options?: PipelineFactoryOptions): AggregationPipeline
 
   /**
    * Identifies the ObjectID of exactly one document matching the given query. Error is thrown if
    * the document cannot be identified.
    *
-   * @param query - Query used for the $match stage of the aggregation pipeline.
+   * @param query - AnyFilter used for the $match stage of the aggregation pipeline.
    *
    * @returns The matching ObjectID.
    *
    * @throws {Error} No document is found with the given query.
    * @throws {Error} ID of the found document is not a valid ObjectID.
    */
-  identifyOneStrict(query: Query<T>): Promise<ObjectID>
+  identifyOneStrict(query: AnyFilter<T>): Promise<ObjectID>
 
   /**
    * Same as the strict identify one operation but this method swallows all errors and returns
    * `undefined` if document canot be identified.
    *
-   * @param query - Query used for the $match stage of the aggregation pipeline.
+   * @param query - AnyFilter used for the $match stage of the aggregation pipeline.
    *
    * @returns The matching ObjectID.
    *
    * @see Model.identifyOneStrict
    */
-  identifyOne(query: Query<T>): Promise<ObjectID | undefined>
+  identifyOne(query: AnyFilter<T>): Promise<ObjectID | undefined>
 
   /**
    * Returns an array of document IDs that match the query.
    *
-   * @param query - Query for this model.
+   * @param query - AnyFilter for this model.
    *
    * @returns Array of matching IDs.
    */
-  identifyMany(query?: Query<T>): Promise<ObjectID[]>
+  identifyMany(query?: AnyFilter<T>): Promise<ObjectID[]>
 
   /**
    * Finds one document from this collection using the aggregation framework. If no query is
    * specified, a random document will be fetched.
    *
-   * @param query - Query used for the $match stage of the aggregation pipeline.
+   * @param query - AnyFilter used for the $match stage of the aggregation pipeline.
    * @param options - See `module:mongodb.Collection#aggregate`.
    *
    * @returns The matching document as the fulfillment value.
@@ -117,31 +117,31 @@ export default interface Model<T> {
    * @throws {Error} More or less than 1 document found.
    * @throws {Error} No document found.
    */
-  findOneStrict<R = T>(query?: Query<T>, options?: ModelFindOneOptions): Promise<Document<R>>
+  findOneStrict<R = T>(query?: AnyFilter<T>, options?: ModelFindOneOptions): Promise<Document<R>>
 
   /**
    * Same as the strict find one operation but this method swallows all errors and returns
    * `undefined` when no document is found.
    *
-   * @param query - Query used for the $match stage of the aggregation pipeline.
+   * @param query - AnyFilter used for the $match stage of the aggregation pipeline.
    * @param options - See `module:mongodb.Collection#aggregate`.
    *
    * @returns The matching document as the fulfillment value.
    *
    * @see Model.findOneStrict
    */
-  findOne<R = T>(query?: Query<T>, options?: ModelFindOneOptions): Promise<Document<R> | undefined>
+  findOne<R = T>(query?: AnyFilter<T>, options?: ModelFindOneOptions): Promise<Document<R> | undefined>
 
   /**
    * Finds multiple documents of this collection using the aggregation framework. If no query is
    * specified, all documents are fetched.
    *
-   * @param query - Query used for the $match stage of the aggregation pipeline.
+   * @param query - AnyFilter used for the $match stage of the aggregation pipeline.
    * @param options - See `module:mongodb.Collection#aggregate`.
    *
    * @returns The matching documents as the fulfillment value.
    */
-  findMany<R = T>(query?: Query<T>, options?: ModelFindManyOptions): Promise<Document<R>[]>
+  findMany<R = T>(query?: AnyFilter<T>, options?: ModelFindManyOptions): Promise<Document<R>[]>
 
   /**
      * Inserts one document into this model's collection. If `doc` is not specified, random fields
@@ -197,7 +197,7 @@ export default interface Model<T> {
    * Updates one document matched by `query` with `update` object. Note that if upserting, all
    * *required* fields must be in the `query` param instead of the `update` param.
    *
-   * @param query - Query for the document to update.
+   * @param query - AnyFilter for the document to update.
    * @param update - Either an object whose key/value pair represent the fields belonging to this
    *                 model to update to, or an update query.
    * @param options - See `ModelUpdateOneOptions`.
@@ -212,18 +212,18 @@ export default interface Model<T> {
    * {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
    *
    * @throws {Error} This method is called even though updates are disabled in the schema.
-   * @throws {Error} Query is invalid probably because it is not santized due to hooks being
+   * @throws {Error} AnyFilter is invalid probably because it is not santized due to hooks being
    * skipped.
    * @throws {Error} A doc is updated but it cannot be found.
    */
-  updateOneStrict(query: Query<T>, update: Update<T>, options?: ModelUpdateOneOptions<T>): Promise<void | Document<T>>
+  updateOneStrict(query: AnyFilter<T>, update: AnyUpdate<T>, options?: ModelUpdateOneOptions<T>): Promise<void | Document<T>>
 
   /**
    * Same as the strict update one operation except this method swallows all errors and returns
    * `undefined` if no document was updated (and that `returnDoc` is `true`) or `true`/`false` (if
    * `returnDoc` is `false`).
    *
-   * @param query - Query for the document to update.
+   * @param query - AnyFilter for the document to update.
    * @param update - Either an object whose key/value pair represent the fields belonging to this
    *                 model to update to, or an update query.
    * @param options - See `ModelUpdateOneOptions`.
@@ -233,12 +233,12 @@ export default interface Model<T> {
    *
    * @see Model.updateOneStrict
    */
-  updateOne(query: Query<T>, update: Update<T>, options?: ModelUpdateOneOptions<T>): Promise<boolean | Document<T> | undefined>
+  updateOne(query: AnyFilter<T>, update: AnyUpdate<T>, options?: ModelUpdateOneOptions<T>): Promise<boolean | Document<T> | undefined>
 
   /**
    * Updates multiple documents matched by `query` with `update` object.
    *
-   * @param query - Query for document to update.
+   * @param query - AnyFilter for document to update.
    * @param update - Either an object whose key/value pair represent the fields belonging to this
    *                 model to update to, or an update query.
    * @param options - See `ModelUpdateManyOptions`.
@@ -257,12 +257,12 @@ export default interface Model<T> {
    * the schema.
    * @throws {Error} One of the updated docs are not returned.
    */
-  updateMany(query: Query<T>, update: Update<T>, options?: ModelUpdateManyOptions<T>): Promise<Document<T>[] | boolean>
+  updateMany(query: AnyFilter<T>, update: AnyUpdate<T>, options?: ModelUpdateManyOptions<T>): Promise<Document<T>[] | boolean>
 
   /**
    * Deletes one document matched by `query`.
    *
-   * @param query - Query for document to delete.
+   * @param query - AnyFilter for document to delete.
    * @param options - See `ModelDeleteOneOptions`.
    *
    * @returns The deleted doc if `returnDoc` is set to `true`.
@@ -275,12 +275,12 @@ export default interface Model<T> {
    * @throws {Error} Unable to return the deleted document when `returnDoc` is `true`.
    * @throws {Error} Unable to delete document.
    */
-  deleteOneStrict(query: Query<T>, options?: ModelDeleteOneOptions): Promise<Document<T> | void>
+  deleteOneStrict(query: AnyFilter<T>, options?: ModelDeleteOneOptions): Promise<Document<T> | void>
 
   /**
    * Same as the strict delete one operation except this method swallows all errors.
    *
-   * @param query - Query for document to delete.
+   * @param query - AnyFilter for document to delete.
    * @param options - See `ModelDeleteOneOptions`.
    *
    * @returns The deleted doc if `returnDoc` is set to `true`, else `true` or `false` depending on
@@ -288,12 +288,12 @@ export default interface Model<T> {
    *
    * @see Model.deleteOneStrict
    */
-  deleteOne(query: Query<T>, options?: ModelDeleteOneOptions): Promise<Document<T> | boolean | undefined>
+  deleteOne(query: AnyFilter<T>, options?: ModelDeleteOneOptions): Promise<Document<T> | boolean | undefined>
 
   /**
    * Deletes multiple documents matched by `query`.
    *
-   * @param query - Query to match documents for deletion.
+   * @param query - AnyFilter to match documents for deletion.
    * @param options - See `ModelDeleteManyOptions`.
    *
    * @returns The deleted docs if `returnDocs` is set to `true`, else `true` or `false` depending on
@@ -308,13 +308,13 @@ export default interface Model<T> {
    * @throws {Error} This method is called even though deletions or multiple deletions are disabled
    *                 in the schema.
    */
-  deleteMany(query: Query<T>, options?: ModelDeleteManyOptions): Promise<boolean | Document<T>[]>
+  deleteMany(query: AnyFilter<T>, options?: ModelDeleteManyOptions): Promise<boolean | Document<T>[]>
 
   /**
    * Replaces one document with another. If `replacement` is not specified, one with random info
    * will be generated.
    *
-   * @param query - Query for document to replace.
+   * @param query - AnyFilter for document to replace.
    * @param replacement - The replacement document.
    * @param options - See `ModelReplaceOneOptions`.
    *
@@ -329,12 +329,12 @@ export default interface Model<T> {
    * @throws {Error} The old document cannot be returned.
    * @throws {Error} The doc is replaced but it cannot be fetched.
    */
-  findAndReplaceOneStrict(query: Query<T>, replacement?: DocumentFragment<T>, options?: ModelReplaceOneOptions<T>): Promise<Document<T>>
+  findAndReplaceOneStrict(query: AnyFilter<T>, replacement?: DocumentFragment<T>, options?: ModelReplaceOneOptions<T>): Promise<Document<T>>
 
   /**
    * Same as the strict find and replace one operation except this method swallows all errors.
    *
-   * @param query - Query for document to replace.
+   * @param query - AnyFilter for document to replace.
    * @param replacement - The replacement document.
    * @param options - See `ModelReplaceOneOptions`.
    *
@@ -343,25 +343,25 @@ export default interface Model<T> {
    *
    * @see Model.findAndReplaceOneStrict
    */
-  findAndReplaceOne(query: Query<T>, replacement?: DocumentFragment<T>, options?: ModelReplaceOneOptions<T>): Promise<Document<T> | undefined>
+  findAndReplaceOne(query: AnyFilter<T>, replacement?: DocumentFragment<T>, options?: ModelReplaceOneOptions<T>): Promise<Document<T> | undefined>
 
   /**
    * Checks if a document exists.
    *
-   * @param query - Query for document to check.
+   * @param query - AnyFilter for document to check.
    *
    * @returns `true` if document exists, `false` otherwise.
    */
-  exists(query: Query<T>): Promise<boolean>
+  exists(query: AnyFilter<T>): Promise<boolean>
 
   /**
    * Counts the documents that match the provided query.
    *
-   * @param query - Query used for the $match stage of the aggregation pipeline.
+   * @param query - AnyFilter used for the $match stage of the aggregation pipeline.
    *
    * @returns The total number of documents found. The minimum is 0.
    */
-  count(query: Query<T>, options?: ModelCountOptions): Promise<number>
+  count(query: AnyFilter<T>, options?: ModelCountOptions): Promise<number>
 
   /**
    * Returns a document whose values are formatted according to the format functions defined in the

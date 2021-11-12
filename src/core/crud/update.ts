@@ -1,10 +1,10 @@
 import _ from 'lodash'
 import { CommonOptions, FilterQuery, FindOneAndReplaceOption, ReplaceOneOptions, UpdateManyOptions, UpdateOneOptions } from 'mongodb'
 import * as db from '../..'
-import { Document, Query, Schema, Update } from '../../types'
+import { Document, AnyFilter, Schema, AnyUpdate } from '../../types'
 import { findMany, findOne } from './find'
 
-export async function findOneAndUpdate<T>(schema: Schema<T>, query: Query<T>, update: Update<T>, options: FindOneAndReplaceOption<T> & ReplaceOneOptions = {}): Promise<[Document<T> | undefined, Document<T>]> {
+export async function findOneAndUpdate<T>(schema: Schema<T>, query: AnyFilter<T>, update: AnyUpdate<T>, options: FindOneAndReplaceOption<T> & ReplaceOneOptions = {}): Promise<[Document<T> | undefined, Document<T>]> {
   if (schema.noUpdates === true) throw new Error(`[${schema.model}] Updates are disallowed for this model`)
 
   const collection = await db.getCollection(schema.collection)
@@ -13,7 +13,7 @@ export async function findOneAndUpdate<T>(schema: Schema<T>, query: Query<T>, up
 
   const results = await collection.findOneAndUpdate(query as { [key: string]: any }, update, { ...options, returnDocument: 'before' })
 
-  if (results.ok !== 1) throw new Error(`[${schema.model}] Update failed`)
+  if (results.ok !== 1) throw new Error(`[${schema.model}] AnyUpdate failed`)
 
   let oldDoc: Document<T> | undefined
   let newDoc: Document<T>
@@ -35,7 +35,7 @@ export async function findOneAndUpdate<T>(schema: Schema<T>, query: Query<T>, up
   return [oldDoc, newDoc]
 }
 
-export async function updateOne<T>(schema: Schema<T>, query: Query<T>, update: Update<T>, options: UpdateOneOptions = {}): Promise<void> {
+export async function updateOne<T>(schema: Schema<T>, query: AnyFilter<T>, update: AnyUpdate<T>, options: UpdateOneOptions = {}): Promise<void> {
   if (schema.noUpdates === true) throw new Error(`[${schema.model}] Updates are disallowed for this model`)
 
   const collection = await db.getCollection(schema.collection)
@@ -48,7 +48,7 @@ export async function updateOne<T>(schema: Schema<T>, query: Query<T>, update: U
   if (results.result.n <= 0) throw new Error(`[${schema.model}] Unable to update the document`)
 }
 
-export async function findManyAndUpdate<T>(schema: Schema<T>, query: Query<T>, update: Update<T>, options: FindOneAndReplaceOption<T> & CommonOptions = {}): Promise<[undefined, Document<T>[]]> {
+export async function findManyAndUpdate<T>(schema: Schema<T>, query: AnyFilter<T>, update: AnyUpdate<T>, options: FindOneAndReplaceOption<T> & CommonOptions = {}): Promise<[undefined, Document<T>[]]> {
   if ((schema.noUpdates === true) || (schema.noUpdateMany === true)) throw new Error(`[${schema.model}] Multiple updates are disallowed for this model`)
 
   const collection = await db.getCollection(schema.collection)
@@ -76,7 +76,7 @@ export async function findManyAndUpdate<T>(schema: Schema<T>, query: Query<T>, u
   return [undefined, newDocs]
 }
 
-export async function updateMany<T>(schema: Schema<T>, query: FilterQuery<T>, update: Update<T>, options: UpdateManyOptions = {}): Promise<Document<T>[] | boolean> {
+export async function updateMany<T>(schema: Schema<T>, query: FilterQuery<T>, update: AnyUpdate<T>, options: UpdateManyOptions = {}): Promise<Document<T>[] | boolean> {
   if ((schema.noUpdates === true) || (schema.noUpdateMany === true)) throw new Error(`[${schema.model}] Multiple updates are disallowed for this model`)
 
   const collection = await db.getCollection(schema.collection)

@@ -1,16 +1,16 @@
 import { FindOneAndReplaceOption, ReplaceOneOptions } from 'mongodb'
 import * as db from '../..'
-import { Document, DocumentFragment, Query, Schema } from '../../types'
+import { Document, DocumentFragment, AnyFilter, Schema } from '../../types'
 import { findOne } from './find'
 
-export async function replaceOne<T>(schema: Schema<T>, query: Query<T>, replacement: DocumentFragment<T>, options: ReplaceOneOptions = {}): Promise<void> {
+export async function replaceOne<T>(schema: Schema<T>, query: AnyFilter<T>, replacement: DocumentFragment<T>, options: ReplaceOneOptions = {}): Promise<void> {
   const collection = await db.getCollection(schema.collection)
   const result = await collection.replaceOne(query as any, replacement, { ...options })
 
   if (result.result.ok !== 1) throw new Error(`[${schema.model}] Unable to find and replace document`)
 }
 
-export async function findOneAndReplace<T>(schema: Schema<T>, query: Query<T>, replacement: DocumentFragment<T>, options: FindOneAndReplaceOption<T> = {}): Promise<[Document<T>, Document<T>]> {
+export async function findOneAndReplace<T>(schema: Schema<T>, query: AnyFilter<T>, replacement: DocumentFragment<T>, options: FindOneAndReplaceOption<T> = {}): Promise<[Document<T>, Document<T>]> {
   const collection = await db.getCollection(schema.collection)
   const results = await collection.findOneAndReplace(query as any, replacement, { ...options, returnDocument: 'before' })
 

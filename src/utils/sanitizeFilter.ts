@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import { ObjectID } from 'mongodb'
-import { DocumentFragment, Query, Schema, typeIsValidObjectID } from '../types'
+import { DocumentFragment, AnyFilter, Schema, typeIsValidObjectID } from '../types'
 import sanitizeDocument from './sanitizeDocument'
 
 type SanitizeQueryOptions = {
@@ -28,20 +28,20 @@ type SanitizeQueryOptions = {
  *
  * @example
  * // Returns { "_id": 5927f337c5178b9665b56b1e }
- * sanitizeQuery(schema, 5927f337c5178b9665b56b1e)
- * sanitizeQuery(schema, '5927f337c5178b9665b56b1e')
- * sanitizeQuery(schema, { _id: '5927f337c5178b9665b56b1e' })
+ * sanitizeFilter(schema, 5927f337c5178b9665b56b1e)
+ * sanitizeFilter(schema, '5927f337c5178b9665b56b1e')
+ * sanitizeFilter(schema, { _id: '5927f337c5178b9665b56b1e' })
  *
  * @example
  * // Returns { a: 'b', b: 'c', garbage: 'garbage' }
- * sanitizeQuery(schema, { a: 'b', b: 'c', garbage: 'garbage' }, { strict: false })
+ * sanitizeFilter(schema, { a: 'b', b: 'c', garbage: 'garbage' }, { strict: false })
  *
  * @example
  * // Returns { a: 'b', b: 'c' }
- * sanitizeQuery(schema, { a: 'b', b: 'c', garbage: 'garbage' })
- * sanitizeQuery(schema, { a: 'b', b: 'c', garbage: 'garbage' }, { strict: true })
+ * sanitizeFilter(schema, { a: 'b', b: 'c', garbage: 'garbage' })
+ * sanitizeFilter(schema, { a: 'b', b: 'c', garbage: 'garbage' }, { strict: true })
  */
-export default function sanitizeQuery<T>(schema: Schema<T>, query: Query<T>, { strict = true }: SanitizeQueryOptions = {}): { [key: string]: any } {
+export default function sanitizeFilter<T>(schema: Schema<T>, query: AnyFilter<T>, { strict = true }: SanitizeQueryOptions = {}): { [key: string]: any } {
   if (typeIsValidObjectID(query)) {
     return { _id: query }
   }

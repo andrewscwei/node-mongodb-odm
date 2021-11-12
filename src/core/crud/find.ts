@@ -1,10 +1,10 @@
 import _ from 'lodash'
 import { CollectionAggregationOptions } from 'mongodb'
 import * as db from '../..'
-import { AggregationPipeline, Document, Query, Schema } from '../../types'
+import { AggregationPipeline, Document, AnyFilter, Schema } from '../../types'
 import Aggregation from '../Aggregation'
 
-export async function findOne<T, R = T>(schema: Schema<T>, query: Query<T>, options: CollectionAggregationOptions = {}): Promise<Document<R>> {
+export async function findOne<T, R = T>(schema: Schema<T>, query: AnyFilter<T>, options: CollectionAggregationOptions = {}): Promise<Document<R>> {
   const docs = await findMany<T, R>(schema, query, options)
 
   if (docs.length === 0) throw new Error(`[${schema.model}] No document found with provided query`)
@@ -21,7 +21,7 @@ export async function findOneRandom<T, R = T>(schema: Schema<T>): Promise<Docume
   return docs[0]
 }
 
-export async function findMany<T, R = T>(schema: Schema<T>, queryOrPipeline: Query<T> | AggregationPipeline, options: CollectionAggregationOptions = {}): Promise<Document<R>[]> {
+export async function findMany<T, R = T>(schema: Schema<T>, queryOrPipeline: AnyFilter<T> | AggregationPipeline, options: CollectionAggregationOptions = {}): Promise<Document<R>[]> {
   const collection = await db.getCollection(schema.collection)
 
   let pipeline: AggregationPipeline

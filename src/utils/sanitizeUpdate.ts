@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import { UpdateQuery } from 'mongodb'
-import { DocumentFragment, Schema, typeIsUpdateQuery, Update } from '../types'
+import { DocumentFragment, Schema, typeIsUpdateQuery, AnyUpdate } from '../types'
 import sanitizeDocument from './sanitizeDocument'
 
 type SanitizeUpdateOptions = {
@@ -17,7 +17,7 @@ type SanitizeUpdateOptions = {
  *
  * @throws
  */
-export default function sanitizeUpdate<T>(schema: Schema<T>, update: Readonly<Update<T>>, { ignoreTimestamps = false }: SanitizeUpdateOptions = {}): UpdateQuery<DocumentFragment<T>> {
+export default function sanitizeUpdate<T>(schema: Schema<T>, update: Readonly<AnyUpdate<T>>, { ignoreTimestamps = false }: SanitizeUpdateOptions = {}): UpdateQuery<DocumentFragment<T>> {
   let out: UpdateQuery<DocumentFragment<T>>
 
   if (typeIsUpdateQuery<T>(update)) {

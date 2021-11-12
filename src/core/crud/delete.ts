@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import { CommonOptions, FilterQuery } from 'mongodb'
 import * as db from '../..'
-import { Document, Query, Schema } from '../../types'
+import { Document, AnyFilter, Schema } from '../../types'
 import { findMany } from './find'
 
 export async function deleteOne<T>(schema: Schema<T>, query: FilterQuery<T>, options: CommonOptions = {}): Promise<void> {
@@ -14,7 +14,7 @@ export async function deleteOne<T>(schema: Schema<T>, query: FilterQuery<T>, opt
   if (!_.isNumber(result.result.n) || (result.result.n <= 0)) throw new Error(`[${schema.model}] Unable to delete document`)
 }
 
-export async function findAndDeleteOne<T>(schema: Schema<T>, query: Query<T>, options: CommonOptions = {}): Promise<Document<T>> {
+export async function findAndDeleteOne<T>(schema: Schema<T>, query: AnyFilter<T>, options: CommonOptions = {}): Promise<Document<T>> {
   if (schema.noDeletes === true) throw new Error(`[${schema.model}] Deletions are disallowed for this model`)
 
   const collection = await db.getCollection(schema.collection)
@@ -26,7 +26,7 @@ export async function findAndDeleteOne<T>(schema: Schema<T>, query: Query<T>, op
   return result.value
 }
 
-export async function deleteMany<T>(schema: Schema<T>, query: Query<T>, options: CommonOptions = {}): Promise<boolean> {
+export async function deleteMany<T>(schema: Schema<T>, query: AnyFilter<T>, options: CommonOptions = {}): Promise<boolean> {
   if ((schema.noDeletes === true) || (schema.noDeleteMany === true)) throw new Error(`[${schema.model}] Multiple deletions are disallowed for this model`)
 
   const collection = await db.getCollection(schema.collection)
@@ -39,7 +39,7 @@ export async function deleteMany<T>(schema: Schema<T>, query: Query<T>, options:
   return true
 }
 
-export async function findManyAndDelete<T>(schema: Schema<T>, query: Query<T>, options: CommonOptions = {}): Promise<Document<T>[]> {
+export async function findManyAndDelete<T>(schema: Schema<T>, query: AnyFilter<T>, options: CommonOptions = {}): Promise<Document<T>[]> {
   if ((schema.noDeletes === true) || (schema.noDeleteMany === true)) throw new Error(`[${schema.model}] Multiple deletions are disallowed for this model`)
 
   const collection = await db.getCollection(schema.collection)
