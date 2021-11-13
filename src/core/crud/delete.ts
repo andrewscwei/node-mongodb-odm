@@ -1,7 +1,8 @@
 import _ from 'lodash'
 import { CommonOptions, FilterQuery } from 'mongodb'
 import * as db from '../..'
-import { Document, AnyFilter, Schema } from '../../types'
+import { AnyFilter, Document } from '../../types'
+import Schema from '../Schema'
 import { findMany } from './find'
 
 export async function deleteOne<T>(schema: Schema<T>, query: FilterQuery<T>, options: CommonOptions = {}): Promise<void> {

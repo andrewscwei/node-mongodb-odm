@@ -1,7 +1,8 @@
 import _ from 'lodash'
 import { CommonOptions, FilterQuery, FindOneAndReplaceOption, ReplaceOneOptions, UpdateManyOptions, UpdateOneOptions } from 'mongodb'
 import * as db from '../..'
-import { Document, AnyFilter, Schema, AnyUpdate } from '../../types'
+import { AnyFilter, AnyUpdate, Document } from '../../types'
+import Schema from '../Schema'
 import { findMany, findOne } from './find'
 
 export async function findOneAndUpdate<T>(schema: Schema<T>, query: AnyFilter<T>, update: AnyUpdate<T>, options: FindOneAndReplaceOption<T> & ReplaceOneOptions = {}): Promise<[Document<T> | undefined, Document<T>]> {

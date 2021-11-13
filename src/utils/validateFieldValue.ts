@@ -1,12 +1,14 @@
 import _ from 'lodash'
 import { ObjectID } from 'mongodb'
-import { FieldSpec, FieldType, FieldValidationStrategy, FieldValue, typeIsValidObjectID } from '../types'
+import { FieldValidationStrategy } from '../core/Model'
+import { FieldDescriptor, FieldType, FieldValue } from '../core/Schema'
+import { typeIsValidObjectID } from '../types'
 
 /**
  * Checks a value against field properties definied in a schema.
  *
  * @param value - The value to check.
- * @param spec - @see FieldSpec
+ * @param spec - @see FieldDescriptor
  * @param strategy - @see FieldValidationStrategy
  *
  * @throws {TypeError} Value is marked as required in the spec but it is null or undefined.
@@ -63,7 +65,7 @@ import { FieldSpec, FieldType, FieldValidationStrategy, FieldValue, typeIsValidO
  * @throws {TypeError} One or more sub-fields of an object value is not valid.
  * @throws {TypeError} Value fails custom validation function (only if validator is a function).
  */
-export default function validateFieldValue<T = FieldValue>(value: T, spec: FieldSpec, strategy?: FieldValidationStrategy<T>) {
+export default function validateFieldValue<T = FieldValue>(value: T, spec: FieldDescriptor, strategy?: FieldValidationStrategy<T>) {
   // Check if value is `undefined` or `null`, then respond accordingly depending on whether or not
   // it is a required value.
   if (_.isNil(value)) {
@@ -192,7 +194,7 @@ export default function validateFieldValue<T = FieldValue>(value: T, spec: Field
       // Validate each field.
       for (const subFieldName in spec.type) {
         if (!spec.type.hasOwnProperty(subFieldName)) continue
-        validateFieldValue((value as any)[subFieldName], (spec.type as { [key: string]: FieldSpec })[subFieldName])
+        validateFieldValue((value as any)[subFieldName], (spec.type as { [key: string]: FieldDescriptor })[subFieldName])
       }
     }
   }

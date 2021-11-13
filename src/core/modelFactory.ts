@@ -1,22 +1,23 @@
 /**
  * @file This is a static, abstract model that provides ORM for a single MongoDB collection. Every
  *       other model must inherit this class. It sets up the ground work for basic CRUD operations,
- *       event triggers, query validations, etc. All returned documents are native JSON objects.
+ *       event triggers, filter validations, etc. All returned documents are native JSON objects.
  */
 
 import bcrypt from 'bcrypt'
 import _ from 'lodash'
 import { Collection, FilterQuery, ObjectID, UpdateQuery } from 'mongodb'
 import * as db from '..'
-import { AggregationPipeline, AnyFilter, AnyUpdate, Document, DocumentFragment, FieldDefaultValueFunction, FieldDescriptor, FieldFormatFunction, FieldRandomValueFunction, FieldSpec, FieldValidationStrategy, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOperators, PipelineFactoryOptions, Schema, typeIsAggregationPipeline, typeIsFieldDescriptor, typeIsValidObjectID } from '../types'
+import { AnyFilter, AnyUpdate, Document, DocumentFragment, typeIsValidObjectID } from '../types'
 import getFieldSpecByKey from '../utils/getFieldSpecByKey'
 import sanitizeDocument from '../utils/sanitizeDocument'
 import sanitizeFilter from '../utils/sanitizeFilter'
 import sanitizeUpdate from '../utils/sanitizeUpdate'
 import validateFieldValue from '../utils/validateFieldValue'
-import Aggregation from './Aggregation'
+import { AggregationPipeline, AggregationPipelineFactoryOperators, AggregationPipelineFactoryOptions, pipelineFactory, typeIsAggregationPipeline } from './aggregation'
 import * as CRUD from './crud'
-import Model from './Model'
+import Model, { ModelCountOptions, ModelDefaultPropertyProvider, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelPropertyFormattingProvider, ModelPropertyValidationProvider, ModelRandomFieldsOptions, ModelRandomPropertyProvider, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions } from './Model'
+import Schema, { FieldDescriptor, MultiFieldDescriptor, typeIsFieldDescriptor } from './Schema'
 
 /**
  * Creates a static model class with the provided schema.
@@ -34,16 +35,16 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     static readonly schema = schema
 
     /** @inheritdoc */
-    static readonly randomProps: { [K in keyof T]?: FieldRandomValueFunction<NonNullable<T[K]>> } = {}
+    static readonly randomProps: ModelRandomPropertyProvider<T> = {}
 
     /** @inheritdoc */
-    static readonly defaultProps: { [K in keyof T]?: NonNullable<T[K]> | FieldDefaultValueFunction<NonNullable<T[K]>> } = {}
+    static readonly defaultProps: ModelDefaultPropertyProvider<T> = {}
 
     /** @inheritdoc */
-    static readonly formatProps: { [K in keyof T]?: FieldFormatFunction<NonNullable<T[K]>> } = {}
+    static readonly formatProps: ModelPropertyFormattingProvider<T> = {}
 
     /** @inheritdoc */
-    static readonly validateProps: { [K in keyof T]?: FieldValidationStrategy<NonNullable<T[K]>> } = {}
+    static readonly validateProps: ModelPropertyValidationProvider<T> = {}
 
     /** @inheritdoc */
     constructor() {
@@ -83,16 +84,16 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static pipeline(queryOrOperators?: AnyFilter<T> | PipelineFactoryOperators<T>, options?: PipelineFactoryOptions): AggregationPipeline {
+    static pipeline(filterOrOperators?: AnyFilter<T> | AggregationPipelineFactoryOperators<T>, options?: AggregationPipelineFactoryOptions): AggregationPipeline {
       if (!this.schema) throw new Error(`[${this.constructor.name}] This model has no schema, you must define this static proerty in the derived class`)
 
       // Check if the argument conforms to aggregation factory operators.
-      if (queryOrOperators && Object.keys(queryOrOperators).some(val => val.startsWith('$'))) {
-        return Aggregation.pipelineFactory(this.schema, queryOrOperators as PipelineFactoryOperators<T>, options)
+      if (filterOrOperators && Object.keys(filterOrOperators).some(val => val.startsWith('$'))) {
+        return pipelineFactory(this.schema, filterOrOperators as AggregationPipelineFactoryOperators<T>, options)
       }
-      // Otherwise the argument is a query for the $match stage.
+      // Otherwise the argument is a filter for the $match stage.
       else {
-        return Aggregation.pipelineFactory(this.schema, { $match: queryOrOperators as AnyFilter<T> }, options)
+        return pipelineFactory(this.schema, { $match: filterOrOperators as AnyFilter<T> }, options)
       }
     }
 
@@ -185,33 +186,33 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async updateOneStrict(query: AnyFilter<T>, update: AnyUpdate<T>, options: ModelUpdateOneOptions<T> = {}): Promise<void | Document<T>> {
+    static async updateOneStrict(filter: AnyFilter<T>, update: AnyUpdate<T>, options: ModelUpdateOneOptions<T> = {}): Promise<void | Document<T>> {
       if (this.schema.noUpdates === true) throw new Error(`[${this.schema.model}] Updates are disallowed for this model`)
 
-      const [q, u] = await this.beforeUpdate(query, update, options)
+      const [f, u] = await this.beforeUpdate(filter, update, options)
 
       if (options.returnDoc === true) {
-        const [oldDoc, newDoc] = await CRUD.findOneAndUpdate(this.schema, q, u, options)
+        const [oldDoc, newDoc] = await CRUD.findOneAndUpdate(this.schema, f, u, options)
 
-        debug('Updating an existing document...', 'OK', q, u, options, oldDoc, newDoc)
+        debug('Updating an existing document...', 'OK', f, u, options, oldDoc, newDoc)
 
         await this.afterUpdate(oldDoc, newDoc)
 
         return newDoc
       }
       else {
-        await CRUD.updateOne(this.schema, q, u, options)
+        await CRUD.updateOne(this.schema, f, u, options)
 
-        debug('Updating an existing document...', 'OK', q, u, options)
+        debug('Updating an existing document...', 'OK', f, u, options)
 
         await this.afterUpdate()
       }
     }
 
     /** @inheritdoc */
-    static async updateOne(query: AnyFilter<T>, update: AnyUpdate<T>, options: ModelUpdateOneOptions<T> = {}): Promise<boolean | Document<T> | undefined> {
+    static async updateOne(filter: AnyFilter<T>, update: AnyUpdate<T>, options: ModelUpdateOneOptions<T> = {}): Promise<boolean | Document<T> | undefined> {
       try {
-        const docOrUndefined = await this.updateOneStrict(query, update, options)
+        const docOrUndefined = await this.updateOneStrict(filter, update, options)
 
         if (docOrUndefined !== undefined && options.returnDoc === true) {
           return docOrUndefined
@@ -226,24 +227,24 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async updateMany(query: AnyFilter<T>, update: AnyUpdate<T>, options: ModelUpdateManyOptions<T> = {}): Promise<Document<T>[] | boolean> {
+    static async updateMany(filter: AnyFilter<T>, update: AnyUpdate<T>, options: ModelUpdateManyOptions<T> = {}): Promise<Document<T>[] | boolean> {
       if ((this.schema.noUpdates === true) || (this.schema.noUpdateMany === true)) throw new Error(`[${this.schema.model}] Multiple updates are disallowed for this model`)
 
-      const [q, u] = await this.beforeUpdate(query, update, options)
+      const [f, u] = await this.beforeUpdate(filter, update, options)
 
       if (options.returnDocs === true) {
-        const [oldDocs, newDocs] = await CRUD.findManyAndUpdate(this.schema, q, u, options)
+        const [oldDocs, newDocs] = await CRUD.findManyAndUpdate(this.schema, f, u, options)
 
-        debug('Updating multiple existing documents...', 'OK', q, u, options, newDocs)
+        debug('Updating multiple existing documents...', 'OK', f, u, options, newDocs)
 
         await this.afterUpdate(oldDocs, newDocs)
 
         return newDocs
       }
       else {
-        const results = await CRUD.updateMany(this.schema, q, u, options)
+        const results = await CRUD.updateMany(this.schema, f, u, options)
 
-        debug('Updating multiple existing documents...', 'OK', q, u, options, results)
+        debug('Updating multiple existing documents...', 'OK', f, u, options, results)
 
         await this.afterUpdate()
 
@@ -252,33 +253,33 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async deleteOneStrict(query: AnyFilter<T>, options: ModelDeleteOneOptions = {}): Promise<Document<T> | void> {
+    static async deleteOneStrict(filter: AnyFilter<T>, options: ModelDeleteOneOptions = {}): Promise<Document<T> | void> {
       if (this.schema.noDeletes === true) throw new Error(`[${this.schema.model}] Deletions are disallowed for this model`)
 
-      const q = await this.beforeDelete(query, options)
+      const f = await this.beforeDelete(filter, options)
 
       if (options.returnDoc === true) {
-        const deletedDoc = await CRUD.findAndDeleteOne(this.schema, q, options)
+        const deletedDoc = await CRUD.findAndDeleteOne(this.schema, f, options)
 
-        debug('Deleting an existing document...', 'OK', query, deletedDoc)
+        debug('Deleting an existing document...', 'OK', filter, deletedDoc)
 
         await this.afterDelete(deletedDoc)
 
         return deletedDoc
       }
       else {
-        await CRUD.deleteOne(this.schema, q, options)
+        await CRUD.deleteOne(this.schema, f, options)
 
-        debug('Deleting an existing document...', 'OK', query)
+        debug('Deleting an existing document...', 'OK', filter)
 
         await this.afterDelete()
       }
     }
 
     /** @inheritdoc */
-    static async deleteOne(query: AnyFilter<T>, options: ModelDeleteOneOptions = {}): Promise<Document<T> | boolean | undefined> {
+    static async deleteOne(filter: AnyFilter<T>, options: ModelDeleteOneOptions = {}): Promise<Document<T> | boolean | undefined> {
       try {
-        const docOrUndefined = await this.deleteOneStrict(query, options)
+        const docOrUndefined = await this.deleteOneStrict(filter, options)
 
         if (docOrUndefined !== undefined && options.returnDoc === true) {
           return docOrUndefined
@@ -293,24 +294,24 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async deleteMany(query: AnyFilter<T>, options: ModelDeleteManyOptions = {}): Promise<boolean | Document<T>[]> {
+    static async deleteMany(filter: AnyFilter<T>, options: ModelDeleteManyOptions = {}): Promise<boolean | Document<T>[]> {
       if ((this.schema.noDeletes === true) || (this.schema.noDeleteMany === true)) throw new Error(`[${this.schema.model}] Multiple deletions are disallowed for this model`)
 
-      const q = await this.beforeDelete(query, options)
+      const f = await this.beforeDelete(filter, options)
 
       if (options.returnDocs === true) {
-        const deletedDocs = await CRUD.findManyAndDelete(this.schema, q, options)
+        const deletedDocs = await CRUD.findManyAndDelete(this.schema, f, options)
 
-        debug('Deleting multiple existing documents...:', 'OK', q, deletedDocs)
+        debug('Deleting multiple existing documents...:', 'OK', f, deletedDocs)
 
         await this.afterDelete(deletedDocs)
 
         return deletedDocs
       }
       else {
-        await CRUD.deleteMany(this.schema, q, options)
+        await CRUD.deleteMany(this.schema, f, options)
 
-        debug('Deleting multiple existing documents...:', 'OK', q)
+        debug('Deleting multiple existing documents...:', 'OK', f)
 
         await this.afterDelete()
 
@@ -319,13 +320,13 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async findAndReplaceOneStrict(query: AnyFilter<T>, replacement?: DocumentFragment<T>, options: ModelReplaceOneOptions<T> = {}): Promise<Document<T>> {
-      const q = await this.beforeDelete(query, options)
+    static async findAndReplaceOneStrict(filter: AnyFilter<T>, replacement?: DocumentFragment<T>, options: ModelReplaceOneOptions<T> = {}): Promise<Document<T>> {
+      const f = await this.beforeDelete(filter, options)
       const r = await this.beforeInsert(replacement || (await this.randomFields()), options)
 
-      const [oldDoc, newDoc] = await CRUD.findOneAndReplace(this.schema, q, r, options)
+      const [oldDoc, newDoc] = await CRUD.findOneAndReplace(this.schema, f, r, options)
 
-      debug('Replacing an existing document...', 'OK', q, r, oldDoc, newDoc)
+      debug('Replacing an existing document...', 'OK', f, r, oldDoc, newDoc)
 
       await this.afterDelete(oldDoc)
       await this.afterInsert(newDoc)
@@ -334,9 +335,9 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async findAndReplaceOne(query: AnyFilter<T>, replacement?: DocumentFragment<T>, options: ModelReplaceOneOptions<T> = {}): Promise<Document<T> | undefined> {
+    static async findAndReplaceOne(filter: AnyFilter<T>, replacement?: DocumentFragment<T>, options: ModelReplaceOneOptions<T> = {}): Promise<Document<T> | undefined> {
       try {
-        return await this.findAndReplaceOneStrict(query, replacement, options)
+        return await this.findAndReplaceOneStrict(filter, replacement, options)
       }
       catch (err) {
         return undefined
@@ -344,15 +345,15 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async exists(query: AnyFilter<T>): Promise<boolean> {
-      const id = await this.identifyOne(query)
+    static async exists(filter: AnyFilter<T>): Promise<boolean> {
+      const id = await this.identifyOne(filter)
 
       return id ? true : false
     }
 
     /** @inheritdoc */
-    static async count(query: AnyFilter<T>, options: ModelCountOptions = {}): Promise<number> {
-      const results = await this.findMany(query, options)
+    static async count(filter: AnyFilter<T>, options: ModelCountOptions = {}): Promise<number> {
+      const results = await this.findMany(filter, options)
 
       return results.length
     }
@@ -462,16 +463,16 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     protected static async didInsertDocument(doc: Document<T>): Promise<void> {}
 
     /**
-     * Handler called before an attempted update operation. This method must return the query and
+     * Handler called before an attempted update operation. This method must return the filter and
      * update descriptor for the update operation.
      *
-     * @param query - The query for document(s) to update.
+     * @param filter - The filter for document(s) to update.
      * @param update - The update descriptor.
      *
-     * @returns A tuple of the query and the update descriptor.
+     * @returns A tuple of the filter and the update descriptor.
      */
-    protected static async willUpdateDocument(query: AnyFilter<T>, update: AnyUpdate<T>): Promise<[AnyFilter<T>, AnyUpdate<T>]> {
-      return [query, update]
+    protected static async willUpdateDocument(filter: AnyFilter<T>, update: AnyUpdate<T>): Promise<[AnyFilter<T>, AnyUpdate<T>]> {
+      return [filter, update]
     }
 
     /**
@@ -487,12 +488,12 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     /**
      * Handler called before an attempt to delete a document.
      *
-     * @param query - The query for the document to be deleted.
+     * @param filter - The filter for the document to be deleted.
      *
      * @returns The document to be deleted.
      */
-    protected static async willDeleteDocument(query: AnyFilter<T>): Promise<AnyFilter<T>> {
-      return query
+    protected static async willDeleteDocument(filter: AnyFilter<T>): Promise<AnyFilter<T>> {
+      return filter
     }
 
     /**
@@ -558,7 +559,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     /**
      * Handler invoked right before an update. This is NOT invoked on an insertion.
      *
-     * @param query - AnyFilter for document to update.
+     * @param filter - Filter for document to update.
      * @param update - The update to apply.
      * @param options - See `ModelUpdateOneOptions` and `ModelUpdateManyOptions`.
      *
@@ -568,27 +569,27 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
      *
      * @todo Handle remaining update operators.
      */
-    private static async beforeUpdate(query: AnyFilter<T>, update: AnyUpdate<T>, options: ModelUpdateOneOptions<T> | ModelUpdateManyOptions<T> = {}): Promise<[DocumentFragment<T>, UpdateQuery<DocumentFragment<T>>]> {
+    private static async beforeUpdate(filter: AnyFilter<T>, update: AnyUpdate<T>, options: ModelUpdateOneOptions<T> | ModelUpdateManyOptions<T> = {}): Promise<[DocumentFragment<T>, UpdateQuery<DocumentFragment<T>>]> {
       if ((options.upsert === true) && (this.schema.allowUpserts !== true)) throw new Error(`[${this.schema.model}] Attempting to upsert a document while upserting is disallowed in the schema`)
 
-      const [q, u] = await this.willUpdateDocument(query, update)
+      const [f, u] = await this.willUpdateDocument(filter, update)
 
-      // First sanitize the inputs. We want to be able to make sure the query is valid and that the
-      // update object is a proper update query.
-      const sanitizedQuery = sanitizeFilter<T>(this.schema, q) as DocumentFragment<T>
+      // First sanitize the inputs. We want to be able to make sure the filter is valid and that the
+      // update object is a proper update filter.
+      const sanitizedFilter = sanitizeFilter<T>(this.schema, f) as DocumentFragment<T>
       const sanitizedUpdate = sanitizeUpdate(this.schema, u, options)
 
-      // Format all fields in the update query.
+      // Format all fields in the update filter.
       if (sanitizedUpdate.$set) {
         sanitizedUpdate.$set = await this.formatDocument(sanitizedUpdate.$set as Document<T>)
       }
 
-      // In the case of an upsert, we need to preprocess the query as if this was an insertion. We
-      // also need to tell the database to save all fields in the query as well, unless they are
+      // In the case of an upsert, we need to preprocess the filter as if this was an insertion. We
+      // also need to tell the database to save all fields in the filter as well, unless they are
       // already in the update query.
       if (options.upsert === true) {
-        // Make a copy of the query in case it is manipulated by the hooks.
-        const beforeInsert = await this.beforeInsert(_.cloneDeep(sanitizedQuery), { ...options, strict: false })
+        // Make a copy of the filter in case it is manipulated by the hooks.
+        const beforeInsert = await this.beforeInsert(_.cloneDeep(sanitizedFilter), { ...options, strict: false })
         const setOnInsert = _.omit({
           ...sanitizedUpdate.$setOnInsert || {},
           ...beforeInsert,
@@ -608,7 +609,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
         await this.validateDocument(sanitizedUpdate.$set as DocumentFragment<T>, { ignoreUniqueIndex: true, accountForDotNotation: true, ...options })
       }
 
-      return [sanitizedQuery, sanitizedUpdate]
+      return [sanitizedFilter, sanitizedUpdate]
     }
 
     /**
@@ -624,15 +625,15 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     /**
      * Handler invoked right before a deletion.
      *
-     * @param query - AnyFilter for document to delete.
+     * @param filter - Filter for document to delete.
      * @param options - See `ModelDeleteOneOptions` and `ModelDeleteManyOptions`.
      *
-     * @returns The processed query for deletion.
+     * @returns The processed filter for deletion.
      */
-    private static async beforeDelete(query: AnyFilter<T>, options: ModelDeleteOneOptions | ModelDeleteManyOptions): Promise<FilterQuery<T>> {
-      const q = await this.willDeleteDocument(query)
+    private static async beforeDelete(filter: AnyFilter<T>, options: ModelDeleteOneOptions | ModelDeleteManyOptions): Promise<FilterQuery<T>> {
+      const f = await this.willDeleteDocument(filter)
 
-      return sanitizeFilter<T>(this.schema, q) as FilterQuery<T>
+      return sanitizeFilter<T>(this.schema, f) as FilterQuery<T>
     }
 
     /**
@@ -673,7 +674,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
 
       for (const modelName of cascadeModelNames) {
         const ModelClass = db.getModel(modelName)
-        const fields: { [fieldName: string]: FieldSpec } = ModelClass.schema.fields
+        const fields: { [fieldName: string]: FieldDescriptor } = ModelClass.schema.fields
 
         if (!ModelClass) throw new Error(`[${this.schema.model}] Trying to cascade delete from model ${modelName} but model is not found`)
 
@@ -701,7 +702,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
      *
      * @throws {TypeError} Missing field.
      */
-    private static validateDocumentRequiredFields(doc: { [key: string]: any }, fieldDescriptor: FieldDescriptor = this.schema.fields, fieldName?: string) {
+    private static validateDocumentRequiredFields(doc: { [key: string]: any }, fieldDescriptor: MultiFieldDescriptor = this.schema.fields, fieldName?: string) {
       for (const field in fieldDescriptor) {
         if (!fieldDescriptor.hasOwnProperty(field)) continue
 

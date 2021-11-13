@@ -1,6 +1,7 @@
 import _ from 'lodash'
 import { ObjectID } from 'mongodb'
-import { DocumentFragment, AnyFilter, Schema, typeIsValidObjectID } from '../types'
+import Schema from '../core/Schema'
+import { AnyFilter, DocumentFragment, typeIsValidObjectID } from '../types'
 import sanitizeDocument from './sanitizeDocument'
 
 type SanitizeQueryOptions = {

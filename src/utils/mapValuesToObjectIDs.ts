@@ -2,6 +2,15 @@ import _ from 'lodash'
 import { ObjectID } from 'mongodb'
 import { valueIsCompatibleObjectID } from '../types'
 
+/**
+ * Maps a single value or a collection of values to Object IDs. If a value cannot be converted to an
+ * Object ID, it will be skipped (but remains in the collection or returned if a single value is
+ * passed).
+ *
+ * @param val - A single value or a collection of values to map.
+ *
+ * @returns The mapped value(s).
+ */
 export default function mapValuesToObjectIDs(val: any): any {
   if (_.isArray(val)) {
     return val.map(v => mapValuesToObjectIDs(v))

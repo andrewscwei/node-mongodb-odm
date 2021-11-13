@@ -1,7 +1,142 @@
-import { Collection, ObjectID } from 'mongodb'
-import { AggregationPipeline, Document, DocumentFragment, FieldDefaultValueFunction, FieldFormatFunction, FieldRandomValueFunction, FieldValidationStrategy, ModelCountOptions, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelRandomFieldsOptions, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions, PipelineFactoryOperators, PipelineFactoryOptions, AnyFilter, Schema, AnyUpdate } from '../types'
+import { Collection, CollectionAggregationOptions, CollectionInsertManyOptions, CollectionInsertOneOptions, CommonOptions, FindOneAndReplaceOption, ObjectID, ReplaceOneOptions } from 'mongodb'
+import { AnyFilter, AnyUpdate, Document, DocumentFragment } from '../types'
+import { AggregationPipeline, AggregationPipelineFactoryOperators, AggregationPipelineFactoryOptions } from './aggregation'
+import Schema, { FieldValue } from './Schema'
 
-type ModelImpl = {}
+type LocalModel = {}
+
+export type ModelRandomPropertyProvider<T> = { [K in keyof T]?: FieldRandomValueFunction<NonNullable<T[K]>> }
+
+/**
+ * Function for generating a random value for the associated field.
+ */
+export type FieldRandomValueFunction<T = FieldValue> = () => T
+
+/**
+ * The validation strategy can be one of several types. The behavior per type is as follows:
+ *   1. RegExp: The value to be validated must pass for RegExp.test().
+ *   2. number: The value to be validated must be <= this number. If the value is a string, its
+ *              length must be <= this number.
+ *   3. any[]: The value to be validated must be one of the elements of this array.
+ *   4. Function: The value to be validated will be passed into this function and it must return
+ *      `true`.
+ */
+export type FieldValidationStrategy<T = FieldValue> = RegExp | number | T[] | FieldValidationFunction<T>
+
+/**
+ * Function for validating field values, in which the value to be validated is passed into the
+ * function as its only argument.
+ */
+export type FieldValidationFunction<T = FieldValue> = (value: T) => boolean
+
+export type ModelDefaultPropertyProvider<T> = { [K in keyof T]?: NonNullable<T[K]> | FieldDefaultValueFunction<NonNullable<T[K]>> }
+
+/**
+ * Function for generating a default value for the associated field.
+ */
+export type FieldDefaultValueFunction<T = FieldValue> = () => T
+
+export type ModelPropertyFormattingProvider<T> = { [K in keyof T]?: FieldFormatFunction<NonNullable<T[K]>> }
+
+/**
+ * Function for formatting field values, in which the value to be formatted will be passed into this function as its
+ * only paramenter.
+ */
+export type FieldFormatFunction<T = FieldValue> = (value: T) => T
+
+export type ModelPropertyValidationProvider<T> = { [K in keyof T]?: FieldValidationStrategy<NonNullable<T[K]>> }
+
+export type ModelRandomFieldsOptions = {
+  /**
+   * Specifies whether optional fields will be generated as well.
+   */
+  includeOptionals?: boolean
+}
+
+export type ModelFindOneOptions = CollectionAggregationOptions & {}
+
+export type ModelFindManyOptions = CollectionAggregationOptions & {}
+
+export type ModelInsertOneOptions = ModelValidateDocumentOptions & CollectionInsertOneOptions & {
+  /**
+   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are automatically
+   * generated before insertion.
+   */
+  ignoreTimestamps?: boolean
+}
+
+export type ModelInsertManyOptions = ModelValidateDocumentOptions & CollectionInsertManyOptions & {
+  /**
+   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are automatically
+   * generated before insertion.
+   */
+  ignoreTimestamps?: boolean
+}
+
+export type ModelUpdateOneOptions<T> = ModelInsertOneOptions & FindOneAndReplaceOption<T> & ReplaceOneOptions & {
+  /**
+   * Specifies whether updated doc is returned when update completes.
+   */
+  returnDoc?: boolean
+
+  /**
+   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are automatically
+   * generated before insertion.
+   */
+  ignoreTimestamps?: boolean
+}
+
+export type ModelUpdateManyOptions<T> = CommonOptions & FindOneAndReplaceOption<T> & {
+  /**
+   * Specifies whether updated docs are returned when update completes.
+   */
+  returnDocs?: boolean
+
+  /**
+   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are automatically
+   * generated before insertion.
+   */
+  ignoreTimestamps?: boolean
+}
+
+export type ModelDeleteOneOptions = CommonOptions & {
+  /**
+   * Specifies whether deleted doc is returned when deletion completes.
+   */
+  returnDoc?: boolean
+}
+
+export type ModelDeleteManyOptions = CommonOptions & {
+  /**
+   * Specifies whether deleted docs are returned when deletion completes.
+   */
+  returnDocs?: boolean
+}
+
+export type ModelReplaceOneOptions<T> = FindOneAndReplaceOption<T> & ModelDeleteOneOptions & ModelInsertOneOptions & {}
+
+export type ModelCountOptions = ModelFindManyOptions & {}
+
+export interface ModelValidateDocumentOptions {
+  /**
+   * Tells the validation process to account for required fields. That is, if this is `true` and
+   * some required fields are missing in the document to be validated, validation fails.
+   */
+  strict?: boolean
+
+  /**
+   * Tells the validation process to account for unique indexes. That is, if this is `false` and one
+   * or more field values are not unique when it supposedly has a unique index, validation fails.
+   */
+  ignoreUniqueIndex?: boolean
+
+  /**
+   * Tells the validation process that the document contains dot notations to in its keys. Dot
+   * notations are usually used by udate queries to update fields in an embedded doc as opposed to a
+   * top-level field.
+   */
+  accountForDotNotation?: boolean
+}
 
 /**
  * Generic interface of a model.
@@ -16,22 +151,22 @@ export default interface Model<T> {
   /**
    * Dictionary of random value generators for this model's props.
    */
-  randomProps: { [K in keyof T]?: FieldRandomValueFunction<NonNullable<T[K]>> }
+  randomProps: ModelRandomPropertyProvider<T>
 
   /**
    * Dictionary of default value generators for this model's props.
    */
-  defaultProps: { [K in keyof T]?: NonNullable<T[K]> | FieldDefaultValueFunction<NonNullable<T[K]>> }
+  defaultProps: ModelDefaultPropertyProvider<T>
 
   /**
    * Dictionary of value formatters for this model's props.
    */
-  formatProps: { [K in keyof T]?: FieldFormatFunction<NonNullable<T[K]>> }
+  formatProps: ModelPropertyFormattingProvider<T>
 
   /**
    * Dictionary of value validators for this model's props.
    */
-  validateProps: { [K in keyof T]?: FieldValidationStrategy<NonNullable<T[K]>> }
+  validateProps: ModelPropertyValidationProvider<T>
 
   /**
    * Gets the MongoDB collection associated with this model.
@@ -63,53 +198,53 @@ export default interface Model<T> {
    *
    * @param queryOrOperators - This is either a query for the $match stage or operators for the
    *                           aggregation factory function.
-   * @param options - See `PipelineFactoryOptions`.
+   * @param options - See `AggregationPipelineFactoryOptions`.
    *
    * @returns Aggregation pipeline.
    *
    * @throws {Error} Model class has no static property `schema` defined.
    */
-  pipeline(queryOrOperators?: AnyFilter<T> | PipelineFactoryOperators<T>, options?: PipelineFactoryOptions): AggregationPipeline
+  pipeline(queryOrOperators?: AnyFilter<T> | AggregationPipelineFactoryOperators<T>, options?: AggregationPipelineFactoryOptions): AggregationPipeline
 
   /**
-   * Identifies the ObjectID of exactly one document matching the given query. Error is thrown if
+   * Identifies the ObjectID of exactly one document matching the given filter. Error is thrown if
    * the document cannot be identified.
    *
-   * @param query - AnyFilter used for the $match stage of the aggregation pipeline.
+   * @param filter - Filter used for the `$match` stage of the aggregation pipeline.
    *
    * @returns The matching ObjectID.
    *
-   * @throws {Error} No document is found with the given query.
+   * @throws {Error} No document is found with the given filter.
    * @throws {Error} ID of the found document is not a valid ObjectID.
    */
-  identifyOneStrict(query: AnyFilter<T>): Promise<ObjectID>
+  identifyOneStrict(filter: AnyFilter<T>): Promise<ObjectID>
 
   /**
-   * Same as the strict identify one operation but this method swallows all errors and returns
-   * `undefined` if document canot be identified.
+   * Same as the strict identify one operation but this method drops all errors and returns
+   * `undefined` if the document canot be identified.
    *
-   * @param query - AnyFilter used for the $match stage of the aggregation pipeline.
+   * @param filter - Filter used for the `$match` stage of the aggregation pipeline.
    *
    * @returns The matching ObjectID.
    *
    * @see Model.identifyOneStrict
    */
-  identifyOne(query: AnyFilter<T>): Promise<ObjectID | undefined>
+  identifyOne(filter: AnyFilter<T>): Promise<ObjectID | undefined>
 
   /**
-   * Returns an array of document IDs that match the query.
+   * Returns an array of document IDs that match the filter.
    *
-   * @param query - AnyFilter for this model.
+   * @param filter - AnyFilter for this model.
    *
    * @returns Array of matching IDs.
    */
-  identifyMany(query?: AnyFilter<T>): Promise<ObjectID[]>
+  identifyMany(filter?: AnyFilter<T>): Promise<ObjectID[]>
 
   /**
-   * Finds one document from this collection using the aggregation framework. If no query is
+   * Finds one document from this collection using the aggregation framework. If no filter is
    * specified, a random document will be fetched.
    *
-   * @param query - AnyFilter used for the $match stage of the aggregation pipeline.
+   * @param filter - Filter used for the `$match` stage of the aggregation pipeline.
    * @param options - See `module:mongodb.Collection#aggregate`.
    *
    * @returns The matching document as the fulfillment value.
@@ -117,48 +252,48 @@ export default interface Model<T> {
    * @throws {Error} More or less than 1 document found.
    * @throws {Error} No document found.
    */
-  findOneStrict<R = T>(query?: AnyFilter<T>, options?: ModelFindOneOptions): Promise<Document<R>>
+  findOneStrict<R = T>(filter?: AnyFilter<T> | AggregationPipeline, options?: ModelFindOneOptions): Promise<Document<R>>
 
   /**
-   * Same as the strict find one operation but this method swallows all errors and returns
-   * `undefined` when no document is found.
+   * Same as the strict find one operation but this method drops all errors and returns `undefined`
+   * when no document is found.
    *
-   * @param query - AnyFilter used for the $match stage of the aggregation pipeline.
+   * @param filter - Filter used for the `$match` stage of the aggregation pipeline.
    * @param options - See `module:mongodb.Collection#aggregate`.
    *
    * @returns The matching document as the fulfillment value.
    *
    * @see Model.findOneStrict
    */
-  findOne<R = T>(query?: AnyFilter<T>, options?: ModelFindOneOptions): Promise<Document<R> | undefined>
+  findOne<R = T>(filter?: AnyFilter<T> | AggregationPipeline, options?: ModelFindOneOptions): Promise<Document<R> | undefined>
 
   /**
    * Finds multiple documents of this collection using the aggregation framework. If no query is
    * specified, all documents are fetched.
    *
-   * @param query - AnyFilter used for the $match stage of the aggregation pipeline.
+   * @param filter - Filter used for the `$match` stage of the aggregation pipeline.
    * @param options - See `module:mongodb.Collection#aggregate`.
    *
    * @returns The matching documents as the fulfillment value.
    */
-  findMany<R = T>(query?: AnyFilter<T>, options?: ModelFindManyOptions): Promise<Document<R>[]>
+  findMany<R = T>(filter?: AnyFilter<T> | AggregationPipeline, options?: ModelFindManyOptions): Promise<Document<R>[]>
 
   /**
-     * Inserts one document into this model's collection. If `doc` is not specified, random fields
-     * will be generated.
-     *
-     * @param doc - Document to be inserted. See `module:mongodb.Collection#insertOne`.
-     * @param options - See `ModelInsertOneOptions`.
-     *
-     * @returns The inserted document.
-     *
-     * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#insertOne}
-     * @see
-     * {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~insertWriteOpResult}
-     *
-     * @throws {Error} This method is called even though insertions are disabled in the schema.
-     * @throws {MongoError} collection#insertOne failed.
-     */
+   * Inserts one document into this model's collection. If `doc` is not specified, random fields
+   * will be generated.
+   *
+   * @param doc - Document to be inserted. See `module:mongodb.Collection#insertOne`.
+   * @param options - See `ModelInsertOneOptions`.
+   *
+   * @returns The inserted document.
+   *
+   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#insertOne}
+   * @see
+   * {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~insertWriteOpResult}
+   *
+   * @throws {Error} This method is called even though insertions are disabled in the schema.
+   * @throws {MongoError} collection#insertOne failed.
+   */
   insertOneStrict(doc?: DocumentFragment<T>, options?: ModelInsertOneOptions): Promise<Document<T>>
 
   /**
@@ -194,10 +329,10 @@ export default interface Model<T> {
   insertMany(docs: DocumentFragment<T>[], options?: ModelInsertManyOptions): Promise<Document<T>[]>
 
   /**
-   * Updates one document matched by `query` with `update` object. Note that if upserting, all
-   * *required* fields must be in the `query` param instead of the `update` param.
+   * Updates one document matched by `filter` with `update` object. Note that if upserting, all
+   * *required* fields must be in the `filter` param instead of the `update` param.
    *
-   * @param query - AnyFilter for the document to update.
+   * @param filter - Filter for the document to update.
    * @param update - Either an object whose key/value pair represent the fields belonging to this
    *                 model to update to, or an update query.
    * @param options - See `ModelUpdateOneOptions`.
@@ -212,18 +347,17 @@ export default interface Model<T> {
    * {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
    *
    * @throws {Error} This method is called even though updates are disabled in the schema.
-   * @throws {Error} AnyFilter is invalid probably because it is not santized due to hooks being
-   * skipped.
+   * @throws {Error} Filter is invalid.
    * @throws {Error} A doc is updated but it cannot be found.
    */
   updateOneStrict(query: AnyFilter<T>, update: AnyUpdate<T>, options?: ModelUpdateOneOptions<T>): Promise<void | Document<T>>
 
   /**
-   * Same as the strict update one operation except this method swallows all errors and returns
+   * Same as the strict update one operation except this method drops all errors and returns
    * `undefined` if no document was updated (and that `returnDoc` is `true`) or `true`/`false` (if
    * `returnDoc` is `false`).
    *
-   * @param query - AnyFilter for the document to update.
+   * @param filter - Filter for the document to update.
    * @param update - Either an object whose key/value pair represent the fields belonging to this
    *                 model to update to, or an update query.
    * @param options - See `ModelUpdateOneOptions`.
@@ -233,12 +367,12 @@ export default interface Model<T> {
    *
    * @see Model.updateOneStrict
    */
-  updateOne(query: AnyFilter<T>, update: AnyUpdate<T>, options?: ModelUpdateOneOptions<T>): Promise<boolean | Document<T> | undefined>
+  updateOne(filter: AnyFilter<T>, update: AnyUpdate<T>, options?: ModelUpdateOneOptions<T>): Promise<boolean | Document<T> | undefined>
 
   /**
-   * Updates multiple documents matched by `query` with `update` object.
+   * Updates multiple documents matched by `filter` with `update` object.
    *
-   * @param query - AnyFilter for document to update.
+   * @param filter - Filter for document to update.
    * @param update - Either an object whose key/value pair represent the fields belonging to this
    *                 model to update to, or an update query.
    * @param options - See `ModelUpdateManyOptions`.
@@ -254,15 +388,15 @@ export default interface Model<T> {
    * {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
    *
    * @throws {Error} This method is called even though updates or multiple updates are disabled in
-   * the schema.
+   *                 the schema.
    * @throws {Error} One of the updated docs are not returned.
    */
-  updateMany(query: AnyFilter<T>, update: AnyUpdate<T>, options?: ModelUpdateManyOptions<T>): Promise<Document<T>[] | boolean>
+  updateMany(filter: AnyFilter<T>, update: AnyUpdate<T>, options?: ModelUpdateManyOptions<T>): Promise<Document<T>[] | boolean>
 
   /**
-   * Deletes one document matched by `query`.
+   * Deletes one document matched by `filter`.
    *
-   * @param query - AnyFilter for document to delete.
+   * @param filter - Filter for document to delete.
    * @param options - See `ModelDeleteOneOptions`.
    *
    * @returns The deleted doc if `returnDoc` is set to `true`.
@@ -275,12 +409,12 @@ export default interface Model<T> {
    * @throws {Error} Unable to return the deleted document when `returnDoc` is `true`.
    * @throws {Error} Unable to delete document.
    */
-  deleteOneStrict(query: AnyFilter<T>, options?: ModelDeleteOneOptions): Promise<Document<T> | void>
+  deleteOneStrict(filter: AnyFilter<T>, options?: ModelDeleteOneOptions): Promise<Document<T> | void>
 
   /**
-   * Same as the strict delete one operation except this method swallows all errors.
+   * Same as the strict delete one operation except this method drops all errors.
    *
-   * @param query - AnyFilter for document to delete.
+   * @param filter - Filter for document to delete.
    * @param options - See `ModelDeleteOneOptions`.
    *
    * @returns The deleted doc if `returnDoc` is set to `true`, else `true` or `false` depending on
@@ -288,12 +422,12 @@ export default interface Model<T> {
    *
    * @see Model.deleteOneStrict
    */
-  deleteOne(query: AnyFilter<T>, options?: ModelDeleteOneOptions): Promise<Document<T> | boolean | undefined>
+  deleteOne(filter: AnyFilter<T>, options?: ModelDeleteOneOptions): Promise<Document<T> | boolean | undefined>
 
   /**
-   * Deletes multiple documents matched by `query`.
+   * Deletes multiple documents matched by `filter`.
    *
-   * @param query - AnyFilter to match documents for deletion.
+   * @param filter - AnyFilter to match documents for deletion.
    * @param options - See `ModelDeleteManyOptions`.
    *
    * @returns The deleted docs if `returnDocs` is set to `true`, else `true` or `false` depending on
@@ -308,13 +442,13 @@ export default interface Model<T> {
    * @throws {Error} This method is called even though deletions or multiple deletions are disabled
    *                 in the schema.
    */
-  deleteMany(query: AnyFilter<T>, options?: ModelDeleteManyOptions): Promise<boolean | Document<T>[]>
+  deleteMany(filter: AnyFilter<T>, options?: ModelDeleteManyOptions): Promise<boolean | Document<T>[]>
 
   /**
    * Replaces one document with another. If `replacement` is not specified, one with random info
    * will be generated.
    *
-   * @param query - AnyFilter for document to replace.
+   * @param filter - Filter for document to replace.
    * @param replacement - The replacement document.
    * @param options - See `ModelReplaceOneOptions`.
    *
@@ -329,12 +463,12 @@ export default interface Model<T> {
    * @throws {Error} The old document cannot be returned.
    * @throws {Error} The doc is replaced but it cannot be fetched.
    */
-  findAndReplaceOneStrict(query: AnyFilter<T>, replacement?: DocumentFragment<T>, options?: ModelReplaceOneOptions<T>): Promise<Document<T>>
+  findAndReplaceOneStrict(filter: AnyFilter<T>, replacement?: DocumentFragment<T>, options?: ModelReplaceOneOptions<T>): Promise<Document<T>>
 
   /**
-   * Same as the strict find and replace one operation except this method swallows all errors.
+   * Same as the strict find and replace one operation except this method drops all errors.
    *
-   * @param query - AnyFilter for document to replace.
+   * @param filter - Filter for document to replace.
    * @param replacement - The replacement document.
    * @param options - See `ModelReplaceOneOptions`.
    *
@@ -343,25 +477,25 @@ export default interface Model<T> {
    *
    * @see Model.findAndReplaceOneStrict
    */
-  findAndReplaceOne(query: AnyFilter<T>, replacement?: DocumentFragment<T>, options?: ModelReplaceOneOptions<T>): Promise<Document<T> | undefined>
+  findAndReplaceOne(filter: AnyFilter<T>, replacement?: DocumentFragment<T>, options?: ModelReplaceOneOptions<T>): Promise<Document<T> | undefined>
 
   /**
    * Checks if a document exists.
    *
-   * @param query - AnyFilter for document to check.
+   * @param filter - Filter for document to check.
    *
    * @returns `true` if document exists, `false` otherwise.
    */
-  exists(query: AnyFilter<T>): Promise<boolean>
+  exists(filter: AnyFilter<T>): Promise<boolean>
 
   /**
-   * Counts the documents that match the provided query.
+   * Counts the documents that match the provided `filter`.
    *
-   * @param query - AnyFilter used for the $match stage of the aggregation pipeline.
+   * @param filter - Filter used for the `$match` stage of the aggregation pipeline.
    *
    * @returns The total number of documents found. The minimum is 0.
    */
-  count(query: AnyFilter<T>, options?: ModelCountOptions): Promise<number>
+  count(filter: AnyFilter<T>, options?: ModelCountOptions): Promise<number>
 
   /**
    * Returns a document whose values are formatted according to the format functions defined in the
@@ -402,5 +536,5 @@ export default interface Model<T> {
    * @throws {Error} Attempting to instantiate this model even though it is meant to be a static
    *                 class.
    */
-  new(): ModelImpl
+  new(): LocalModel
 }

@@ -1,8 +1,9 @@
 import _ from 'lodash'
 import { CollectionAggregationOptions } from 'mongodb'
 import * as db from '../..'
-import { AggregationPipeline, AnyFilter, Document, Schema } from '../../types'
-import Aggregation from '../Aggregation'
+import { AnyFilter, Document } from '../../types'
+import { AggregationPipeline, pipelineFactory } from '../aggregation'
+import Schema from '../Schema'
 
 export async function findOne<T, R = T>(schema: Schema<T>, filter: AnyFilter<T> | AggregationPipeline, options: CollectionAggregationOptions = {}): Promise<Document<R>> {
   const docs = await findMany<T, R>(schema, filter, options)
@@ -13,7 +14,7 @@ export async function findOne<T, R = T>(schema: Schema<T>, filter: AnyFilter<T> 
 }
 
 export async function findOneRandom<T, R = T>(schema: Schema<T>): Promise<Document<R>> {
-  const pipeline = Aggregation.pipelineFactory(schema).concat([{ $sample: { size: 1 } }])
+  const pipeline = pipelineFactory(schema).concat([{ $sample: { size: 1 } }])
   const docs = await findMany<T, R>(schema, pipeline)
 
   if (docs.length !== 1) throw new Error(`[${schema.model}] More or less than 1 random document found even though only 1 was supposed to be found.`)
@@ -30,7 +31,7 @@ export async function findMany<T, R = T>(schema: Schema<T>, filter: AnyFilter<T>
     pipeline = filter
   }
   else {
-    pipeline = Aggregation.pipelineFactory(schema, { $match: filter })
+    pipeline = pipelineFactory(schema, { $match: filter })
   }
 
   const docs = await collection.aggregate(pipeline, options).toArray()
@@ -40,7 +41,7 @@ export async function findMany<T, R = T>(schema: Schema<T>, filter: AnyFilter<T>
 
 export async function findAll<T, R = T>(schema: Schema<T>): Promise<Document<R>[]> {
   const collection = await db.getCollection(schema.collection)
-  const docs = await collection.aggregate(Aggregation.pipelineFactory(schema)).toArray()
+  const docs = await collection.aggregate(pipelineFactory(schema)).toArray()
 
   return docs
 }

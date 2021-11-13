@@ -1,6 +1,7 @@
 import { FindOneAndReplaceOption, ReplaceOneOptions } from 'mongodb'
 import * as db from '../..'
-import { Document, DocumentFragment, AnyFilter, Schema } from '../../types'
+import { AnyFilter, Document, DocumentFragment } from '../../types'
+import Schema from '../Schema'
 import { findOne } from './find'
 
 export async function replaceOne<T>(schema: Schema<T>, query: AnyFilter<T>, replacement: DocumentFragment<T>, options: ReplaceOneOptions = {}): Promise<void> {

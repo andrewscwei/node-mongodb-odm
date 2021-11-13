@@ -5,10 +5,12 @@ import Faker from 'faker'
 import _ from 'lodash'
 import { describe } from 'mocha'
 import { ObjectID } from 'mongodb'
+import { AggregationStageDescriptor, groupStageFactory, lookupStageFactory, matchStageFactory, pipelineFactory, projectStageFactory, sortStageFactory } from './aggregation'
 import { configureDb } from '..'
-import Aggregation from '../core/Aggregation'
-import { AggregationStageDescriptor, Document, ModelDeleteManyOptions, AnyFilter, Schema, typeIsValidObjectID } from '../types'
+import { AnyFilter, Document, typeIsValidObjectID } from '../types'
+import { ModelDeleteManyOptions } from './Model'
 import Model from './modelFactory'
+import Schema from './Schema'
 
 describe('core/Aggregation', () => {
   before(async () => {
@@ -21,7 +23,7 @@ describe('core/Aggregation', () => {
 
   it('can generate $match stage', () => {
     const objectId = new ObjectID()
-    const actual = Aggregation.matchStageFactory(BarSchema, { _id: objectId })
+    const actual = matchStageFactory(BarSchema, { _id: objectId })
     const expected = [{
       $match: { _id: objectId },
     }]
@@ -32,13 +34,13 @@ describe('core/Aggregation', () => {
   })
 
   it('can generate $lookup stage', () => {
-    assert.deepStrictEqual(Aggregation.lookupStageFactory(FooSchema, { aBar: true }), [{
+    assert.deepStrictEqual(lookupStageFactory(FooSchema, { aBar: true }), [{
       $lookup: { from: 'bars', localField: 'aBar', foreignField: '_id', as: 'aBar' },
     }, {
       $unwind: { path: '$aBar', preserveNullAndEmptyArrays: true },
     }])
 
-    assert.deepStrictEqual(Aggregation.lookupStageFactory(FooSchema, { aBar: { aBar: true } }), [{
+    assert.deepStrictEqual(lookupStageFactory(FooSchema, { aBar: { aBar: true } }), [{
       $lookup: { from: 'bars', localField: 'aBar', foreignField: '_id', as: 'aBar' },
     }, {
       $unwind: { path: '$aBar', preserveNullAndEmptyArrays: true },
@@ -48,7 +50,7 @@ describe('core/Aggregation', () => {
       $unwind: { path: '$aBar.aBar', preserveNullAndEmptyArrays: true },
     }])
 
-    assert.deepStrictEqual(Aggregation.lookupStageFactory(FooSchema, { aBar: { aBar: true }, aFoo: true }), [{
+    assert.deepStrictEqual(lookupStageFactory(FooSchema, { aBar: { aBar: true }, aFoo: true }), [{
       $lookup: { from: 'bars', localField: 'aBar', foreignField: '_id', as: 'aBar' },
     }, {
       $unwind: { path: '$aBar', preserveNullAndEmptyArrays: true },
@@ -62,7 +64,7 @@ describe('core/Aggregation', () => {
       $unwind: { path: '$aFoo', preserveNullAndEmptyArrays: true },
     }])
 
-    assert.deepStrictEqual(Aggregation.lookupStageFactory(FooSchema, { aBar: { aBar: true }, aFoo: true }, { fromPrefix: 'foo.', toPrefix: 'bar.' }), [{
+    assert.deepStrictEqual(lookupStageFactory(FooSchema, { aBar: { aBar: true }, aFoo: true }, { fromPrefix: 'foo.', toPrefix: 'bar.' }), [{
       $lookup: { from: 'bars', localField: 'foo.aBar', foreignField: '_id', as: 'bar.aBar' },
     }, {
       $unwind: { path: '$bar.aBar', preserveNullAndEmptyArrays: true },
@@ -78,11 +80,11 @@ describe('core/Aggregation', () => {
   })
 
   it('can generate $group stage', () => {
-    assert.deepStrictEqual(Aggregation.groupStageFactory(FooSchema, 'foo'), [{
+    assert.deepStrictEqual(groupStageFactory(FooSchema, 'foo'), [{
       $group: { _id: '$foo' },
     }])
 
-    assert.deepStrictEqual(Aggregation.groupStageFactory(FooSchema, {
+    assert.deepStrictEqual(groupStageFactory(FooSchema, {
       _id: '$foo',
       bar: '$bar',
     }), [{
@@ -94,7 +96,7 @@ describe('core/Aggregation', () => {
   })
 
   it('can generate $sort stage', () => {
-    assert.deepStrictEqual(Aggregation.sortStageFactory(FooSchema, {
+    assert.deepStrictEqual(sortStageFactory(FooSchema, {
       a: 1,
       b: -1,
     }), [{
@@ -106,7 +108,7 @@ describe('core/Aggregation', () => {
   })
 
   it('can generate $project stage for an entire schema', () => {
-    assert.deepStrictEqual(Aggregation.projectStageFactory(FooSchema), [{
+    assert.deepStrictEqual(projectStageFactory(FooSchema), [{
       $project: {
         ..._.mapValues(FooSchema.fields, (value: any, key: string) => `$${key}`),
         _id: '$_id',
@@ -117,7 +119,7 @@ describe('core/Aggregation', () => {
   })
 
   it('can generate $project stage with prefixes for an entire schema and its foreign keys', () => {
-    assert.deepStrictEqual(Aggregation.projectStageFactory(FooSchema, { populate: { aBar: true }, fromPrefix: 'foo.', toPrefix: 'bar.' }), [{
+    assert.deepStrictEqual(projectStageFactory(FooSchema, { populate: { aBar: true }, fromPrefix: 'foo.', toPrefix: 'bar.' }), [{
       $project: {
         ..._(FooSchema.fields).mapValues((v, k) => `$foo.${k}`).mapKeys((v, k) => `bar.${k}`).value(),
         ['bar._id']: '$foo._id',
@@ -132,7 +134,7 @@ describe('core/Aggregation', () => {
   })
 
   it('can generate $project stage with exclusions for a schema', () => {
-    assert.deepStrictEqual(Aggregation.projectStageFactory(FooSchema, {
+    assert.deepStrictEqual(projectStageFactory(FooSchema, {
       exclude: ['createdAt', 'updatedAt'],
     }), [{
       $project: {
@@ -145,14 +147,14 @@ describe('core/Aggregation', () => {
   it('can generate a full aggregation pipeline', () => {
     const objectId = new ObjectID()
 
-    assert.deepStrictEqual(Aggregation.pipelineFactory(FooSchema), [])
+    assert.deepStrictEqual(pipelineFactory(FooSchema), [])
 
-    const actual = Aggregation.pipelineFactory(FooSchema, {
+    const actual = pipelineFactory(FooSchema, {
       $match: objectId,
     })
 
     const expected = [
-      ...Aggregation.matchStageFactory(FooSchema, objectId),
+      ...matchStageFactory(FooSchema, objectId),
     ]
 
     assert(actual.length === expected.length)
@@ -276,7 +278,6 @@ const BazSchema: Schema<BazProps> = {
     spec: { aString: 1 },
   }],
 }
-
 
 class Baz extends Model(BazSchema) {
 

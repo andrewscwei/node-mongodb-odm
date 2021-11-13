@@ -1,6 +1,7 @@
 import _ from 'lodash'
 import { UpdateQuery } from 'mongodb'
-import { DocumentFragment, Schema, typeIsUpdateQuery, AnyUpdate } from '../types'
+import Schema from '../core/Schema'
+import { AnyUpdate, DocumentFragment, typeIsUpdateQuery } from '../types'
 import sanitizeDocument from './sanitizeDocument'
 
 type SanitizeUpdateOptions = {
@@ -25,7 +26,7 @@ export default function sanitizeUpdate<T>(schema: Schema<T>, update: Readonly<An
   }
   else {
     out = {
-      $set: _.cloneDeep(update)
+      $set: _.cloneDeep(update),
     }
   }
 

@@ -10,6 +10,7 @@
  */
 
 import { Collection, Db, MongoClient } from 'mongodb'
+import * as Aggregation from './core/aggregation'
 import Model from './core/modelFactory'
 
 const debug = require('debug')('mongodb-odm')
@@ -206,11 +207,10 @@ export async function getCollection(modelOrCollectionName: string): Promise<Coll
   return collection
 }
 
-export { default as Aggregation } from './core/Aggregation'
 export * from './types'
 export { default as getFieldSpecByKey } from './utils/getFieldSpecByKey'
 export { default as mapValuesToObjectIDs } from './utils/mapValuesToObjectIDs'
 export { default as sanitizeDocument } from './utils/sanitizeDocument'
 export { default as sanitizeFilter } from './utils/sanitizeFilter'
 export { default as validateFieldValue } from './utils/validateFieldValue'
-export { Model }
+export { Model, Aggregation }

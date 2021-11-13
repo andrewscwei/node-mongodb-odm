@@ -5,7 +5,8 @@ import Faker from 'faker'
 import { describe, it } from 'mocha'
 import { ObjectID } from 'mongodb'
 import Model from '../core/modelFactory'
-import { DocumentFragment, Schema } from '../types'
+import Schema from '../core/Schema'
+import { DocumentFragment } from '../types'
 import sanitizeFilter from './sanitizeFilter'
 
 describe('utils/sanitizeFilter', () => {

@@ -7,8 +7,9 @@ import _ from 'lodash'
 import { describe, it } from 'mocha'
 import { ObjectID } from 'mongodb'
 import { configureDb, getDbInstance } from '..'
-import { Document, DocumentFragment, Schema } from '../types'
+import { Document, DocumentFragment } from '../types'
 import Model from './modelFactory'
+import Schema from './Schema'
 
 describe('core/Model', () => {
   before(async () => {

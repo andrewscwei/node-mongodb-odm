@@ -1,4 +1,4 @@
-import { FieldSpec, typeIsFieldDescriptor } from '../types'
+import { FieldDescriptor, typeIsFieldDescriptor } from '../core/Schema'
 
 /**
  * Finds and returns the spec of a field in the provided schema by its key. This key can be in dot
@@ -6,7 +6,7 @@ import { FieldSpec, typeIsFieldDescriptor } from '../types'
  *
  * @returns The field spec.
  */
-export default function getFieldSpecByKey(fieldDescriptor: { [key: string]: FieldSpec }, key: string): FieldSpec | undefined {
+export default function getFieldSpecByKey(fieldDescriptor: { [key: string]: FieldDescriptor }, key: string): FieldDescriptor | undefined {
   const keys = key.split('.')
   const k = keys.shift()
 

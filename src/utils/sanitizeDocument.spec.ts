@@ -2,7 +2,7 @@ import assert from 'assert'
 import Faker from 'faker'
 import { describe, it } from 'mocha'
 import Model from '../core/modelFactory'
-import { Schema } from '../types'
+import Schema from '../core/Schema'
 import sanitizeDocument from '../utils/sanitizeDocument'
 
 describe('utils/sanitizeDocument', () => {

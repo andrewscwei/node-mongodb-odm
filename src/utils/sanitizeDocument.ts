@@ -1,5 +1,6 @@
 import _ from 'lodash'
-import { DocumentFragment, Schema } from '../types'
+import Schema from '../core/Schema'
+import { DocumentFragment } from '../types'
 import getFieldSpecByKey from './getFieldSpecByKey'
 
 type SanitizeDocumentOptions = {

@@ -1,6 +1,7 @@
 import { CollectionInsertManyOptions, CollectionInsertOneOptions } from 'mongodb'
 import * as db from '../..'
-import { Document, DocumentFragment, Schema } from '../../types'
+import { Document, DocumentFragment } from '../../types'
+import Schema from '../Schema'
 
 export async function insertOne<T>(schema: Schema<T>, doc: DocumentFragment<T>, options: CollectionInsertOneOptions = {}): Promise<Document<T>> {
   if (schema.noInserts === true) throw new Error(`[${schema.model}] Insertions are disallowed for this model`)
