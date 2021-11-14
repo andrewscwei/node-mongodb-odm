@@ -1,8 +1,9 @@
 import _ from 'lodash'
 import { Filter, ObjectId } from 'mongodb'
 import Schema from '../core/Schema'
-import { AnyFilter, AnyProps, Document, DocumentFragment, typeIsValidObjectID } from '../types'
+import { AnyFilter, AnyProps, Document, DocumentFragment } from '../types'
 import sanitizeDocument from './sanitizeDocument'
+import typeIsValidObjectId from './typeIsValidObjectId'
 
 type SanitizeFilterOptions = {
   /**
@@ -42,7 +43,7 @@ type SanitizeFilterOptions = {
  * sanitizeFilter(schema, { a: 'b', b: 'c', garbage: 'garbage' }, { strict: true })
  */
 export default function sanitizeFilter<P extends AnyProps = AnyProps>(schema: Schema<P>, filter: AnyFilter<P>, { strict = true }: SanitizeFilterOptions = {}): Filter<Document<P>> {
-  if (typeIsValidObjectID(filter)) {
+  if (typeIsValidObjectId(filter)) {
     return { _id: filter }
   }
   else if (_.isString(filter)) {

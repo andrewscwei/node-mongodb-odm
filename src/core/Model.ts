@@ -23,8 +23,8 @@ export type FieldDefaultValueFunction<V = FieldValue> = () => V
 export type ModelPropertyFormattingProvider<P extends AnyProps = AnyProps> = { [K in keyof P]?: FieldFormatFunction<NonNullable<P[K]>> }
 
 /**
- * Function for formatting field values, in which the value to be formatted will be passed into this function as its
- * only paramenter.
+ * Function for formatting field values, in which the value to be formatted will be passed into this
+ * function as its only paramenter.
  */
 export type FieldFormatFunction<V = FieldValue> = (value: V) => V
 

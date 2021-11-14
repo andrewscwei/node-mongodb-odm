@@ -8,11 +8,13 @@ import bcrypt from 'bcrypt'
 import _ from 'lodash'
 import { Collection, Filter, ObjectId, UpdateFilter } from 'mongodb'
 import * as db from '..'
-import { AnyDocument, AnyFilter, AnyProps, AnyUpdate, Document, DocumentFragment, typeIsAnyDocument, typeIsValidObjectID } from '../types'
+import { AnyDocument, AnyFilter, AnyProps, AnyUpdate, Document, DocumentFragment } from '../types'
 import getFieldSpecByKey from '../utils/getFieldSpecByKey'
 import sanitizeDocument from '../utils/sanitizeDocument'
 import sanitizeFilter from '../utils/sanitizeFilter'
 import sanitizeUpdate from '../utils/sanitizeUpdate'
+import typeIsAnyDocument from '../utils/typeIsAnyDocument'
+import typeIsValidObjectId from '../utils/typeIsValidObjectId'
 import validateFieldValue from '../utils/validateFieldValue'
 import { AggregationPipeline, AggregationPipelineFactoryOperators, AggregationPipelineFactoryOptions, pipelineFactory, typeIsAggregationPipeline } from './aggregation'
 import * as CRUD from './crud'
@@ -190,7 +192,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       if (this.schema.noUpdates === true) throw new Error(`[${this.schema.model}] Updates are disallowed for this model`)
 
       const f = sanitizeFilter(this.schema, filter)
-      const u = await this.beforeUpdate(f, update, options)
+      const u = await this.beforeUpdate(f, sanitizeUpdate(this.schema, update, options), options)
 
       if (options.returnDoc === true) {
         const [oldDoc, newDoc] = await CRUD.findOneAndUpdate(this.schema, f, u, options)
@@ -234,7 +236,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       if ((this.schema.noUpdates === true) || (this.schema.noUpdateMany === true)) throw new Error(`[${this.schema.model}] Multiple updates are disallowed for this model`)
 
       const f = sanitizeFilter(this.schema, filter)
-      const u = await this.beforeUpdate(f, update, options)
+      const u = await this.beforeUpdate(f, sanitizeUpdate(this.schema, update, options), options)
 
       if (options.returnDocs === true) {
         const [oldDocs, newDocs] = await CRUD.findManyAndUpdate(this.schema, f, u, options)
@@ -362,9 +364,9 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
 
     /** @inheritdoc */
     static async count(filter: AnyFilter<P>, options: ModelCountOptions = {}): Promise<number> {
-      const results = await this.findMany(filter, options)
+      const result = await this.findMany(filter, options)
 
-      return results.length
+      return result.length
     }
 
     /** @inheritdoc */
@@ -480,7 +482,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
      *
      * @returns A tuple of the filter and the update descriptor.
      */
-    protected static async willUpdateDocument(filter: Readonly<Filter<Document<P>>>, update: AnyUpdate<P>): Promise<AnyUpdate<P>> {
+    protected static async willUpdateDocument(filter: Readonly<Filter<Document<P>>>, update: UpdateFilter<Document<P>>): Promise<AnyUpdate<P>> {
       return update
     }
 
@@ -576,12 +578,10 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
      *
      * @todo Handle remaining update operators.
      */
-    private static async beforeUpdate(filter: Filter<Document<P>>, update: AnyUpdate<P>, options: ModelUpdateOneOptions | ModelUpdateManyOptions = {}): Promise<UpdateFilter<Document<P>>> {
+    private static async beforeUpdate(filter: Filter<Document<P>>, update: UpdateFilter<Document<P>>, options: ModelUpdateOneOptions | ModelUpdateManyOptions = {}): Promise<UpdateFilter<Document<P>>> {
       if ((options.upsert === true) && (this.schema.allowUpserts !== true)) throw new Error(`[${this.schema.model}] Attempting to upsert a document while upserting is disallowed in the schema`)
 
-      const sanitizedUpdate = sanitizeUpdate(this.schema, update, options)
-
-      const u = await this.willUpdateDocument(filter, sanitizedUpdate)
+      const u = await this.willUpdateDocument(filter, update)
 
       // Format all fields in the update filter.
       if (u.$set) {
@@ -651,14 +651,14 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
           const docs = docOrDocs
 
           for (const doc of docs) {
-            if (!typeIsValidObjectID(doc._id)) continue
+            if (!typeIsValidObjectId(doc._id)) continue
             await this.cascadeDelete(doc._id)
           }
         }
         else {
           const doc = docOrDocs
 
-          if (typeIsValidObjectID(doc._id)) {
+          if (typeIsValidObjectId(doc._id)) {
             await this.cascadeDelete(doc._id)
           }
         }

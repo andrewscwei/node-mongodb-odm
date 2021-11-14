@@ -2,7 +2,7 @@ import _ from 'lodash'
 import { ObjectId } from 'mongodb'
 import { FieldValidationStrategy } from '../core/Model'
 import { FieldDescriptor, FieldType, FieldValue } from '../core/Schema'
-import { typeIsValidObjectID } from '../types'
+import typeIsValidObjectId from './typeIsValidObjectId'
 
 /**
  * Checks a value against field properties definied in a schema.
@@ -149,7 +149,7 @@ export default function validateFieldValue<V = FieldValue>(value: V, spec: Field
 
     break
   case ObjectId:
-    if (!typeIsValidObjectID(value)) throw new TypeError(`The value "${value}" is expected to be an ObjectId but instead it is a(n) ${typeof value}`)
+    if (!typeIsValidObjectId(value)) throw new TypeError(`The value "${value}" is expected to be an ObjectId but instead it is a(n) ${typeof value}`)
 
     if (_.isRegExp(strategy)) {
       throw new TypeError('The RegExp validation method is not supported for ObjectId values')

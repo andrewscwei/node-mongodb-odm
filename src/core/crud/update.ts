@@ -76,12 +76,12 @@ export async function findManyAndUpdate<P extends AnyProps = AnyProps>(schema: S
   else {
     for (let i = 0; i < n; i++) {
       const doc = docs[i]
-      const results = await collection.findOneAndUpdate({ _id: doc._id }, update, { ...options, returnDocument: 'after' })
+      const result = await collection.findOneAndUpdate({ _id: doc._id }, update, { ...options, returnDocument: 'after' })
 
-      if (results.ok !== 1) throw new Error(`[${schema.model}] Unable to update many documents`)
-      if (!results.value) throw new Error(`[${schema.model}] Unable to update many documents`)
+      if (result.ok !== 1) throw new Error(`[${schema.model}] Unable to update many documents`)
+      if (!result.value) throw new Error(`[${schema.model}] Unable to update many documents`)
 
-      newDocs.push(results.value)
+      newDocs.push(result.value)
     }
   }
 

@@ -45,7 +45,7 @@ export async function findManyAndDelete<T extends AnyProps = AnyProps>(schema: S
   const collection = await db.getCollection<Document<T>>(schema.collection)
   const docs = await findMany(schema, filter)
   const n = docs.length
-  const results: Document<T>[] = []
+  const deletedDocs: Document<T>[] = []
 
   for (let i = 0; i < n; i++) {
     const doc = docs[i]
@@ -54,9 +54,9 @@ export async function findManyAndDelete<T extends AnyProps = AnyProps>(schema: S
     if (result.ok !== 1) throw new Error(`[${schema.model}] Unable to delete documents`)
 
     if (result.value) {
-      results.push(result.value)
+      deletedDocs.push(result.value)
     }
   }
 
-  return results
+  return deletedDocs
 }

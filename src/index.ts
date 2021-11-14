@@ -206,11 +206,20 @@ export async function getCollection<T extends AnyDocument = AnyDocument>(modelOr
   return collection
 }
 
+export { ObjectId } from 'mongodb'
 export * from './types'
 export { default as getFieldSpecByKey } from './utils/getFieldSpecByKey'
 export { default as mapValuesToObjectIDs } from './utils/mapValuesToObjectIDs'
+export { default as ObjectIdEqual } from './utils/ObjectIdEqual'
+export { default as ObjectIdGet } from './utils/ObjectIdGet'
+export { default as ObjectIdMake } from './utils/ObjectIdMake'
 export { default as sanitizeDocument } from './utils/sanitizeDocument'
 export { default as sanitizeFilter } from './utils/sanitizeFilter'
 export { default as sanitizeUpdate } from './utils/sanitizeUpdate'
+export { default as typeIsAnyDocument } from './utils/typeIsAnyDocument'
+export { default as typeIsIdentifiableDocument } from './utils/typeIsIdentifiableDocument'
+export { default as typeIsUpdateFilter } from './utils/typeIsUpdateFilter'
+export { default as typeIsValidObjectId } from './utils/typeIsValidObjectId'
 export { default as validateFieldValue } from './utils/validateFieldValue'
+export { default as valueIsObjectIdConvertible } from './utils/valueIsObjectIdConvertible'
 export { Model, Aggregation }

@@ -4,8 +4,8 @@ import { AnyProps } from '../../types'
 import Schema from '../Schema'
 
 /**
- * Spec that define the `$group` stage. If this is a string, a simple `$group` stage will be generated
- * with `_id` equal this string.
+ * Spec that define the `$group` stage. If this is a string, a simple `$group` stage will be
+ * generated with `_id` equal this string.
  */
 export type GroupStageFactorySpec = string | { [key: string]: any }
 

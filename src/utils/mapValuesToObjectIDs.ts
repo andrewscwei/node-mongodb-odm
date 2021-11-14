@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import { ObjectId } from 'mongodb'
-import { valueIsObjectIdConvertible } from '../types'
+import valueIsObjectIdConvertible from './valueIsObjectIdConvertible'
 
 /**
  * Maps a single value or a collection of values to Object IDs. If a value cannot be converted to an

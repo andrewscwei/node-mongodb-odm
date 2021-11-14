@@ -1,8 +1,9 @@
 import _ from 'lodash'
 import { UpdateFilter } from 'mongodb'
 import Schema from '../core/Schema'
-import { AnyProps, AnyUpdate, Document, typeIsUpdateFilter } from '../types'
+import { AnyProps, AnyUpdate, Document } from '../types'
 import sanitizeDocument from './sanitizeDocument'
+import typeIsUpdateFilter from './typeIsUpdateFilter'
 
 export type SanitizeUpdateOptions = {
   ignoreTimestamps?: boolean
