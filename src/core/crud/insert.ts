@@ -28,7 +28,7 @@ export async function insertMany<P extends AnyProps = AnyProps>(schema: Schema<P
   if (!result.acknowledged) throw new Error(`[${schema.model}] Unable to insert many documents`)
   if (result.insertedCount <= 0) return []
 
-  const insertedDocs = await findMany(schema, matchStageFactory(schema, { _id: { $in: Object.values(result.insertedIds) as any }}))
+  const insertedDocs = await findMany(schema, matchStageFactory(schema, { _id: { $in: Object.values(result.insertedIds) as any } }))
 
   return insertedDocs
 }

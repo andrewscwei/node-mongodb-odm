@@ -159,7 +159,7 @@ export default interface Schema<P extends AnyProps = AnyProps> {
  *
  * @returns `true` or `false`.
  */
- export function typeIsFieldDescriptor(value: any): value is MultiFieldDescriptor {
+export function typeIsFieldDescriptor(value: any): value is MultiFieldDescriptor {
   if (!_.isPlainObject(value)) return false
 
   return true

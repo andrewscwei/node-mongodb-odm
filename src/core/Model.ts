@@ -4,7 +4,9 @@ import { SanitizeUpdateOptions } from '../utils/sanitizeUpdate'
 import { AggregationPipeline, AggregationPipelineFactoryOperators, AggregationPipelineFactoryOptions } from './aggregation'
 import Schema, { FieldValue } from './Schema'
 
-type LocalModel = {}
+type LocalModel = {
+
+}
 
 export type ModelRandomPropertyProvider<P extends AnyProps = AnyProps> = { [K in keyof P]?: FieldRandomValueFunction<NonNullable<P[K]>> }
 
@@ -39,13 +41,13 @@ export type ModelPropertyValidationProvider<P extends AnyProps = AnyProps> = { [
  *   4. Function: The value to be validated will be passed into this function and it must return
  *      `true`.
  */
- export type FieldValidationStrategy<V = FieldValue> = RegExp | number | V[] | FieldValidationFunction<V>
+export type FieldValidationStrategy<V = FieldValue> = RegExp | number | V[] | FieldValidationFunction<V>
 
- /**
+/**
   * Function for validating field values, in which the value to be validated is passed into the
   * function as its only argument.
   */
- export type FieldValidationFunction<V = FieldValue> = (value: V) => boolean
+export type FieldValidationFunction<V = FieldValue> = (value: V) => boolean
 
 export type ModelRandomFieldsOptions = {
   /**
@@ -54,9 +56,13 @@ export type ModelRandomFieldsOptions = {
   includeOptionals?: boolean
 }
 
-export type ModelFindOneOptions = AggregateOptions & {}
+export type ModelFindOneOptions = AggregateOptions & {
 
-export type ModelFindManyOptions = AggregateOptions & {}
+}
+
+export type ModelFindManyOptions = AggregateOptions & {
+
+}
 
 export type ModelInsertOneOptions = ModelValidateDocumentOptions & InsertOneOptions & {
   /**
@@ -114,9 +120,13 @@ export type ModelDeleteManyOptions = DeleteOptions & FindOneAndReplaceOptions & 
   returnDocs?: boolean
 }
 
-export type ModelReplaceOneOptions = ReplaceOptions & FindOneAndReplaceOptions & ModelInsertOneOptions & {}
+export type ModelReplaceOneOptions = ReplaceOptions & FindOneAndReplaceOptions & ModelInsertOneOptions & {
 
-export type ModelCountOptions = ModelFindManyOptions & {}
+}
+
+export type ModelCountOptions = ModelFindManyOptions & {
+
+}
 
 export interface ModelValidateDocumentOptions {
   /**
@@ -168,6 +178,14 @@ export default interface Model<T> {
    * Dictionary of value validators for this model's props.
    */
   validateProps: ModelPropertyValidationProvider<T>
+
+  /**
+   * This is meant to be used as a static class so instantiation is strictly prohibited.
+   *
+   * @throws {Error} Attempting to instantiate this model even though it is meant to be a static
+   *                 class.
+   */
+  new(): LocalModel
 
   /**
    * Gets the MongoDB collection associated with this model.
@@ -532,12 +550,4 @@ export default interface Model<T> {
    * @throws {Error} Some required fields in the document are missing.
    */
   validateDocument(doc: DocumentFragment<T>, options: ModelValidateDocumentOptions): Promise<void>
-
-  /**
-   * This is meant to be used as a static class so instantiation is strictly prohibited.
-   *
-   * @throws {Error} Attempting to instantiate this model even though it is meant to be a static
-   *                 class.
-   */
-  new(): LocalModel
 }

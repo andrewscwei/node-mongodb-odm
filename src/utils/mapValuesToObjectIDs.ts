@@ -11,16 +11,16 @@ import valueIsObjectIdConvertible from './valueIsObjectIdConvertible'
  *
  * @returns The mapped value(s).
  */
-export default function mapValuesToObjectIDs(val: any): any {
+export default function mapValuesToObjectIds(val: any): any {
   if (_.isArray(val)) {
-    return val.map(v => mapValuesToObjectIDs(v))
+    return val.map(v => mapValuesToObjectIds(v))
   }
   else if (_.isPlainObject(val)) {
     const out: any = {}
 
     for (const k in val) {
       if (!val.hasOwnProperty(k)) continue
-      out[k] = mapValuesToObjectIDs(val[k])
+      out[k] = mapValuesToObjectIds(val[k])
     }
 
     return out
