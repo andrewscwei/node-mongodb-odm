@@ -207,6 +207,7 @@ export async function getCollection<T extends AnyDocument = AnyDocument>(modelOr
 }
 
 export { ObjectId } from 'mongodb'
+export { default as Schema } from './core/Schema'
 export * from './types'
 export { default as getFieldSpecByKey } from './utils/getFieldSpecByKey'
 export { default as mapValuesToObjectIDs } from './utils/mapValuesToObjectIDs'
