@@ -5,7 +5,7 @@ import { AnyFilter, AnyProps, Document, DocumentFragment } from '../types'
 import sanitizeDocument from './sanitizeDocument'
 import typeIsValidObjectId from './typeIsValidObjectId'
 
-type SanitizeFilterOptions = {
+export type SanitizeFilterOptions = {
   /**
    * If set to `true`, fields that are not specified in the schema will be deleted as part of the
    * sanitizing process.

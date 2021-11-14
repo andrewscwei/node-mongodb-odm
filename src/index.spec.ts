@@ -1,7 +1,7 @@
 import assert from 'assert'
 import _ from 'lodash'
 import { before, describe, it } from 'mocha'
-import { configureDb, connectToDb, disconnectFromDb, getDbInstance, isDbConnected } from '.'
+import { configureDb, getDbConnection } from '.'
 
 describe('can connect to a database', () => {
   before(async () => {
@@ -12,17 +12,19 @@ describe('can connect to a database', () => {
   })
 
   it('can connect to db', async () => {
-    await connectToDb()
-    assert(isDbConnected() === true)
+    const connection = getDbConnection()
+    await connection.connect()
+    assert(connection.isConnected() === true)
   })
 
   it('can disconnect', async () => {
-    await disconnectFromDb()
-    assert(isDbConnected() === false)
+    const connection = getDbConnection()
+    await connection.disconnect()
+    assert(connection.isConnected() === false)
   })
 
   it('can fetch db instance', async () => {
-    const db = await getDbInstance()
+    const db = await getDbConnection().getDbInstance()
     assert(_.isNil(db) === false)
   })
 })

@@ -9,13 +9,7 @@ import _ from 'lodash'
 import { Collection, Filter, ObjectId, UpdateFilter } from 'mongodb'
 import * as db from '..'
 import { AnyDocument, AnyFilter, AnyProps, AnyUpdate, Document, DocumentFragment } from '../types'
-import getFieldSpecByKey from '../utils/getFieldSpecByKey'
-import sanitizeDocument from '../utils/sanitizeDocument'
-import sanitizeFilter from '../utils/sanitizeFilter'
-import sanitizeUpdate from '../utils/sanitizeUpdate'
-import typeIsAnyDocument from '../utils/typeIsAnyDocument'
-import typeIsValidObjectId from '../utils/typeIsValidObjectId'
-import validateFieldValue from '../utils/validateFieldValue'
+import { getFieldSpecByKey, sanitizeDocument, sanitizeFilter, sanitizeUpdate, typeIsAnyDocument, typeIsValidObjectId, validateFieldValue } from '../utils'
 import { AggregationPipeline, AggregationPipelineFactoryOperators, AggregationPipelineFactoryOptions, pipelineFactory, typeIsAggregationPipeline } from './aggregation'
 import * as CRUD from './crud'
 import Model, { FieldValidationStrategy, ModelCountOptions, ModelDefaultPropertyProvider, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelPropertyFormattingProvider, ModelPropertyValidationProvider, ModelRandomFieldsOptions, ModelRandomPropertyProvider, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions } from './Model'
@@ -29,7 +23,7 @@ import Schema, { FieldDescriptor, MultiFieldDescriptor, typeIsFieldDescriptor } 
  * @returns The generated static model.
  */
 export default function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): Model<P> {
-  const debug = process.env.NODE_ENV === 'development' ? require('debug')(`mongodb-odm:model:${schema.model}`) : () => {}
+  const debug = require('debug')(`mongodb-odm:model:${schema.model}`)
 
   return class {
 

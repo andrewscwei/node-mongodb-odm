@@ -1,6 +1,6 @@
 import { AggregateOptions, BulkWriteOptions, Collection, DeleteOptions, FindOneAndDeleteOptions, FindOneAndReplaceOptions, FindOneAndUpdateOptions, InsertOneOptions, ObjectId, ReplaceOptions, UpdateOptions } from 'mongodb'
 import { AnyFilter, AnyProps, AnyUpdate, Document, DocumentFragment } from '../types'
-import { SanitizeUpdateOptions } from '../utils/sanitizeUpdate'
+import { SanitizeUpdateOptions } from '../utils'
 import { AggregationPipeline, AggregationPipelineFactoryOperators, AggregationPipelineFactoryOptions } from './aggregation'
 import Schema, { FieldValue } from './Schema'
 
@@ -128,7 +128,7 @@ export type ModelCountOptions = ModelFindManyOptions & {
 
 }
 
-export interface ModelValidateDocumentOptions {
+export type ModelValidateDocumentOptions = {
   /**
    * Tells the validation process to account for required fields. That is, if this is `true` and
    * some required fields are missing in the document to be validated, validation fails.

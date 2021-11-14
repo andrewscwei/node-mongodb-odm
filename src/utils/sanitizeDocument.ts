@@ -3,7 +3,7 @@ import Schema from '../core/Schema'
 import { AnyDocumentFragment, AnyProps, DocumentFragment } from '../types'
 import getFieldSpecByKey from './getFieldSpecByKey'
 
-type SanitizeDocumentOptions = {
+export type SanitizeDocumentOptions = {
   /**
    * If set to `true`, fields in the form of a dot delimited string will be treated as nested
    * fields.

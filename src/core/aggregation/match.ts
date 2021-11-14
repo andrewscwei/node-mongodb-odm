@@ -1,6 +1,6 @@
 import { AggregationPipeline } from '.'
 import { AnyFilter, AnyProps } from '../../types'
-import sanitizeFilter from '../../utils/sanitizeFilter'
+import { sanitizeFilter } from '../../utils'
 import Schema from '../Schema'
 
 export type MatchStageFactorySpec<P> = AnyFilter<P>

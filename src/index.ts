@@ -9,41 +9,21 @@
  * instance.
  */
 
-import { Collection, Db, MongoClient } from 'mongodb'
-import * as Aggregation from './core/aggregation'
-import Model from './core/modelFactory'
+import { Collection } from 'mongodb'
+import { Connection, ConnectionConfiguration, Model } from './core'
 import { AnyDocument } from './types'
 
 const debug = require('debug')('mongodb-odm')
 
-export interface Configuration {
-  host: string
-  name: string
-  replicaSet?: string
-  username?: string
-  password?: string
-  models?: { [modelName: string]: any }
-}
-
 /**
- * Global MongoDB client instance.
+ * Global MongoDB connection.
  */
-let client: MongoClient
-
-/**
- * Global db configuration options.
- */
-let config: Configuration
-
-/**
- * Collection lookup dictionary.
- */
-let collections: { [collectionName: string]: Collection<any> } = {}
+let connection: Connection | undefined
 
 // Be sure to disconnect the database if the app terminates.
 process.on('SIGINT', async () => {
-  if (client) {
-    await disconnectFromDb()
+  if (connection?.client) {
+    await connection?.disconnect?.()
     debug('Handling SIGINT error...', 'OK', 'MongoDB client disconnected due to app termination')
   }
 
@@ -51,71 +31,24 @@ process.on('SIGINT', async () => {
 })
 
 /**
- * Establishes a new connection to the database based on the initialized configuration. If there
- * already exists one, this method does nothing.
- *
- * @throws {Error} ODM is not configured.
- */
-export async function connectToDb(): Promise<void> {
-  if (isDbConnected()) return
-
-  if (!config) throw new Error('You must configure connection options by calling #configureDb()')
-
-  // Resolve the authentication string.
-  const authentication = (config.username && config.password) ? `${config.username}:${config.password}` : undefined
-
-  // Database client URL.
-  const url = `mongodb://${authentication ? `${authentication}@` : ''}${config.host}/${config.name}${config.replicaSet ? `?replicaSet=${config.replicaSet}` : ''}`
-
-  client = await MongoClient.connect(url, {
-
-  })
-
-  debug('Establishing MongoDB client connection...', 'OK', url)
-}
-
-/**
- * Disconnects the existing database client.
- */
-export async function disconnectFromDb(): Promise<void> {
-  if (!client) return
-  await client.close()
-}
-
-/**
- * Checks if the database client is established.
- *
- * @returns `true` if connected, `false` otherwise.
- */
-export function isDbConnected(): boolean {
-  if (!client) return false
-  return true
-}
-
-/**
  * Configures the ODM.
  *
  * @param options - Configuration options.
  */
-export function configureDb(options: Configuration) {
+export function configureDb(options: ConnectionConfiguration) {
   debug('Configuring ODM... OK', options)
-  config = options
-  collections = {}
+  connection = new Connection(options)
 }
 
 /**
- * Gets the database instance from the client.
+ * Gets the global database connection.
  *
- * @returns The database instance.
+ * @returns The database connection.
  */
-export async function getDbInstance(): Promise<Db> {
-  if (client) return client.db(config.name)
-
-  debug('No MongoDB client, begin establishing connection')
-
-  await connectToDb()
-
-  return getDbInstance()
+export function getDbConnection(): Connection | undefined {
+  if (connection) return connection
+  debug('No MongoDB connection, did you forget to call `configureDb`?')
+  return undefined
 }
 
 /**
@@ -125,25 +58,11 @@ export async function getDbInstance(): Promise<Db> {
  *
  * @returns The model class.
  *
- * @throws {Error} There are no models registered with the ODM.
- * @throws {Error} No model found with the provided name.
+ * @throws {Error} There is no active db connection.
  */
 export function getModel(modelOrCollectionName: string): ReturnType<typeof Model> {
-  const models = config.models
-
-  if (!models) throw new Error('You must register models using the #configureDb() function')
-
-  if (models.hasOwnProperty(modelOrCollectionName)) return models[modelOrCollectionName]
-
-  for (const key in models) {
-    if (!models.hasOwnProperty(key)) continue
-
-    const ModelClass = models[key]
-
-    if (ModelClass.schema.collection === modelOrCollectionName) return ModelClass
-  }
-
-  throw new Error('No model found for given model/collection name')
+  if (!connection) throw new Error('There is no active db connection')
+  return connection.getModel(modelOrCollectionName)
 }
 
 /**
@@ -156,71 +75,14 @@ export function getModel(modelOrCollectionName: string): ReturnType<typeof Model
  *
  * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html}
  *
- * @throws {Error} There are no models registered.
- * @throws {Error} Unable to find the model associated with the model or collection name.
+ * @throws {Error} There is no active db connection.
  */
 export async function getCollection<T extends AnyDocument = AnyDocument>(modelOrCollectionName: string): Promise<Collection<T>> {
-  const models = config.models
-
-  if (!models) throw new Error('You must register models using the #configureDb() function')
-
-  // TODO: Indexes are lost somehow, comment this out temporarily.
-  // if (!!collections[modelOrCollectionName]) {
-  //   return collections[modelOrCollectionName];
-  // }
-
-  let ModelClass: ReturnType<typeof Model> | undefined
-
-  for (const key in models) {
-    if (!models.hasOwnProperty(key)) continue
-
-    if ((models[key].schema.model === modelOrCollectionName) || (models[key].schema.collection === modelOrCollectionName)) {
-      ModelClass = models[key]
-      break
-    }
-  }
-
-  if (!ModelClass) throw new Error('Unable to find collection with given model or collection name, is the model registered?')
-
-  const dbInstance = await getDbInstance()
-  const schema = ModelClass.schema
-  const collection = dbInstance.collection<T>(schema.collection)
-
-  // Ensure schema indexes.
-  if (schema.indexes) {
-    for (const index of schema.indexes) {
-      const spec = index.spec || {}
-      const options = index.options || {}
-
-      if (!options.hasOwnProperty('background')) {
-        options.background = true
-      }
-
-      await collection.createIndex(spec, options)
-    }
-  }
-
-  collections[schema.model] = collection
-  collections[schema.collection] = collection
-
-  return collection
+  if (!connection) throw new Error('There is no active db connection')
+  return connection.getCollection(modelOrCollectionName)
 }
 
 export { ObjectId } from 'mongodb'
-export { default as Schema } from './core/Schema'
+export * from './core'
 export * from './types'
-export { default as getFieldSpecByKey } from './utils/getFieldSpecByKey'
-export { default as mapValuesToObjectIds } from './utils/mapValuesToObjectIds'
-export { default as ObjectIdEqual } from './utils/ObjectIdEqual'
-export { default as ObjectIdGet } from './utils/ObjectIdGet'
-export { default as ObjectIdMake } from './utils/ObjectIdMake'
-export { default as sanitizeDocument } from './utils/sanitizeDocument'
-export { default as sanitizeFilter } from './utils/sanitizeFilter'
-export { default as sanitizeUpdate } from './utils/sanitizeUpdate'
-export { default as typeIsAnyDocument } from './utils/typeIsAnyDocument'
-export { default as typeIsIdentifiableDocument } from './utils/typeIsIdentifiableDocument'
-export { default as typeIsUpdateFilter } from './utils/typeIsUpdateFilter'
-export { default as typeIsValidObjectId } from './utils/typeIsValidObjectId'
-export { default as validateFieldValue } from './utils/validateFieldValue'
-export { default as valueIsObjectIdConvertible } from './utils/valueIsObjectIdConvertible'
-export { Model, Aggregation }
+export * from './utils'

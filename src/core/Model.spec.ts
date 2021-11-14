@@ -6,7 +6,7 @@ import Faker from 'faker'
 import _ from 'lodash'
 import { describe, it } from 'mocha'
 import { ObjectId } from 'mongodb'
-import { configureDb, getDbInstance } from '..'
+import { configureDb, getDbConnection } from '..'
 import { Document, DocumentFragment } from '../types'
 import Model from './modelFactory'
 import Schema from './Schema'
@@ -19,8 +19,8 @@ describe('core/Model', () => {
       models: { Foo, Bar },
     })
 
-    const db = await getDbInstance()
-    await db.dropDatabase()
+    const db = await getDbConnection()?.getDbInstance()
+    await db?.dropDatabase()
   })
 
   it('cannot be instantiated', async () => {
