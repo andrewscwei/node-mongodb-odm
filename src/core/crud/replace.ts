@@ -1,23 +1,24 @@
-import { FindOneAndReplaceOption, ReplaceOneOptions } from 'mongodb'
+import { Filter, FindOneAndReplaceOptions, ReplaceOptions } from 'mongodb'
 import * as db from '../..'
-import { AnyFilter, Document, DocumentFragment } from '../../types'
+import { AnyProps, Document } from '../../types'
 import Schema from '../Schema'
 import { findOne } from './find'
 
-export async function replaceOne<T>(schema: Schema<T>, query: AnyFilter<T>, replacement: DocumentFragment<T>, options: ReplaceOneOptions = {}): Promise<void> {
-  const collection = await db.getCollection(schema.collection)
-  const result = await collection.replaceOne(query as any, replacement, { ...options })
+export async function replaceOne<P extends AnyProps = AnyProps>(schema: Schema<P>, filter: Filter<Document<P>>, replacement: Document<P>, options: ReplaceOptions = {}): Promise<void> {
+  const collection = await db.getCollection<Document<P>>(schema.collection)
+  const result = await collection.replaceOne(filter, replacement, { ...options })
 
-  if (result.result.ok !== 1) throw new Error(`[${schema.model}] Unable to find and replace document`)
+  if (!result.acknowledged) throw new Error(`[${schema.model}] Unable to find and replace document`)
+  if (result.matchedCount <= 0) throw new Error(`[${schema.model}] Unable to find and replace document`)
 }
 
-export async function findOneAndReplace<T>(schema: Schema<T>, query: AnyFilter<T>, replacement: DocumentFragment<T>, options: FindOneAndReplaceOption<T> = {}): Promise<[Document<T>, Document<T>]> {
-  const collection = await db.getCollection(schema.collection)
-  const results = await collection.findOneAndReplace(query as any, replacement, { ...options, returnDocument: 'before' })
+export async function findOneAndReplace<P extends AnyProps = AnyProps>(schema: Schema<P>, filter: Filter<Document<P>>, replacement: Document<P>, options: FindOneAndReplaceOptions = {}): Promise<[Document<P>, Document<P>]> {
+  const collection = await db.getCollection<Document<P>>(schema.collection)
+  const result = await collection.findOneAndReplace(filter, replacement, { ...options, returnDocument: 'before' })
 
-  if (results.ok !== 1) throw new Error(`[${schema.model}] Unable to find and replace document`)
+  if (result.ok !== 1) throw new Error(`[${schema.model}] Unable to find and replace document`)
 
-  const oldDoc = results.value
+  const oldDoc = result.value
 
   if (!oldDoc) throw new Error(`[${schema.model}] Unable to return the old document`)
 

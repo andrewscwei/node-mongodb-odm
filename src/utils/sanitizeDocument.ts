@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import Schema from '../core/Schema'
-import { DocumentFragment } from '../types'
+import { AnyDocumentFragment, AnyProps, DocumentFragment } from '../types'
 import getFieldSpecByKey from './getFieldSpecByKey'
 
 type SanitizeDocumentOptions = {
@@ -24,8 +24,8 @@ type SanitizeDocumentOptions = {
  * // Returns { a: 'b', b: 'c' }
  * sanitizeDocument(schema, { a: 'b', b: 'c', garbage: 'garbage' })
  */
-export default function sanitizeDocument<T>(schema: Schema<T>, doc: DocumentFragment<any>, { accountForDotNotation = false }: SanitizeDocumentOptions = {}): DocumentFragment<T> {
-  const o: DocumentFragment<T> = {}
+export default function sanitizeDocument<P extends AnyProps = AnyProps>(schema: Schema<P>, doc: AnyDocumentFragment, { accountForDotNotation = false }: SanitizeDocumentOptions = {}): DocumentFragment<P> {
+  const o: DocumentFragment<P> = {}
 
   for (const key in doc) {
     // Ignore timestamp fields if timestamps aren't enabled in the schema.
@@ -39,7 +39,7 @@ export default function sanitizeDocument<T>(schema: Schema<T>, doc: DocumentFrag
     // Ignore fields with `undefined` or `null` values.
     if (_.isNil(doc[key])) continue
 
-    o[key as keyof T] = doc[key]
+    o[key as keyof P] = doc[key]
   }
 
   return o

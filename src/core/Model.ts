@@ -1,16 +1,34 @@
-import { Collection, CollectionAggregationOptions, CollectionInsertManyOptions, CollectionInsertOneOptions, CommonOptions, FindOneAndReplaceOption, ObjectID, ReplaceOneOptions } from 'mongodb'
-import { AnyFilter, AnyUpdate, Document, DocumentFragment } from '../types'
+import { AggregateOptions, BulkWriteOptions, Collection, DeleteOptions, FindOneAndDeleteOptions, FindOneAndReplaceOptions, FindOneAndUpdateOptions, InsertOneOptions, ObjectId, ReplaceOptions, UpdateOptions } from 'mongodb'
+import { AnyFilter, AnyProps, AnyUpdate, Document, DocumentFragment } from '../types'
+import { SanitizeUpdateOptions } from '../utils/sanitizeUpdate'
 import { AggregationPipeline, AggregationPipelineFactoryOperators, AggregationPipelineFactoryOptions } from './aggregation'
 import Schema, { FieldValue } from './Schema'
 
 type LocalModel = {}
 
-export type ModelRandomPropertyProvider<T> = { [K in keyof T]?: FieldRandomValueFunction<NonNullable<T[K]>> }
+export type ModelRandomPropertyProvider<P extends AnyProps = AnyProps> = { [K in keyof P]?: FieldRandomValueFunction<NonNullable<P[K]>> }
 
 /**
  * Function for generating a random value for the associated field.
  */
-export type FieldRandomValueFunction<T = FieldValue> = () => T
+export type FieldRandomValueFunction<V = FieldValue> = () => V
+
+export type ModelDefaultPropertyProvider<P extends AnyProps = AnyProps> = { [K in keyof P]?: NonNullable<P[K]> | FieldDefaultValueFunction<NonNullable<P[K]>> }
+
+/**
+ * Function for generating a default value for the associated field.
+ */
+export type FieldDefaultValueFunction<V = FieldValue> = () => V
+
+export type ModelPropertyFormattingProvider<P extends AnyProps = AnyProps> = { [K in keyof P]?: FieldFormatFunction<NonNullable<P[K]>> }
+
+/**
+ * Function for formatting field values, in which the value to be formatted will be passed into this function as its
+ * only paramenter.
+ */
+export type FieldFormatFunction<V = FieldValue> = (value: V) => V
+
+export type ModelPropertyValidationProvider<P extends AnyProps = AnyProps> = { [K in keyof P]?: FieldValidationStrategy<NonNullable<P[K]>> }
 
 /**
  * The validation strategy can be one of several types. The behavior per type is as follows:
@@ -21,30 +39,13 @@ export type FieldRandomValueFunction<T = FieldValue> = () => T
  *   4. Function: The value to be validated will be passed into this function and it must return
  *      `true`.
  */
-export type FieldValidationStrategy<T = FieldValue> = RegExp | number | T[] | FieldValidationFunction<T>
+ export type FieldValidationStrategy<V = FieldValue> = RegExp | number | V[] | FieldValidationFunction<V>
 
-/**
- * Function for validating field values, in which the value to be validated is passed into the
- * function as its only argument.
- */
-export type FieldValidationFunction<T = FieldValue> = (value: T) => boolean
-
-export type ModelDefaultPropertyProvider<T> = { [K in keyof T]?: NonNullable<T[K]> | FieldDefaultValueFunction<NonNullable<T[K]>> }
-
-/**
- * Function for generating a default value for the associated field.
- */
-export type FieldDefaultValueFunction<T = FieldValue> = () => T
-
-export type ModelPropertyFormattingProvider<T> = { [K in keyof T]?: FieldFormatFunction<NonNullable<T[K]>> }
-
-/**
- * Function for formatting field values, in which the value to be formatted will be passed into this function as its
- * only paramenter.
- */
-export type FieldFormatFunction<T = FieldValue> = (value: T) => T
-
-export type ModelPropertyValidationProvider<T> = { [K in keyof T]?: FieldValidationStrategy<NonNullable<T[K]>> }
+ /**
+  * Function for validating field values, in which the value to be validated is passed into the
+  * function as its only argument.
+  */
+ export type FieldValidationFunction<V = FieldValue> = (value: V) => boolean
 
 export type ModelRandomFieldsOptions = {
   /**
@@ -53,11 +54,11 @@ export type ModelRandomFieldsOptions = {
   includeOptionals?: boolean
 }
 
-export type ModelFindOneOptions = CollectionAggregationOptions & {}
+export type ModelFindOneOptions = AggregateOptions & {}
 
-export type ModelFindManyOptions = CollectionAggregationOptions & {}
+export type ModelFindManyOptions = AggregateOptions & {}
 
-export type ModelInsertOneOptions = ModelValidateDocumentOptions & CollectionInsertOneOptions & {
+export type ModelInsertOneOptions = ModelValidateDocumentOptions & InsertOneOptions & {
   /**
    * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are automatically
    * generated before insertion.
@@ -65,7 +66,7 @@ export type ModelInsertOneOptions = ModelValidateDocumentOptions & CollectionIns
   ignoreTimestamps?: boolean
 }
 
-export type ModelInsertManyOptions = ModelValidateDocumentOptions & CollectionInsertManyOptions & {
+export type ModelInsertManyOptions = ModelValidateDocumentOptions & BulkWriteOptions & {
   /**
    * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are automatically
    * generated before insertion.
@@ -73,7 +74,7 @@ export type ModelInsertManyOptions = ModelValidateDocumentOptions & CollectionIn
   ignoreTimestamps?: boolean
 }
 
-export type ModelUpdateOneOptions<T> = ModelInsertOneOptions & FindOneAndReplaceOption<T> & ReplaceOneOptions & {
+export type ModelUpdateOneOptions = ModelValidateDocumentOptions & SanitizeUpdateOptions & UpdateOptions & FindOneAndUpdateOptions & {
   /**
    * Specifies whether updated doc is returned when update completes.
    */
@@ -86,7 +87,7 @@ export type ModelUpdateOneOptions<T> = ModelInsertOneOptions & FindOneAndReplace
   ignoreTimestamps?: boolean
 }
 
-export type ModelUpdateManyOptions<T> = CommonOptions & FindOneAndReplaceOption<T> & {
+export type ModelUpdateManyOptions = ModelValidateDocumentOptions & SanitizeUpdateOptions & UpdateOptions & FindOneAndUpdateOptions & {
   /**
    * Specifies whether updated docs are returned when update completes.
    */
@@ -99,21 +100,21 @@ export type ModelUpdateManyOptions<T> = CommonOptions & FindOneAndReplaceOption<
   ignoreTimestamps?: boolean
 }
 
-export type ModelDeleteOneOptions = CommonOptions & {
+export type ModelDeleteOneOptions = DeleteOptions & FindOneAndDeleteOptions & {
   /**
    * Specifies whether deleted doc is returned when deletion completes.
    */
   returnDoc?: boolean
 }
 
-export type ModelDeleteManyOptions = CommonOptions & {
+export type ModelDeleteManyOptions = DeleteOptions & FindOneAndReplaceOptions & {
   /**
    * Specifies whether deleted docs are returned when deletion completes.
    */
   returnDocs?: boolean
 }
 
-export type ModelReplaceOneOptions<T> = FindOneAndReplaceOption<T> & ModelDeleteOneOptions & ModelInsertOneOptions & {}
+export type ModelReplaceOneOptions = ReplaceOptions & FindOneAndReplaceOptions & ModelInsertOneOptions & {}
 
 export type ModelCountOptions = ModelFindManyOptions & {}
 
@@ -207,17 +208,17 @@ export default interface Model<T> {
   pipeline(queryOrOperators?: AnyFilter<T> | AggregationPipelineFactoryOperators<T>, options?: AggregationPipelineFactoryOptions): AggregationPipeline
 
   /**
-   * Identifies the ObjectID of exactly one document matching the given filter. Error is thrown if
+   * Identifies the ObjectId of exactly one document matching the given filter. Error is thrown if
    * the document cannot be identified.
    *
    * @param filter - Filter used for the `$match` stage of the aggregation pipeline.
    *
-   * @returns The matching ObjectID.
+   * @returns The matching ObjectId.
    *
    * @throws {Error} No document is found with the given filter.
-   * @throws {Error} ID of the found document is not a valid ObjectID.
+   * @throws {Error} ID of the found document is not a valid ObjectId.
    */
-  identifyOneStrict(filter: AnyFilter<T>): Promise<ObjectID>
+  identifyOneStrict(filter: AnyFilter<T>): Promise<ObjectId>
 
   /**
    * Same as the strict identify one operation but this method drops all errors and returns
@@ -225,11 +226,11 @@ export default interface Model<T> {
    *
    * @param filter - Filter used for the `$match` stage of the aggregation pipeline.
    *
-   * @returns The matching ObjectID.
+   * @returns The matching ObjectId.
    *
    * @see Model.identifyOneStrict
    */
-  identifyOne(filter: AnyFilter<T>): Promise<ObjectID | undefined>
+  identifyOne(filter: AnyFilter<T>): Promise<ObjectId | undefined>
 
   /**
    * Returns an array of document IDs that match the filter.
@@ -238,7 +239,7 @@ export default interface Model<T> {
    *
    * @returns Array of matching IDs.
    */
-  identifyMany(filter?: AnyFilter<T>): Promise<ObjectID[]>
+  identifyMany(filter?: AnyFilter<T>): Promise<ObjectId[]>
 
   /**
    * Finds one document from this collection using the aggregation framework. If no filter is
@@ -337,7 +338,8 @@ export default interface Model<T> {
    *                 model to update to, or an update query.
    * @param options - See `ModelUpdateOneOptions`.
    *
-   * @returns The updated doc if `returnDoc` is set to `true`, else there is no fulfillment value.
+   * @returns The updated doc if `returnDoc` is set to `true`, or a boolean indicating whether a
+   *          doc was updated or upserted.
    *
    * @see {@link https://docs.mongodb.com/manual/reference/operator/update-field/}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#updateOne}
@@ -350,7 +352,7 @@ export default interface Model<T> {
    * @throws {Error} Filter is invalid.
    * @throws {Error} A doc is updated but it cannot be found.
    */
-  updateOneStrict(query: AnyFilter<T>, update: AnyUpdate<T>, options?: ModelUpdateOneOptions<T>): Promise<void | Document<T>>
+  updateOneStrict(query: AnyFilter<T>, update: AnyUpdate<T>, options?: ModelUpdateOneOptions): Promise<boolean | Document<T>>
 
   /**
    * Same as the strict update one operation except this method drops all errors and returns
@@ -367,7 +369,7 @@ export default interface Model<T> {
    *
    * @see Model.updateOneStrict
    */
-  updateOne(filter: AnyFilter<T>, update: AnyUpdate<T>, options?: ModelUpdateOneOptions<T>): Promise<boolean | Document<T> | undefined>
+  updateOne(filter: AnyFilter<T>, update: AnyUpdate<T>, options?: ModelUpdateOneOptions): Promise<boolean | Document<T> | undefined>
 
   /**
    * Updates multiple documents matched by `filter` with `update` object.
@@ -391,7 +393,7 @@ export default interface Model<T> {
    *                 the schema.
    * @throws {Error} One of the updated docs are not returned.
    */
-  updateMany(filter: AnyFilter<T>, update: AnyUpdate<T>, options?: ModelUpdateManyOptions<T>): Promise<Document<T>[] | boolean>
+  updateMany(filter: AnyFilter<T>, update: AnyUpdate<T>, options?: ModelUpdateManyOptions): Promise<Document<T>[] | boolean>
 
   /**
    * Deletes one document matched by `filter`.
@@ -399,7 +401,8 @@ export default interface Model<T> {
    * @param filter - Filter for document to delete.
    * @param options - See `ModelDeleteOneOptions`.
    *
-   * @returns The deleted doc if `returnDoc` is set to `true`.
+   * @returns The deleted doc if `returnDoc` is set to `true`, or a boolean indicating whether the
+   *          doc is deleted.
    *
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#deleteOne}
    * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndDelete}
@@ -409,7 +412,7 @@ export default interface Model<T> {
    * @throws {Error} Unable to return the deleted document when `returnDoc` is `true`.
    * @throws {Error} Unable to delete document.
    */
-  deleteOneStrict(filter: AnyFilter<T>, options?: ModelDeleteOneOptions): Promise<Document<T> | void>
+  deleteOneStrict(filter: AnyFilter<T>, options?: ModelDeleteOneOptions): Promise<Document<T> | boolean>
 
   /**
    * Same as the strict delete one operation except this method drops all errors.
@@ -463,7 +466,7 @@ export default interface Model<T> {
    * @throws {Error} The old document cannot be returned.
    * @throws {Error} The doc is replaced but it cannot be fetched.
    */
-  findAndReplaceOneStrict(filter: AnyFilter<T>, replacement?: DocumentFragment<T>, options?: ModelReplaceOneOptions<T>): Promise<Document<T>>
+  findAndReplaceOneStrict(filter: AnyFilter<T>, replacement?: DocumentFragment<T>, options?: ModelReplaceOneOptions): Promise<Document<T>>
 
   /**
    * Same as the strict find and replace one operation except this method drops all errors.
@@ -477,7 +480,7 @@ export default interface Model<T> {
    *
    * @see Model.findAndReplaceOneStrict
    */
-  findAndReplaceOne(filter: AnyFilter<T>, replacement?: DocumentFragment<T>, options?: ModelReplaceOneOptions<T>): Promise<Document<T> | undefined>
+  findAndReplaceOne(filter: AnyFilter<T>, replacement?: DocumentFragment<T>, options?: ModelReplaceOneOptions): Promise<Document<T> | undefined>
 
   /**
    * Checks if a document exists.

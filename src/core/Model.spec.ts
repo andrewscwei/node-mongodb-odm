@@ -5,7 +5,7 @@ import bcrypt from 'bcrypt'
 import Faker from 'faker'
 import _ from 'lodash'
 import { describe, it } from 'mocha'
-import { ObjectID } from 'mongodb'
+import { ObjectId } from 'mongodb'
 import { configureDb, getDbInstance } from '..'
 import { Document, DocumentFragment } from '../types'
 import Model from './modelFactory'
@@ -32,7 +32,7 @@ describe('core/Model', () => {
   })
 
   it('can find a document', async () => {
-    const t: DocumentFragment<BarProps> = { aString: Faker.random.alphaNumeric(10) }
+    const t = { aString: Faker.random.alphaNumeric(10) }
     const res = await Bar.insertOneStrict(t)
 
     assert(res)
@@ -76,28 +76,28 @@ describe('core/Model', () => {
   })
 
   it('can insert a new document', async () => {
-    const t: DocumentFragment<BarProps> = { aString: Faker.random.alphaNumeric(10) }
+    const t = { aString: Faker.random.alphaNumeric(10) }
     const doc = await Bar.insertOneStrict(t)
     assert(doc.aString === t.aString)
   })
 
   it('can insert multiple documents', async () => {
-    const t: DocumentFragment<BarProps>[] = [{ aString: Faker.random.alphaNumeric(10) }, { aString: Faker.random.alphaNumeric(10) }, { aString: Faker.random.alphaNumeric(10) }]
+    const t = [{ aString: Faker.random.alphaNumeric(10) }, { aString: Faker.random.alphaNumeric(10) }, { aString: Faker.random.alphaNumeric(10) }]
     const docs = await Bar.insertMany(t)
     assert(docs.length === t.length)
-    assert(docs!.reduce((prev, curr) => prev && ObjectID.isValid(curr._id), true))
+    assert(docs!.reduce((prev, curr) => prev && ObjectId.isValid(curr._id), true))
     docs.forEach((doc, i) => assert(doc.aString === t[i].aString))
   })
 
   it('can identify a single document', async () => {
-    const t: DocumentFragment<BarProps> = { aString: 'foo' }
+    const t = { aString: 'foo' }
     await Bar.insertOneStrict(t)
     const id = await Bar.identifyOne({ aString: 'foo' })
     assert(id)
   })
 
   it('can identify multiple documents', async () => {
-    const t: DocumentFragment<BarProps>[] = [{ aString: 'bar' }, { aString: 'bar' }, { aString: 'bar' }]
+    const t = [{ aString: 'bar' }, { aString: 'bar' }, { aString: 'bar' }]
     await Bar.insertMany(t)
     const ids = await Bar.identifyMany({ aString: 'bar' })
     assert(ids.length === t.length)
@@ -116,33 +116,33 @@ describe('core/Model', () => {
   })
 
   it('can format documents according to the schema', async () => {
-    const t: DocumentFragment<BarProps> = { aFormattedString: Faker.random.alphaNumeric(10) }
+    const t = { aFormattedString: Faker.random.alphaNumeric(10) }
     const res = await Bar.formatDocument(t)
     assert(Bar.formatProps.aFormattedString(t.aFormattedString!) === res.aFormattedString)
   })
 
   it('can encrypt document fields according to the schema', async () => {
     const s = Faker.random.alphaNumeric(10)
-    const t: DocumentFragment<BarProps> = { anEncryptedString: s }
+    const t = { anEncryptedString: s }
     const res = await Bar.formatDocument(t)
     assert(await bcrypt.compare(s, res.anEncryptedString!))
   })
 
   it('should automatically generate default values on insert', async () => {
-    const t: DocumentFragment<BarProps> = { aString: Faker.random.alphaNumeric(10) }
+    const t = { aString: Faker.random.alphaNumeric(10) }
     const res = await Bar.insertOneStrict(t)
     assert(res.aBoolean === Bar.defaultProps.aBoolean)
   })
 
   it('should automatically format values on insert according to the schema', async () => {
-    const t: DocumentFragment<BarProps> = { aString: Faker.random.alphaNumeric(10), aFormattedString: Faker.random.alphaNumeric(10) }
+    const t = { aString: Faker.random.alphaNumeric(10), aFormattedString: Faker.random.alphaNumeric(10) }
     const res = await Bar.insertOneStrict(t)
     assert(Bar.formatProps.aFormattedString(t.aFormattedString!) === res.aFormattedString)
   })
 
   it('can update an existing doc', async () => {
     const s = Faker.random.alphaNumeric(10)
-    const t: DocumentFragment<BarProps> = { aString: Faker.random.alphaNumeric(10) }
+    const t = { aString: Faker.random.alphaNumeric(10) }
     await Bar.insertOneStrict(t)
     const updated = await Bar.updateOneStrict(t, { aString: s }, { returnDoc: true })
     assert((updated as Document<BarProps>).aString === s)
@@ -158,14 +158,14 @@ describe('core/Model', () => {
 
   it('can upsert a doc if it does not already exist', async () => {
     const s = Faker.random.alphaNumeric(10)
-    const t: DocumentFragment<BarProps> = { aString: s }
+    const t = { aString: s }
     await Bar.updateOneStrict(t, { aFormattedString: Faker.random.alphaNumeric(10) }, { upsert: true })
     await Bar.findOneStrict({ aString: s })
   })
 
   it('cannot upsert a doc if `allowUpserts` is not enabled in the schema', async () => {
     const s = Faker.random.alphaNumeric(10)
-    const t: DocumentFragment<FooProps> = { aString: s }
+    const t = { aString: s }
     let didThrow = true
 
     try {
@@ -178,12 +178,12 @@ describe('core/Model', () => {
   })
 
   it('should return `false` if update fails and `returnDoc` is `false`', async () => {
-    const res = await Bar.updateOne(new ObjectID(), { aString: Faker.random.alphaNumeric(10) })
+    const res = await Bar.updateOne(new ObjectId(), { aString: Faker.random.alphaNumeric(10) })
     assert(res === false)
   })
 
   it('should return `undefined` if update fails and `returnDoc` is `true`', async () => {
-    const res = await Bar.updateOne(new ObjectID(), { aString: Faker.random.alphaNumeric(10) }, { returnDoc: true })
+    const res = await Bar.updateOne(new ObjectId(), { aString: Faker.random.alphaNumeric(10) }, { returnDoc: true })
     assert(_.isUndefined(res))
   })
 
@@ -216,7 +216,7 @@ describe('core/Model', () => {
     const docs = await Bar.insertMany(q)
 
     assert(docs)
-    assert(docs!.reduce((prev, curr) => prev && ObjectID.isValid(curr._id), true))
+    assert(docs!.reduce((prev, curr) => prev && ObjectId.isValid(curr._id), true))
 
     const res = await Bar.updateMany({ aString: s }, { aString: t }, { returnDocs: true }) as Document<BarProps>[]
 
@@ -234,7 +234,7 @@ describe('core/Model', () => {
     assert(!_.isNil(await Bar.findOne({ aString: s })))
   })
 
-  it('can upsert a doc in an `updateMany` op while `returnDocs` is fa`lse', async () => {
+  it('can upsert a doc in an `updateMany` op while `returnDocs` is false', async () => {
     const s = Faker.random.alphaNumeric(10)
     const t = Faker.random.alphaNumeric(10)
 
@@ -353,8 +353,8 @@ interface FooObject {
 interface FooProps {
   aString: string
   aNumber: number
-  aBar: ObjectID
-  aFoo?: ObjectID
+  aBar: ObjectId
+  aFoo?: ObjectId
   anObject?: FooObject
 }
 
@@ -365,8 +365,8 @@ const FooSchema: Schema<FooProps> = {
   fields: {
     aString: { type: String, required: true },
     aNumber: { type: Number, required: true },
-    aBar: { type: ObjectID, ref: 'Bar', required: true },
-    aFoo: { type: ObjectID, ref: 'Foo' },
+    aBar: { type: ObjectId, ref: 'Bar', required: true },
+    aFoo: { type: ObjectId, ref: 'Foo' },
     anObject: {
       type: {
         foo: {
@@ -408,7 +408,7 @@ class Foo extends Model(FooSchema) {
 }
 
 interface BarProps {
-  aBar: ObjectID
+  aBar: ObjectId
   aString: string
   aDate: Date
   anObject?: {
@@ -428,12 +428,12 @@ const BarSchema: Schema<BarProps> = {
   cascade: ['Foo'],
   allowUpserts: true,
   fields: {
-    aBar: { type: ObjectID, ref: 'Bar' },
+    aBar: { type: ObjectId, ref: 'Bar' },
     aString: { type: String, required: true },
     aDate: { type: Date, required: true },
     anObject: {
       type: {
-        anObjectIdArray: { type: [ObjectID] },
+        anObjectIdArray: { type: [ObjectId] },
         aString: { type: String },
         aNumber: { type: Number },
         aBoolean: { type: Boolean },

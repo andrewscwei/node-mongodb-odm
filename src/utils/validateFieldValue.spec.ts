@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { describe, it } from 'mocha'
-import { ObjectID } from 'mongodb'
+import { ObjectId } from 'mongodb'
 import validateFieldValue from '../utils/validateFieldValue'
 
 describe('utils/validate', () => {
@@ -67,7 +67,7 @@ describe('utils/validate', () => {
   })
 
   it('can validate ObjectIDs', () => {
-    const i = new ObjectID()
-    assert.doesNotThrow(() => validateFieldValue(i, { type: ObjectID }))
+    const i = new ObjectId()
+    assert.doesNotThrow(() => validateFieldValue(i, { type: ObjectId }))
   })
 })

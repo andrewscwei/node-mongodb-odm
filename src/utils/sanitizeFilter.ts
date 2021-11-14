@@ -1,10 +1,10 @@
 import _ from 'lodash'
-import { ObjectID } from 'mongodb'
+import { Filter, ObjectId } from 'mongodb'
 import Schema from '../core/Schema'
-import { AnyFilter, DocumentFragment, typeIsValidObjectID } from '../types'
+import { AnyFilter, AnyProps, Document, DocumentFragment, typeIsValidObjectID } from '../types'
 import sanitizeDocument from './sanitizeDocument'
 
-type SanitizeQueryOptions = {
+type SanitizeFilterOptions = {
   /**
    * If set to `true`, fields that are not specified in the schema will be deleted as part of the
    * sanitizing process.
@@ -13,19 +13,18 @@ type SanitizeQueryOptions = {
 }
 
 /**
- * Magically transforms any supported value into a valid input for querying db collections. Note
- * that this process does not perform any data validation. The transformation process includes the
+ * Magically transforms any supported value into a valid input for filtering db collections. Note
+ * that this process does not perform any data validations. The transformation process includes the
  * following:
- *   1. Wraps an ObjectID instance or string representing an ObjectID into a proper query.
+ *   1. Wraps an `ObjectId` instance or string representing an `ObjectId` into a proper filter.
  *   2. If strict mode is enabled, the provided schema will be used to strip out all extraneous
- *      fields from the input.
- *      @see sanitizeDocument
+ *      fields from the input. @see sanitizeDocument
  *
  * @param schema - The collection schema.
- * @param query - The query object to sanitize.
- * @param options - @see SanitizeQueryOptions
+ * @param filter - The filter to sanitize.
+ * @param options - @see SanitizeFilterOptions
  *
- * @returns The sanitized query.
+ * @returns The sanitized filter.
  *
  * @example
  * // Returns { "_id": 5927f337c5178b9665b56b1e }
@@ -42,17 +41,17 @@ type SanitizeQueryOptions = {
  * sanitizeFilter(schema, { a: 'b', b: 'c', garbage: 'garbage' })
  * sanitizeFilter(schema, { a: 'b', b: 'c', garbage: 'garbage' }, { strict: true })
  */
-export default function sanitizeFilter<T>(schema: Schema<T>, query: AnyFilter<T>, { strict = true }: SanitizeQueryOptions = {}): { [key: string]: any } {
-  if (typeIsValidObjectID(query)) {
-    return { _id: query }
+export default function sanitizeFilter<P extends AnyProps = AnyProps>(schema: Schema<P>, filter: AnyFilter<P>, { strict = true }: SanitizeFilterOptions = {}): Filter<Document<P>> {
+  if (typeIsValidObjectID(filter)) {
+    return { _id: filter }
   }
-  else if (_.isString(query)) {
-    return { _id: new ObjectID(query) }
+  else if (_.isString(filter)) {
+    return { _id: new ObjectId(filter) }
   }
   else if (strict) {
-    return sanitizeDocument<T>(schema, query as DocumentFragment<T>, { accountForDotNotation: true })
+    return sanitizeDocument<P>(schema, filter as DocumentFragment<P>, { accountForDotNotation: true })
   }
   else {
-    return query
+    return filter
   }
 }

@@ -32,11 +32,10 @@
     "index.d.ts"
   ],
   "dependencies": {
-    "@types/mongodb": "^3.6.20",
     "bcrypt": "^5.0.1",
     "debug": "^4.3.2",
     "lodash": "^4.17.21",
-    "mongodb": "^3.6.10"
+    "mongodb": "^4.1.4"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.0",

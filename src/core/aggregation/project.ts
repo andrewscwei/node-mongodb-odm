@@ -1,6 +1,7 @@
 import _ from 'lodash'
 import { AggregationPipeline, AggregationStageDescriptor } from '.'
 import * as db from '../..'
+import { AnyProps } from '../../types'
 import Schema, { FieldDescriptor } from '../Schema'
 
 export interface ProjectStageFactoryOptions {
@@ -58,7 +59,7 @@ export interface ProjectStageFactoryOptionsPopulate {
  *
  * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/project/}
  */
-export function projectStageFactory<T>(schema: Schema<T>, { toPrefix = '', fromPrefix = '', populate = {}, exclude = [] }: ProjectStageFactoryOptions = {}): AggregationPipeline {
+export function projectStageFactory<P extends AnyProps = AnyProps>(schema: Schema<P>, { toPrefix = '', fromPrefix = '', populate = {}, exclude = [] }: ProjectStageFactoryOptions = {}): AggregationPipeline {
   const fields: { [fieldName: string]: FieldDescriptor} = schema.fields
   const out: { [key: string]: any } = { [`${toPrefix}_id`]: `$${fromPrefix}_id` }
   for (const key in fields) {

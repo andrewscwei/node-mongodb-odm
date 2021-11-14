@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { ObjectID } from 'mongodb'
+import { ObjectId } from 'mongodb'
 import { FieldValidationStrategy } from '../core/Model'
 import { FieldDescriptor, FieldType, FieldValue } from '../core/Schema'
 import { typeIsValidObjectID } from '../types'
@@ -45,12 +45,12 @@ import { typeIsValidObjectID } from '../types'
  *                     number).
  * @throws {TypeError} Array value should not have an array validator (only if validator is an
  *                     array).
- * @throws {TypeError} Value is supposed to be an ObjectID but it is not.
- * @throws {TypeError} ObjectID value should not have a RegExp validator (only if validator is a
+ * @throws {TypeError} Value is supposed to be an ObjectId but it is not.
+ * @throws {TypeError} ObjectId value should not have a RegExp validator (only if validator is a
  *                     RegExp).
- * @throws {TypeError} ObjectID value should not have a number validator (only if validator is a
+ * @throws {TypeError} ObjectId value should not have a number validator (only if validator is a
  *                     number).
- * @throws {TypeError} ObjectID value should not have an array validator (only if validator is an
+ * @throws {TypeError} ObjectId value should not have an array validator (only if validator is an
  *                     array).
  * @throws {TypeError} Incorrect definition of a typed array type in the spec.
  * @throws {TypeError} Value is supposed to be a typed array but it is not even an array.
@@ -65,7 +65,7 @@ import { typeIsValidObjectID } from '../types'
  * @throws {TypeError} One or more sub-fields of an object value is not valid.
  * @throws {TypeError} Value fails custom validation function (only if validator is a function).
  */
-export default function validateFieldValue<T = FieldValue>(value: T, spec: FieldDescriptor, strategy?: FieldValidationStrategy<T>) {
+export default function validateFieldValue<V = FieldValue>(value: V, spec: FieldDescriptor, strategy?: FieldValidationStrategy<V>) {
   // Check if value is `undefined` or `null`, then respond accordingly depending on whether or not
   // it is a required value.
   if (_.isNil(value)) {
@@ -148,17 +148,17 @@ export default function validateFieldValue<T = FieldValue>(value: T, spec: Field
     }
 
     break
-  case ObjectID:
-    if (!typeIsValidObjectID(value)) throw new TypeError(`The value "${value}" is expected to be an ObjectID but instead it is a(n) ${typeof value}`)
+  case ObjectId:
+    if (!typeIsValidObjectID(value)) throw new TypeError(`The value "${value}" is expected to be an ObjectId but instead it is a(n) ${typeof value}`)
 
     if (_.isRegExp(strategy)) {
-      throw new TypeError('The RegExp validation method is not supported for ObjectID values')
+      throw new TypeError('The RegExp validation method is not supported for ObjectId values')
     }
     else if (_.isNumber(strategy)) {
-      throw new TypeError('The number validation method is not supported for ObjectID values')
+      throw new TypeError('The number validation method is not supported for ObjectId values')
     }
     else if (_.isArray(strategy)) {
-      throw new TypeError('The array validation method is not supported for ObjectID values')
+      throw new TypeError('The array validation method is not supported for ObjectId values')
     }
 
     break

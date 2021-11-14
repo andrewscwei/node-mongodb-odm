@@ -1,6 +1,7 @@
 import _ from 'lodash'
 import { AggregationPipeline } from '.'
 import * as db from '../..'
+import { AnyProps } from '../../types'
 import Schema, { FieldDescriptor } from '../Schema'
 
 /**
@@ -62,7 +63,7 @@ export type LookupStageFactoryOptions = {
  * @throws {Error} Field to populate doesn't have a `ref` field specified.
  * @throws {Error} Unable to find the schema for the field to populate.
  */
-export function lookupStageFactory<T>(schema: Schema<T>, spec: LookupStageFactorySpec, { fromPrefix = '', toPrefix = '' }: LookupStageFactoryOptions = {}): AggregationPipeline {
+export function lookupStageFactory<P extends AnyProps = AnyProps>(schema: Schema<P>, spec: LookupStageFactorySpec, { fromPrefix = '', toPrefix = '' }: LookupStageFactoryOptions = {}): AggregationPipeline {
   const fields: { [fieldName: string]: FieldDescriptor} = schema.fields
 
   let pipe: AggregationPipeline = []

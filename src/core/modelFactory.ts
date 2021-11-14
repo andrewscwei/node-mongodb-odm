@@ -6,9 +6,9 @@
 
 import bcrypt from 'bcrypt'
 import _ from 'lodash'
-import { Collection, FilterQuery, ObjectID, UpdateQuery } from 'mongodb'
+import { Collection, Filter, ObjectId, UpdateFilter } from 'mongodb'
 import * as db from '..'
-import { AnyFilter, AnyUpdate, Document, DocumentFragment, typeIsValidObjectID } from '../types'
+import { AnyDocument, AnyFilter, AnyProps, AnyUpdate, Document, DocumentFragment, typeIsAnyDocument, typeIsValidObjectID } from '../types'
 import getFieldSpecByKey from '../utils/getFieldSpecByKey'
 import sanitizeDocument from '../utils/sanitizeDocument'
 import sanitizeFilter from '../utils/sanitizeFilter'
@@ -16,7 +16,7 @@ import sanitizeUpdate from '../utils/sanitizeUpdate'
 import validateFieldValue from '../utils/validateFieldValue'
 import { AggregationPipeline, AggregationPipelineFactoryOperators, AggregationPipelineFactoryOptions, pipelineFactory, typeIsAggregationPipeline } from './aggregation'
 import * as CRUD from './crud'
-import Model, { ModelCountOptions, ModelDefaultPropertyProvider, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelPropertyFormattingProvider, ModelPropertyValidationProvider, ModelRandomFieldsOptions, ModelRandomPropertyProvider, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions } from './Model'
+import Model, { FieldValidationStrategy, ModelCountOptions, ModelDefaultPropertyProvider, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelPropertyFormattingProvider, ModelPropertyValidationProvider, ModelRandomFieldsOptions, ModelRandomPropertyProvider, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions } from './Model'
 import Schema, { FieldDescriptor, MultiFieldDescriptor, typeIsFieldDescriptor } from './Schema'
 
 /**
@@ -26,7 +26,7 @@ import Schema, { FieldDescriptor, MultiFieldDescriptor, typeIsFieldDescriptor } 
  *
  * @returns The generated static model.
  */
-export default function modelFactory<T>(schema: Schema<T>): Model<T> {
+export default function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): Model<P> {
   const debug = process.env.NODE_ENV === 'development' ? require('debug')(`mongodb-odm:model:${schema.model}`) : () => {}
 
   return class {
@@ -35,16 +35,16 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     static readonly schema = schema
 
     /** @inheritdoc */
-    static readonly randomProps: ModelRandomPropertyProvider<T> = {}
+    static readonly randomProps: ModelRandomPropertyProvider<P> = {}
 
     /** @inheritdoc */
-    static readonly defaultProps: ModelDefaultPropertyProvider<T> = {}
+    static readonly defaultProps: ModelDefaultPropertyProvider<P> = {}
 
     /** @inheritdoc */
-    static readonly formatProps: ModelPropertyFormattingProvider<T> = {}
+    static readonly formatProps: ModelPropertyFormattingProvider<P> = {}
 
     /** @inheritdoc */
-    static readonly validateProps: ModelPropertyValidationProvider<T> = {}
+    static readonly validateProps: ModelPropertyValidationProvider<P> = {}
 
     /** @inheritdoc */
     constructor() {
@@ -57,8 +57,8 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async randomFields(fixedFields: DocumentFragment<T> = {}, { includeOptionals = false }: ModelRandomFieldsOptions = {}): Promise<DocumentFragment<T>> {
-      const o: DocumentFragment<T> = {}
+    static async randomFields(fixedFields: DocumentFragment<P> = {}, { includeOptionals = false }: ModelRandomFieldsOptions = {}): Promise<DocumentFragment<P>> {
+      const o: DocumentFragment<P> = {}
 
       const fields = this.schema.fields
 
@@ -77,33 +77,33 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
 
       for (const key in fixedFields) {
         if (!fixedFields.hasOwnProperty(key)) continue
-        o[key as keyof T] = fixedFields[key as keyof T]
+        o[key as keyof P] = fixedFields[key as keyof P]
       }
 
       return o
     }
 
     /** @inheritdoc */
-    static pipeline(filterOrOperators?: AnyFilter<T> | AggregationPipelineFactoryOperators<T>, options?: AggregationPipelineFactoryOptions): AggregationPipeline {
+    static pipeline(filterOrOperators?: AnyFilter<P> | AggregationPipelineFactoryOperators<P>, options: AggregationPipelineFactoryOptions = {}): AggregationPipeline {
       if (!this.schema) throw new Error(`[${this.constructor.name}] This model has no schema, you must define this static proerty in the derived class`)
 
       // Check if the argument conforms to aggregation factory operators.
       if (filterOrOperators && Object.keys(filterOrOperators).some(val => val.startsWith('$'))) {
-        return pipelineFactory(this.schema, filterOrOperators as AggregationPipelineFactoryOperators<T>, options)
+        return pipelineFactory(this.schema, filterOrOperators as AggregationPipelineFactoryOperators<P>, options)
       }
       // Otherwise the argument is a filter for the $match stage.
       else {
-        return pipelineFactory(this.schema, { $match: filterOrOperators as AnyFilter<T> }, options)
+        return pipelineFactory(this.schema, { $match: filterOrOperators as AnyFilter<P> }, options)
       }
     }
 
     /** @inheritdoc */
-    static async identifyOneStrict(filter: AnyFilter<T>): Promise<ObjectID> {
+    static async identifyOneStrict(filter: AnyFilter<P>): Promise<ObjectId> {
       return CRUD.identifyOne(this.schema, filter)
     }
 
     /** @inheritdoc */
-    static async identifyOne(filter: AnyFilter<T>): Promise<ObjectID | undefined> {
+    static async identifyOne(filter: AnyFilter<P>): Promise<ObjectId | undefined> {
       try {
         return await this.identifyOneStrict(filter)
       }
@@ -113,12 +113,12 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async identifyMany(filter?: AnyFilter<T>): Promise<ObjectID[]> {
+    static async identifyMany(filter?: AnyFilter<P>): Promise<ObjectId[]> {
       return filter ? CRUD.identifyMany(this.schema, filter) : CRUD.identifyAll(this.schema)
     }
 
     /** @inheritdoc */
-    static async findOneStrict<R = T>(filter?: AnyFilter<T> | AggregationPipeline, options: ModelFindOneOptions = {}): Promise<Document<R>> {
+    static async findOneStrict<R = P>(filter?: AnyFilter<P> | AggregationPipeline, options: ModelFindOneOptions = {}): Promise<Document<R>> {
       if (filter) {
         return CRUD.findOne(this.schema, typeIsAggregationPipeline(filter) ? filter : this.pipeline(filter), options)
       }
@@ -128,7 +128,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async findOne<R = T>(filter?: AnyFilter<T> | AggregationPipeline, options: ModelFindOneOptions = {}): Promise<Document<R> | undefined> {
+    static async findOne<R = P>(filter?: AnyFilter<P> | AggregationPipeline, options: ModelFindOneOptions = {}): Promise<Document<R> | undefined> {
       try {
         return await this.findOneStrict<R>(filter, options)
       }
@@ -138,7 +138,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async findMany<R = T>(filter?: AnyFilter<T> | AggregationPipeline, options: ModelFindManyOptions = {}): Promise<Document<R>[]> {
+    static async findMany<R = P>(filter?: AnyFilter<P> | AggregationPipeline, options: ModelFindManyOptions = {}): Promise<Document<R>[]> {
       if (filter) {
         return CRUD.findMany(this.schema, typeIsAggregationPipeline(filter) ? filter : this.pipeline(filter), options)
       }
@@ -148,7 +148,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async insertOneStrict(doc?: DocumentFragment<T>, options: ModelInsertOneOptions = {}): Promise<Document<T>> {
+    static async insertOneStrict(doc?: DocumentFragment<P>, options: ModelInsertOneOptions = {}): Promise<Document<P>> {
       if (schema.noInserts === true) throw new Error(`[${this.schema.model}] Insertions are disallowed for this model`)
 
       const docToInsert = await this.beforeInsert(doc ?? (await this.randomFields()), { strict: true, ...options })
@@ -158,7 +158,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async insertOne(doc?: DocumentFragment<T>, options: ModelInsertOneOptions = {}): Promise<Document<T> | undefined> {
+    static async insertOne(doc?: DocumentFragment<P>, options: ModelInsertOneOptions = {}): Promise<Document<P> | undefined> {
       try {
         return await this.insertOneStrict(doc, options)
       }
@@ -168,7 +168,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async insertMany(docs: DocumentFragment<T>[], options: ModelInsertManyOptions = {}): Promise<Document<T>[]> {
+    static async insertMany(docs: DocumentFragment<P>[], options: ModelInsertManyOptions = {}): Promise<Document<P>[]> {
       if ((this.schema.noInserts === true) || (this.schema.noInsertMany === true)) throw new Error(`[${this.schema.model}] Multiple insertions are disallowed for this model`)
 
       const docsToInsert = await Promise.all(docs.map(doc => this.beforeInsert(doc)))
@@ -186,10 +186,11 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async updateOneStrict(filter: AnyFilter<T>, update: AnyUpdate<T>, options: ModelUpdateOneOptions<T> = {}): Promise<void | Document<T>> {
+    static async updateOneStrict(filter: AnyFilter<P>, update: AnyUpdate<P>, options: ModelUpdateOneOptions = {}): Promise<boolean | Document<P>> {
       if (this.schema.noUpdates === true) throw new Error(`[${this.schema.model}] Updates are disallowed for this model`)
 
-      const [f, u] = await this.beforeUpdate(filter, update, options)
+      const f = sanitizeFilter(this.schema, filter)
+      const u = await this.beforeUpdate(f, update, options)
 
       if (options.returnDoc === true) {
         const [oldDoc, newDoc] = await CRUD.findOneAndUpdate(this.schema, f, u, options)
@@ -201,24 +202,26 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
         return newDoc
       }
       else {
-        await CRUD.updateOne(this.schema, f, u, options)
+        const result = await CRUD.updateOne(this.schema, f, u, options)
 
         debug('Updating an existing document...', 'OK', f, u, options)
 
         await this.afterUpdate()
+
+        return result
       }
     }
 
     /** @inheritdoc */
-    static async updateOne(filter: AnyFilter<T>, update: AnyUpdate<T>, options: ModelUpdateOneOptions<T> = {}): Promise<boolean | Document<T> | undefined> {
+    static async updateOne(filter: AnyFilter<P>, update: AnyUpdate<P>, options: ModelUpdateOneOptions = {}): Promise<boolean | Document<P> | undefined> {
       try {
-        const docOrUndefined = await this.updateOneStrict(filter, update, options)
+        const result = await this.updateOneStrict(filter, update, options)
 
-        if (docOrUndefined !== undefined && options.returnDoc === true) {
-          return docOrUndefined
+        if (!_.isBoolean(result) && options.returnDoc === true) {
+          return result
         }
         else {
-          return true
+          return result
         }
       }
       catch (err) {
@@ -227,10 +230,11 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async updateMany(filter: AnyFilter<T>, update: AnyUpdate<T>, options: ModelUpdateManyOptions<T> = {}): Promise<Document<T>[] | boolean> {
+    static async updateMany(filter: AnyFilter<P>, update: AnyUpdate<P>, options: ModelUpdateManyOptions = {}): Promise<Document<P>[] | boolean> {
       if ((this.schema.noUpdates === true) || (this.schema.noUpdateMany === true)) throw new Error(`[${this.schema.model}] Multiple updates are disallowed for this model`)
 
-      const [f, u] = await this.beforeUpdate(filter, update, options)
+      const f = sanitizeFilter(this.schema, filter)
+      const u = await this.beforeUpdate(f, update, options)
 
       if (options.returnDocs === true) {
         const [oldDocs, newDocs] = await CRUD.findManyAndUpdate(this.schema, f, u, options)
@@ -242,21 +246,22 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
         return newDocs
       }
       else {
-        const results = await CRUD.updateMany(this.schema, f, u, options)
+        const result = await CRUD.updateMany(this.schema, f, u, options)
 
-        debug('Updating multiple existing documents...', 'OK', f, u, options, results)
+        debug('Updating multiple existing documents...', 'OK', f, u, options, result)
 
         await this.afterUpdate()
 
-        return true
+        return result
       }
     }
 
     /** @inheritdoc */
-    static async deleteOneStrict(filter: AnyFilter<T>, options: ModelDeleteOneOptions = {}): Promise<Document<T> | void> {
+    static async deleteOneStrict(filter: AnyFilter<P>, options: ModelDeleteOneOptions = {}): Promise<Document<P> | boolean> {
       if (this.schema.noDeletes === true) throw new Error(`[${this.schema.model}] Deletions are disallowed for this model`)
 
-      const f = await this.beforeDelete(filter, options)
+      const f = sanitizeFilter(this.schema, filter)
+      await this.beforeDelete(f, options)
 
       if (options.returnDoc === true) {
         const deletedDoc = await CRUD.findAndDeleteOne(this.schema, f, options)
@@ -268,24 +273,26 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
         return deletedDoc
       }
       else {
-        await CRUD.deleteOne(this.schema, f, options)
+        const result = await CRUD.deleteOne(this.schema, f, options)
 
         debug('Deleting an existing document...', 'OK', filter)
 
         await this.afterDelete()
+
+        return result
       }
     }
 
     /** @inheritdoc */
-    static async deleteOne(filter: AnyFilter<T>, options: ModelDeleteOneOptions = {}): Promise<Document<T> | boolean | undefined> {
+    static async deleteOne(filter: AnyFilter<P>, options: ModelDeleteOneOptions = {}): Promise<Document<P> | boolean | undefined> {
       try {
-        const docOrUndefined = await this.deleteOneStrict(filter, options)
+        const result = await this.deleteOneStrict(filter, options)
 
-        if (docOrUndefined !== undefined && options.returnDoc === true) {
-          return docOrUndefined
+        if (!_.isBoolean(result) && options.returnDoc === true) {
+          return result
         }
         else {
-          return true
+          return result
         }
       }
       catch (err) {
@@ -294,10 +301,12 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async deleteMany(filter: AnyFilter<T>, options: ModelDeleteManyOptions = {}): Promise<boolean | Document<T>[]> {
+    static async deleteMany(filter: AnyFilter<P>, options: ModelDeleteManyOptions = {}): Promise<boolean | Document<P>[]> {
       if ((this.schema.noDeletes === true) || (this.schema.noDeleteMany === true)) throw new Error(`[${this.schema.model}] Multiple deletions are disallowed for this model`)
 
-      const f = await this.beforeDelete(filter, options)
+      const f = sanitizeFilter(this.schema, filter)
+
+      await this.beforeDelete(f, options)
 
       if (options.returnDocs === true) {
         const deletedDocs = await CRUD.findManyAndDelete(this.schema, f, options)
@@ -320,9 +329,9 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async findAndReplaceOneStrict(filter: AnyFilter<T>, replacement?: DocumentFragment<T>, options: ModelReplaceOneOptions<T> = {}): Promise<Document<T>> {
-      const f = await this.beforeDelete(filter, options)
-      const r = await this.beforeInsert(replacement || (await this.randomFields()), options)
+    static async findAndReplaceOneStrict(filter: AnyFilter<P>, replacement?: DocumentFragment<P>, options: ModelReplaceOneOptions = {}): Promise<Document<P>> {
+      const f = sanitizeFilter(this.schema, filter)
+      const r = await this.beforeInsert(replacement ?? (await this.randomFields()), options)
 
       const [oldDoc, newDoc] = await CRUD.findOneAndReplace(this.schema, f, r, options)
 
@@ -335,7 +344,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async findAndReplaceOne(filter: AnyFilter<T>, replacement?: DocumentFragment<T>, options: ModelReplaceOneOptions<T> = {}): Promise<Document<T> | undefined> {
+    static async findAndReplaceOne(filter: AnyFilter<P>, replacement?: DocumentFragment<P>, options: ModelReplaceOneOptions = {}): Promise<Document<P> | undefined> {
       try {
         return await this.findAndReplaceOneStrict(filter, replacement, options)
       }
@@ -345,21 +354,21 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async exists(filter: AnyFilter<T>): Promise<boolean> {
+    static async exists(filter: AnyFilter<P>): Promise<boolean> {
       const id = await this.identifyOne(filter)
 
       return id ? true : false
     }
 
     /** @inheritdoc */
-    static async count(filter: AnyFilter<T>, options: ModelCountOptions = {}): Promise<number> {
+    static async count(filter: AnyFilter<P>, options: ModelCountOptions = {}): Promise<number> {
       const results = await this.findMany(filter, options)
 
       return results.length
     }
 
     /** @inheritdoc */
-    static async formatDocument(doc: DocumentFragment<T>): Promise<DocumentFragment<T>> {
+    static async formatDocument(doc: DocumentFragment<P>): Promise<DocumentFragment<P>> {
       const formattedDoc = _.cloneDeep(doc)
       const fields = this.schema.fields
 
@@ -387,7 +396,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /** @inheritdoc */
-    static async validateDocument(doc: DocumentFragment<T>, options: ModelValidateDocumentOptions = {}) {
+    static async validateDocument(doc: DocumentFragment<P>, options: ModelValidateDocumentOptions = {}) {
       if (_.isEmpty(doc)) throw new Error(`[${this.schema.model}] Empty objects are not permitted`)
 
       for (const key in doc) {
@@ -400,13 +409,13 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
         if (this.schema.timestamps && (key === 'createdAt')) continue
 
         // #1 Check if field is defined in the schema.
-        const fieldSpec = options.accountForDotNotation ? getFieldSpecByKey(this.schema.fields, key) : schema.fields[key as keyof T]
+        const fieldSpec = options.accountForDotNotation ? getFieldSpecByKey(this.schema.fields, key) : schema.fields[key as keyof P]
         if (!fieldSpec) throw new Error(`[${this.schema.model}] The field '${key}' is not defined in the ${JSON.stringify(this.schema.fields, undefined, 0)}`)
 
         // #2 Check if field value conforms to its defined spec. Note that the key can be in dot
         // notation because this method may also be used when applying doc updates.
         const val = _.get(doc, key, undefined)
-        const validationStrategy = _.get(this.validateProps, key, undefined)
+        const validationStrategy: FieldValidationStrategy<any> | undefined = _.get(this.validateProps, key, undefined)
 
         try {
           validateFieldValue(val, fieldSpec, validationStrategy)
@@ -429,9 +438,9 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
           if (!index.spec) continue
           if (!Object.keys(index.spec).every(v => Object.keys(doc).indexOf(v) > -1)) continue
 
-          const uniqueQuery = _.pick(doc, Object.keys(index.spec))
+          const filter = _.pick(doc, Object.keys(index.spec)) as Filter<Document<P>>
 
-          if (await this.findOne(uniqueQuery)) throw new Error(`[${this.schema.model}] Another document already exists with ${JSON.stringify(uniqueQuery, undefined, 0)}`)
+          if (await this.findOne(filter)) throw new Error(`[${this.schema.model}] Another document already exists with ${JSON.stringify(filter, undefined, 0)}`)
         }
       }
 
@@ -451,7 +460,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
      *
      * @returns The document to be inserted.
      */
-    protected static async willInsertDocument(doc: DocumentFragment<T>): Promise<DocumentFragment<T>> {
+    protected static async willInsertDocument(doc: DocumentFragment<P>): Promise<DocumentFragment<P>> {
       return doc
     }
 
@@ -460,7 +469,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
      *
      * @param doc - The inserted document.
      */
-    protected static async didInsertDocument(doc: Document<T>): Promise<void> {}
+    protected static async didInsertDocument(doc: Readonly<Document<P>>): Promise<void> {}
 
     /**
      * Handler called before an attempted update operation. This method must return the filter and
@@ -471,8 +480,8 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
      *
      * @returns A tuple of the filter and the update descriptor.
      */
-    protected static async willUpdateDocument(filter: AnyFilter<T>, update: AnyUpdate<T>): Promise<[AnyFilter<T>, AnyUpdate<T>]> {
-      return [filter, update]
+    protected static async willUpdateDocument(filter: Readonly<Filter<Document<P>>>, update: AnyUpdate<P>): Promise<AnyUpdate<P>> {
+      return update
     }
 
     /**
@@ -483,7 +492,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
      * @param newDocs - The updated document(s). This is only available if `returnDoc` or
      *                  `returnDocs` was enabled.
      */
-    protected static async didUpdateDocument(prevDoc?: Document<T>, newDocs?: Document<T> | Document<T>[]): Promise<void> {}
+    protected static async didUpdateDocument(prevDoc?: Readonly<Document<P>>, newDocs?: Readonly<Document<P>> | Readonly<Document<P>[]>): Promise<void> {}
 
     /**
      * Handler called before an attempt to delete a document.
@@ -492,16 +501,14 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
      *
      * @returns The document to be deleted.
      */
-    protected static async willDeleteDocument(filter: AnyFilter<T>): Promise<AnyFilter<T>> {
-      return filter
-    }
+    protected static async willDeleteDocument(filter: Readonly<Filter<Document<P>>>): Promise<void> {}
 
     /**
      * Handler called after a document or a set of documents are successfully deleted.
      *
      * @param docs - The deleted document(s) if available.
      */
-    protected static async didDeleteDocument(docs?: Document<T> | Document<T>[]): Promise<void> {}
+    protected static async didDeleteDocument(docs?: Readonly<Document<P>> | Readonly<Document<P>[]>): Promise<void> {}
 
     /**
      * Processes a document before it is inserted. This is also used during an upsert operation.
@@ -511,40 +518,40 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
      *
      * @returns Document to be inserted/upserted to the database.
      */
-    private static async beforeInsert(doc: DocumentFragment<T>, options: ModelInsertOneOptions | ModelInsertManyOptions = {}): Promise<DocumentFragment<T>> {
+    private static async beforeInsert(doc: DocumentFragment<P>, options: ModelInsertOneOptions | ModelInsertManyOptions = {}): Promise<Document<P>> {
       // Call event hook first.
-      const d = await this.willInsertDocument(doc)
+      const modifiedDoc = await this.willInsertDocument(doc)
 
-      let o = sanitizeDocument<T>(this.schema, d)
+      let sanitizedDoc = sanitizeDocument(this.schema, modifiedDoc)
 
       // Unless specified, always renew the `createdAt` and `updatedAt` fields.
       if ((this.schema.timestamps === true) && (options.ignoreTimestamps !== true)) {
-        if (!_.isDate(o.createdAt)) o.createdAt = new Date() as any
-        if (!_.isDate(o.updatedAt)) o.updatedAt = new Date() as any
+        if (!_.isDate(sanitizedDoc.createdAt)) sanitizedDoc.createdAt = new Date() as any
+        if (!_.isDate(sanitizedDoc.updatedAt)) sanitizedDoc.updatedAt = new Date() as any
       }
 
       // Before inserting this document, go through each field and make sure that it has default
       // values and that they are formatted correctly.
       for (const key in this.schema.fields) {
         if (!this.schema.fields.hasOwnProperty(key)) continue
-        if (o.hasOwnProperty(key)) continue
+        if (sanitizedDoc.hasOwnProperty(key)) continue
 
         const defaultValue = this.defaultProps[key]
 
         // Check if the field has a default value defined in the schema. If so, apply it.
         if (_.isUndefined(defaultValue)) continue
 
-        o[key as keyof T] = (_.isFunction(defaultValue)) ? defaultValue() as any : defaultValue as any
+        sanitizedDoc[key] = (_.isFunction(defaultValue)) ? defaultValue() : defaultValue
       }
 
       // Apply format function defined in the schema if applicable.
-      o = await this.formatDocument(o)
+      sanitizedDoc = await this.formatDocument(sanitizedDoc)
 
-      // Finally, validate the document as a final sanity check. Ignore unique indexes in this step.
-      // Let the db throw an error if the inserted doc voilates those indexes.
-      await this.validateDocument(o, { ignoreUniqueIndex: true, strict: true, accountForDotNotation: false, ...options })
+      // Finally, validate the document. Ignore unique indexes in this step. Let the db throw an
+      // error if the inserted doc violates those indexes.
+      await this.validateDocument(sanitizedDoc, { ignoreUniqueIndex: true, strict: true, accountForDotNotation: false, ...options })
 
-      return o
+      return sanitizedDoc as Document<P>
     }
 
     /**
@@ -552,7 +559,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
      *
      * @param doc - The inserted document.
      */
-    private static async afterInsert(doc: Document<T>): Promise<void> {
+    private static async afterInsert(doc: Document<P>): Promise<void> {
       await this.didInsertDocument(doc)
     }
 
@@ -569,105 +576,109 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
      *
      * @todo Handle remaining update operators.
      */
-    private static async beforeUpdate(filter: AnyFilter<T>, update: AnyUpdate<T>, options: ModelUpdateOneOptions<T> | ModelUpdateManyOptions<T> = {}): Promise<[DocumentFragment<T>, UpdateQuery<DocumentFragment<T>>]> {
+    private static async beforeUpdate(filter: Filter<Document<P>>, update: AnyUpdate<P>, options: ModelUpdateOneOptions | ModelUpdateManyOptions = {}): Promise<UpdateFilter<Document<P>>> {
       if ((options.upsert === true) && (this.schema.allowUpserts !== true)) throw new Error(`[${this.schema.model}] Attempting to upsert a document while upserting is disallowed in the schema`)
 
-      const [f, u] = await this.willUpdateDocument(filter, update)
+      const sanitizedUpdate = sanitizeUpdate(this.schema, update, options)
 
-      // First sanitize the inputs. We want to be able to make sure the filter is valid and that the
-      // update object is a proper update filter.
-      const sanitizedFilter = sanitizeFilter<T>(this.schema, f) as DocumentFragment<T>
-      const sanitizedUpdate = sanitizeUpdate(this.schema, u, options)
+      const u = await this.willUpdateDocument(filter, sanitizedUpdate)
 
       // Format all fields in the update filter.
-      if (sanitizedUpdate.$set) {
-        sanitizedUpdate.$set = await this.formatDocument(sanitizedUpdate.$set as Document<T>)
+      if (u.$set) {
+        u.$set = await this.formatDocument(u.$set as Document<P>)
       }
 
       // In the case of an upsert, we need to preprocess the filter as if this was an insertion. We
       // also need to tell the database to save all fields in the filter as well, unless they are
       // already in the update query.
-      if (options.upsert === true) {
+      if (options.upsert === true && typeIsAnyDocument(filter)) {
         // Make a copy of the filter in case it is manipulated by the hooks.
-        const beforeInsert = await this.beforeInsert(_.cloneDeep(sanitizedFilter), { ...options, strict: false })
+        const docIfUpsert = await this.beforeInsert(filter as DocumentFragment<P>, { ...options, strict: false })
         const setOnInsert = _.omit({
-          ...sanitizedUpdate.$setOnInsert || {},
-          ...beforeInsert,
+          ...u.$setOnInsert ?? {},
+          ...docIfUpsert,
         }, [
-          ...Object.keys(sanitizedUpdate.$set || {}),
-          ...Object.keys(sanitizedUpdate.$unset || {}),
-        ]) as DocumentFragment<T>
+          ...Object.keys(u.$set ?? {}),
+          ...Object.keys(u.$unset ?? {}),
+        ]) as DocumentFragment<P>
 
         if (!_.isEmpty(setOnInsert)) {
-          sanitizedUpdate.$setOnInsert = setOnInsert
+          u.$setOnInsert = setOnInsert
         }
       }
 
-      // Validate all fields in the update query. Account for dot notations to facilitate updating fields in embedded
-      // docs.
-      if (sanitizedUpdate.$set && !_.isEmpty(sanitizedUpdate.$set)) {
-        await this.validateDocument(sanitizedUpdate.$set as DocumentFragment<T>, { ignoreUniqueIndex: true, accountForDotNotation: true, ...options })
+      // Validate all fields in the update. Account for dot notations to facilitate updating fields
+      // in nested fields.
+      if (u.$set && !_.isEmpty(u.$set)) {
+        await this.validateDocument(u.$set as DocumentFragment<P>, { ...options, ignoreUniqueIndex: true, accountForDotNotation: true })
       }
 
-      return [sanitizedFilter, sanitizedUpdate]
+      return u
     }
 
     /**
      * Handler invoked right after an update. This does not account for insertions.
      *
      * @param oldDoc - The original document.
-     * @param newDoc - The updated document.
+     * @param newDocOrNewDocs - The updated document(s).
      */
-    private static async afterUpdate(oldDoc?: Document<T>, newDocs?: Document<T> | Document<T>[]) {
-      await this.didUpdateDocument(oldDoc, newDocs)
+    private static async afterUpdate(oldDoc?: Document<P>, newDocOrNewDocs?: Document<P> | Document<P>[]) {
+      await this.didUpdateDocument(oldDoc, newDocOrNewDocs)
     }
 
     /**
-     * Handler invoked right before a deletion.
+     * Handler invoked before a deletion.
      *
      * @param filter - Filter for document to delete.
      * @param options - See `ModelDeleteOneOptions` and `ModelDeleteManyOptions`.
      *
      * @returns The processed filter for deletion.
      */
-    private static async beforeDelete(filter: AnyFilter<T>, options: ModelDeleteOneOptions | ModelDeleteManyOptions): Promise<FilterQuery<T>> {
-      const f = await this.willDeleteDocument(filter)
-
-      return sanitizeFilter<T>(this.schema, f) as FilterQuery<T>
+    private static async beforeDelete(filter: Filter<Document<P>>, options: ModelDeleteOneOptions | ModelDeleteManyOptions): Promise<void> {
+      await this.willDeleteDocument(filter)
     }
 
     /**
-     * Handler invoked right after a deletion.
+     * Handler invoked after a deletion.
      *
-     * @param doc - The deleted doc, if available.
+     * @param docOrDocs - The deleted doc(s), if available.
      *
      * @todo Cascade deletion only works for first-level foreign keys so far.
      */
-    private static async afterDelete(docs?: Document<T> | Document<T>[]) {
-      if (_.isArray(docs)) {
-        for (const doc of docs) {
-          if (!typeIsValidObjectID(doc._id)) continue
-          await this.cascadeDelete(doc._id)
+    private static async afterDelete(docOrDocs?: Document<P> | Document<P>[]) {
+      if (docOrDocs) {
+        if (_.isArray(docOrDocs)) {
+          const docs = docOrDocs
+
+          for (const doc of docs) {
+            if (!typeIsValidObjectID(doc._id)) continue
+            await this.cascadeDelete(doc._id)
+          }
+        }
+        else {
+          const doc = docOrDocs
+
+          if (typeIsValidObjectID(doc._id)) {
+            await this.cascadeDelete(doc._id)
+          }
         }
       }
-      else if (docs && typeIsValidObjectID(docs._id)) {
-        await this.cascadeDelete(docs._id)
-      }
 
-      await this.didDeleteDocument(docs)
+      await this.didDeleteDocument(docOrDocs)
     }
 
     /**
-     * Deletes documents from other collections that have a foreign key to this collection, as
-     * specified in the schema.
+     * Looks for documents **in all other registered collections** that have a foreign key to this
+     * collection with the field value matching the provided `docId`, then deletes them from the
+     * database.
      *
      * @param docId - The ID of the document in this collection in which other collections are
-     * pointing to.
+     *                pointing to.
      *
      * @throws {Error} Cascade deletion is incorrectly defined in the schema.
      * @throws {Error} Cascade deletion failed because a model cannot be found.
      */
-    private static async cascadeDelete(docId: ObjectID) {
+    private static async cascadeDelete(docId: ObjectId) {
       const cascadeModelNames = this.schema.cascade
 
       if (!cascadeModelNames) return
@@ -693,8 +704,8 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
     }
 
     /**
-     * Validates a doc of this model to see if the required fields are in place. This process
-     * handles spec defined for embedded docs as well.
+     * Validates a document of this model to see if the required fields (including nested fields)
+     * are in place.
      *
      * @param doc - The doc to validate.
      * @param fieldDescriptor - The field descriptor to validate against.
@@ -702,7 +713,7 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
      *
      * @throws {TypeError} Missing field.
      */
-    private static validateDocumentRequiredFields(doc: { [key: string]: any }, fieldDescriptor: MultiFieldDescriptor = this.schema.fields, fieldName?: string) {
+    private static validateDocumentRequiredFields(doc: AnyDocument, fieldDescriptor: MultiFieldDescriptor = this.schema.fields, fieldName?: string) {
       for (const field in fieldDescriptor) {
         if (!fieldDescriptor.hasOwnProperty(field)) continue
 
@@ -714,10 +725,13 @@ export default function modelFactory<T>(schema: Schema<T>): Model<T> {
         // If model has default props defined for this field, skip.
         if (this.defaultProps.hasOwnProperty(field)) continue
 
-        // At this point we certain that the field needs to be present in the doc, so go ahead and check if it exists.
-        if (!doc.hasOwnProperty(field)) throw new TypeError(`[${this.schema.model}] Missing required field "${fieldName ? `${fieldName}.` : ''}${field}"`)
+        // At this point we are certain that this field needs to be present in the doc, so go ahead
+        // and check if it exists.
+        if (!doc.hasOwnProperty(field)) {
+          throw new TypeError(`[${this.schema.model}] Missing required field "${fieldName ? `${fieldName}.` : ''}${field}"`)
+        }
 
-        // Recursively check for embedded docs, if applicable.
+        // Recursively validate nested fields if applicable.
         if (typeIsFieldDescriptor(fieldSpec.type)) {
           this.validateDocumentRequiredFields(doc[field], fieldSpec.type, field)
         }

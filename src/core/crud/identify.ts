@@ -1,20 +1,20 @@
 import _ from 'lodash'
-import { ObjectID } from 'mongodb'
+import { ObjectId } from 'mongodb'
 import * as db from '../..'
-import { AnyFilter } from '../../types'
+import { AnyFilter, AnyProps } from '../../types'
 import { AggregationPipeline, groupStageFactory, pipelineFactory } from '../aggregation'
 import Schema from '../Schema'
 import { findOne } from './find'
 
-export async function identifyOne<T>(schema: Schema<T>, filter: AnyFilter<T>): Promise<ObjectID> {
+export async function identifyOne<P extends AnyProps = AnyProps>(schema: Schema<P>, filter: AnyFilter<P>): Promise<ObjectId> {
   const doc = await findOne(schema, filter).catch(err => { throw new Error(`[${schema.model}] No results found while identifying this ${schema.model} using the filter ${filter}`) })
 
-  if (!ObjectID.isValid(doc._id)) throw new Error(`[${schema.model}] ID of ${doc} is not a valid ObjectID`)
+  if (!ObjectId.isValid(doc._id)) throw new Error(`[${schema.model}] ID of ${doc} is not a valid ObjectId`)
 
   return doc._id
 }
 
-export async function identifyMany<T>(schema: Schema<T>, filter: AnyFilter<T>): Promise<ObjectID[]> {
+export async function identifyMany<P extends AnyProps = AnyProps>(schema: Schema<P>, filter: AnyFilter<P>): Promise<ObjectId[]> {
   const collection = await db.getCollection(schema.collection)
 
   let pipeline: AggregationPipeline
@@ -39,7 +39,7 @@ export async function identifyMany<T>(schema: Schema<T>, filter: AnyFilter<T>): 
   return docs[0].ids || []
 }
 
-export async function identifyAll<T>(schema: Schema<T>): Promise<ObjectID[]> {
+export async function identifyAll<P extends AnyProps = AnyProps>(schema: Schema<P>): Promise<ObjectId[]> {
   const collection = await db.getCollection(schema.collection)
   const pipeline = [...pipelineFactory(schema), ...groupStageFactory(schema, {
     _id: undefined,

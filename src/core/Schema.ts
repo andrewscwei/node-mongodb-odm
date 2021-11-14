@@ -1,10 +1,11 @@
 import _ from 'lodash'
-import { IndexOptions, ObjectID } from 'mongodb'
+import { CreateIndexesOptions, IndexSpecification, ObjectId } from 'mongodb'
+import { AnyProps } from '../types'
 
 /**
  * Data type for describing multiple (can be nested) fields in the `Schema`.
  */
-export type MultiFieldDescriptor<T = { [key: string]: any }> = { [K in keyof T]: FieldDescriptor }
+export type MultiFieldDescriptor<P extends AnyProps = AnyProps> = { [K in keyof P]: FieldDescriptor }
 
 /**
  * Data type for describing a single (can be nested) field in the `Schema`.
@@ -17,7 +18,7 @@ export type FieldDescriptor = {
   type: FieldType | MultiFieldDescriptor
 
   /**
-   * When the `type` is an ObjectID, that means this field is a foreign key to another collection.
+   * When the `type` is an ObjectId, that means this field is a foreign key to another collection.
    * This `ref` value indicates the name of model in which the foreign key belongs to.
    */
   ref?: string
@@ -37,7 +38,7 @@ export type FieldDescriptor = {
  * Data type representing primitive field types only, that are acceptable values of
  * `FieldDescriptor.type`.
  */
-export type FieldPrimitiveType = typeof String | typeof Number | typeof Boolean | typeof Date | typeof ObjectID | typeof Array
+export type FieldPrimitiveType = typeof String | typeof Number | typeof Boolean | typeof Date | typeof ObjectId | typeof Array
 
 /**
  * Data type for all acceptable values of `FieldDescriptor.type`.
@@ -47,7 +48,7 @@ export type FieldType = FieldPrimitiveType | FieldPrimitiveType[]
 /**
  * Data type for primitive field values only.
  */
-export type FieldPrimitiveValue = ObjectID | string | number | boolean | Date
+export type FieldPrimitiveValue = ObjectId | string | number | boolean | Date
 
 /**
  * Data type for all acceptable field values.
@@ -64,17 +65,17 @@ export type SchemaIndex = {
    *
    * @see {@link https://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#createIndex}
    */
-  spec: Record<string, any>
+  spec: IndexSpecification
 
   /**
    * Options to be passed to `Collection#createIndex`.
    *
    * @see {@link https://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#createIndex}
    */
-  options?: IndexOptions
+  options?: CreateIndexesOptions
 }
 
-export default interface Schema<T> {
+export default interface Schema<P extends AnyProps = AnyProps> {
 
   /**
    * Name of the model. Should be in upper cammel-case, i.e. `Model`.
@@ -141,7 +142,7 @@ export default interface Schema<T> {
    *
    * @see FieldDescriptor
    */
-  fields: MultiFieldDescriptor<Required<T>>
+  fields: MultiFieldDescriptor<Required<P>>
 
   /**
    * Defines the indexes of this collection.

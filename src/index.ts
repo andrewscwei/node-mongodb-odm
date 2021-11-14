@@ -12,6 +12,7 @@
 import { Collection, Db, MongoClient } from 'mongodb'
 import * as Aggregation from './core/aggregation'
 import Model from './core/modelFactory'
+import { AnyDocument } from './types'
 
 const debug = require('debug')('mongodb-odm')
 
@@ -37,7 +38,7 @@ let config: Configuration
 /**
  * Collection lookup dictionary.
  */
-let collections: { [collectionName: string]: Collection } = {}
+let collections: { [collectionName: string]: Collection<any> } = {}
 
 // Be sure to disconnect the database if the app terminates.
 process.on('SIGINT', async () => {
@@ -67,8 +68,7 @@ export async function connectToDb(): Promise<void> {
   const url = `mongodb://${authentication ? `${authentication}@` : ''}${config.host}/${config.name}${config.replicaSet ? `?replicaSet=${config.replicaSet}` : ''}`
 
   client = await MongoClient.connect(url, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
+
   })
 
   debug('Establishing MongoDB client connection...', 'OK', url)
@@ -89,7 +89,6 @@ export async function disconnectFromDb(): Promise<void> {
  */
 export function isDbConnected(): boolean {
   if (!client) return false
-  if (!client.isConnected()) return false
   return true
 }
 
@@ -160,7 +159,7 @@ export function getModel(modelOrCollectionName: string): ReturnType<typeof Model
  * @throws {Error} There are no models registered.
  * @throws {Error} Unable to find the model associated with the model or collection name.
  */
-export async function getCollection(modelOrCollectionName: string): Promise<Collection> {
+export async function getCollection<T extends AnyDocument = AnyDocument>(modelOrCollectionName: string): Promise<Collection<T>> {
   const models = config.models
 
   if (!models) throw new Error('You must register models using the #configureDb() function')
@@ -185,7 +184,7 @@ export async function getCollection(modelOrCollectionName: string): Promise<Coll
 
   const dbInstance = await getDbInstance()
   const schema = ModelClass.schema
-  const collection = dbInstance.collection(schema.collection)
+  const collection = dbInstance.collection<T>(schema.collection)
 
   // Ensure schema indexes.
   if (schema.indexes) {
@@ -212,5 +211,6 @@ export { default as getFieldSpecByKey } from './utils/getFieldSpecByKey'
 export { default as mapValuesToObjectIDs } from './utils/mapValuesToObjectIDs'
 export { default as sanitizeDocument } from './utils/sanitizeDocument'
 export { default as sanitizeFilter } from './utils/sanitizeFilter'
+export { default as sanitizeUpdate } from './utils/sanitizeUpdate'
 export { default as validateFieldValue } from './utils/validateFieldValue'
 export { Model, Aggregation }

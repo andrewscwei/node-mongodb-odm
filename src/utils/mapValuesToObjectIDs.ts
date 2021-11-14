@@ -1,6 +1,6 @@
 import _ from 'lodash'
-import { ObjectID } from 'mongodb'
-import { valueIsCompatibleObjectID } from '../types'
+import { ObjectId } from 'mongodb'
+import { valueIsObjectIdConvertible } from '../types'
 
 /**
  * Maps a single value or a collection of values to Object IDs. If a value cannot be converted to an
@@ -25,8 +25,8 @@ export default function mapValuesToObjectIDs(val: any): any {
 
     return out
   }
-  else if (valueIsCompatibleObjectID(val)) {
-    return new ObjectID(val)
+  else if (valueIsObjectIdConvertible(val)) {
+    return new ObjectId(val)
   }
   else {
     return val

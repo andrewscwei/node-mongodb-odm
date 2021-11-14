@@ -1,10 +1,10 @@
 import _ from 'lodash'
-import { UpdateQuery } from 'mongodb'
+import { UpdateFilter } from 'mongodb'
 import Schema from '../core/Schema'
-import { AnyUpdate, DocumentFragment, typeIsUpdateQuery } from '../types'
+import { AnyProps, AnyUpdate, Document, typeIsUpdateFilter } from '../types'
 import sanitizeDocument from './sanitizeDocument'
 
-type SanitizeUpdateOptions = {
+export type SanitizeUpdateOptions = {
   ignoreTimestamps?: boolean
 }
 
@@ -18,10 +18,10 @@ type SanitizeUpdateOptions = {
  *
  * @throws
  */
-export default function sanitizeUpdate<T>(schema: Schema<T>, update: Readonly<AnyUpdate<T>>, { ignoreTimestamps = false }: SanitizeUpdateOptions = {}): UpdateQuery<DocumentFragment<T>> {
-  let out: UpdateQuery<DocumentFragment<T>>
+export default function sanitizeUpdate<P extends AnyProps = AnyProps>(schema: Schema<P>, update: Readonly<AnyUpdate<P>>, { ignoreTimestamps = false }: SanitizeUpdateOptions = {}): UpdateFilter<Document<P>> {
+  let out: UpdateFilter<Document<P>>
 
-  if (typeIsUpdateQuery<T>(update)) {
+  if (typeIsUpdateFilter<P>(update)) {
     out = _.cloneDeep(update)
   }
   else {
@@ -42,7 +42,7 @@ export default function sanitizeUpdate<T>(schema: Schema<T>, update: Readonly<An
   }
 
   // Now sanitize the `$set` operator.
-  out.$set = sanitizeDocument<T>(schema, setOperator, { accountForDotNotation: true }) as typeof out.$set
+  out.$set = sanitizeDocument<P>(schema, setOperator, { accountForDotNotation: true }) as typeof out.$set
 
   // Relocate the previously remembered `null` or `undefined` values to the `$unset` operator.
   const unsetOperator: Record<string, any> = out.$unset ?? {}
@@ -55,19 +55,19 @@ export default function sanitizeUpdate<T>(schema: Schema<T>, update: Readonly<An
 
   // Sanitize all fields in the `$setOnInsert` operator, if any.
   if (out.$setOnInsert) {
-    out.$setOnInsert = sanitizeDocument<T>(schema, out.$setOnInsert, { accountForDotNotation: true }) as typeof out.$setOnInsert
+    out.$setOnInsert = sanitizeDocument<P>(schema, out.$setOnInsert, { accountForDotNotation: true }) as typeof out.$setOnInsert
   }
 
   // Sanitize all fields in the `$addToSet` operator, if any. The `$addToSet` operator automatically
   // ignores duplicates.
   if (out.$addToSet) {
-    out.$addToSet = sanitizeDocument<T>(schema, out.$addToSet, { accountForDotNotation: true }) as typeof out.$addToSet
+    out.$addToSet = sanitizeDocument<P>(schema, out.$addToSet, { accountForDotNotation: true }) as typeof out.$addToSet
   }
 
   // Sanitize all fields in the `$push` operator, if any. The `$push` operator does not mind
   // duplicates.
   if (out.$push) {
-    out.$push = sanitizeDocument<T>(schema, out.$push, { accountForDotNotation: true }) as typeof out.$push
+    out.$push = sanitizeDocument<P>(schema, out.$push, { accountForDotNotation: true }) as typeof out.$push
   }
 
   // Strip empty operators.

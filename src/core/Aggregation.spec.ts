@@ -4,7 +4,7 @@ import assert from 'assert'
 import Faker from 'faker'
 import _ from 'lodash'
 import { describe } from 'mocha'
-import { ObjectID } from 'mongodb'
+import { ObjectId } from 'mongodb'
 import { AggregationStageDescriptor, groupStageFactory, lookupStageFactory, matchStageFactory, pipelineFactory, projectStageFactory, sortStageFactory } from './aggregation'
 import { configureDb } from '..'
 import { AnyFilter, Document, typeIsValidObjectID } from '../types'
@@ -22,7 +22,7 @@ describe('core/Aggregation', () => {
   })
 
   it('can generate $match stage', () => {
-    const objectId = new ObjectID()
+    const objectId = new ObjectId()
     const actual = matchStageFactory(BarSchema, { _id: objectId })
     const expected = [{
       $match: { _id: objectId },
@@ -145,7 +145,7 @@ describe('core/Aggregation', () => {
   })
 
   it('can generate a full aggregation pipeline', () => {
-    const objectId = new ObjectID()
+    const objectId = new ObjectId()
 
     assert.deepStrictEqual(pipelineFactory(FooSchema), [])
 
@@ -167,8 +167,8 @@ describe('core/Aggregation', () => {
 interface FooProps {
   aString: string
   aNumber: number
-  aBar: ObjectID
-  aFoo?: ObjectID
+  aBar: ObjectId
+  aFoo?: ObjectId
 }
 
 const FooSchema: Schema<FooProps> = {
@@ -178,8 +178,8 @@ const FooSchema: Schema<FooProps> = {
   fields: {
     aString: { type: String, required: true },
     aNumber: { type: Number, required: true },
-    aBar: { type: ObjectID, ref: 'Bar', required: true },
-    aFoo: { type: ObjectID, ref: 'Foo' },
+    aBar: { type: ObjectId, ref: 'Bar', required: true },
+    aFoo: { type: ObjectId, ref: 'Foo' },
   },
   indexes: [{
     spec: { aString: 1 }, options: { unique: true },
@@ -205,7 +205,7 @@ class Foo extends Model(FooSchema) {
 }
 
 interface BarProps {
-  aBar: ObjectID
+  aBar: ObjectId
   aString: string
   aDate: Date
   anObject?: {
@@ -222,12 +222,12 @@ const BarSchema: Schema<BarProps> = {
   collection: 'bars',
   cascade: ['Foo'],
   fields: {
-    aBar: { type: ObjectID, ref: 'Bar', required: true },
+    aBar: { type: ObjectId, ref: 'Bar', required: true },
     aString: { type: String, required: true },
     aDate: { type: Date, required: true },
     anObject: {
       type: {
-        anObjectIdArray: { type: [ObjectID] },
+        anObjectIdArray: { type: [ObjectId] },
         aString: { type: String },
         aNumber: { type: Number },
         aBoolean: { type: Boolean },

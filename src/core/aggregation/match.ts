@@ -1,9 +1,9 @@
 import { AggregationPipeline } from '.'
-import { AnyFilter } from '../../types'
+import { AnyFilter, AnyProps } from '../../types'
 import sanitizeFilter from '../../utils/sanitizeFilter'
 import Schema from '../Schema'
 
-export type MatchStageFactorySpec<T> = AnyFilter<T>
+export type MatchStageFactorySpec<P> = AnyFilter<P>
 
 export type MatchStageFactoryOptions = {
   prefix?: string
@@ -13,7 +13,7 @@ export type MatchStageFactoryOptions = {
  * Generates the `$match` stage of the aggregation pipeline.
  *
  * @param schema - The schema of the database collection.
- * @param spec - Spec (aka query in this case) that defines the match.
+ * @param spec - Spec (aka filter in this case) that defines the match.
  * @param options - Additional options.
  *
  * @returns The aggregation pipeline that handles the generated `$match` stage.
@@ -32,14 +32,14 @@ export type MatchStageFactoryOptions = {
  *
  * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/match/}
  */
-export function matchStageFactory<T>(schema: Schema<T>, spec: MatchStageFactorySpec<T>, { prefix = '' }: MatchStageFactoryOptions = {}): AggregationPipeline {
-  const sanitized = sanitizeFilter<T>(schema, spec, { strict: false })
-  const query: { [key: string]: any } = {}
+export function matchStageFactory<P extends AnyProps = AnyProps>(schema: Schema<P>, spec: MatchStageFactorySpec<P>, { prefix = '' }: MatchStageFactoryOptions = {}): AggregationPipeline {
+  const sanitized = sanitizeFilter(schema, spec, { strict: false })
+  const filter: { [key: string]: any } = {}
 
   for (const key in sanitized) {
     if (!sanitized.hasOwnProperty(key)) continue
-    query[`${prefix}${key}`] = (sanitized as any)[key as keyof T]
+    filter[`${prefix}${key}`] = (sanitized as any)[key as keyof P]
   }
 
-  return [{ $match: query }]
+  return [{ $match: filter }]
 }

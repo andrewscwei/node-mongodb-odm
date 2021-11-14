@@ -3,7 +3,7 @@
 import assert from 'assert'
 import Faker from 'faker'
 import { describe, it } from 'mocha'
-import { ObjectID } from 'mongodb'
+import { ObjectId } from 'mongodb'
 import Model from '../core/modelFactory'
 import Schema from '../core/Schema'
 import { DocumentFragment } from '../types'
@@ -11,27 +11,27 @@ import sanitizeFilter from './sanitizeFilter'
 
 describe('utils/sanitizeFilter', () => {
   it('can generate valid queries based on an Object ID string', () => {
-    const objectId = new ObjectID()
+    const objectId = new ObjectId()
 
     const actual = sanitizeFilter<BazProps>(Baz.schema, objectId.toHexString())
     const expected = { _id: objectId }
 
     assert.deepStrictEqual(Object.keys(actual), Object.keys(expected))
-    assert(expected._id.equals(actual._id!))
+    assert(expected._id.equals(actual._id! as ObjectId))
   })
 
   it('can generate valid queries based on an Object ID', () => {
-    const objectId = new ObjectID()
+    const objectId = new ObjectId()
 
     const actual = sanitizeFilter<BazProps>(Baz.schema, objectId)
     const expected = { _id: objectId }
 
     assert.deepStrictEqual(Object.keys(actual), Object.keys(expected))
-    assert(expected._id.equals(actual._id!))
+    assert(expected._id.equals(actual._id! as ObjectId))
   })
 
   it('can generate valid queries removing extraneous fields', () => {
-    const objectId = new ObjectID()
+    const objectId = new ObjectId()
 
     const expected: DocumentFragment<BazProps> = {
       _id: objectId,
@@ -47,7 +47,7 @@ describe('utils/sanitizeFilter', () => {
   })
 
   it('can generate valid queries while keeping extraneous fields', () => {
-    const objectId = new ObjectID()
+    const objectId = new ObjectId()
 
     const expected: DocumentFragment<BazProps> = {
       _id: objectId,

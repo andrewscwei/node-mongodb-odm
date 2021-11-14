@@ -1,25 +1,25 @@
-import _ from 'lodash'
-import { CommonOptions, FilterQuery } from 'mongodb'
+import { DeleteOptions, Filter, FindOneAndDeleteOptions } from 'mongodb'
 import * as db from '../..'
-import { AnyFilter, Document } from '../../types'
+import { AnyProps, Document } from '../../types'
 import Schema from '../Schema'
 import { findMany } from './find'
 
-export async function deleteOne<T>(schema: Schema<T>, query: FilterQuery<T>, options: CommonOptions = {}): Promise<void> {
+export async function deleteOne<T extends AnyProps = AnyProps>(schema: Schema<T>, filter: Filter<Document<T>>, options: DeleteOptions = {}): Promise<boolean> {
   if (schema.noDeletes === true) throw new Error(`[${schema.model}] Deletions are disallowed for this model`)
 
-  const collection = await db.getCollection(schema.collection)
-  const result = await collection.deleteOne(query, options)
+  const collection = await db.getCollection<Document<T>>(schema.collection)
+  const result = await collection.deleteOne(filter, options)
 
-  if (result.result.ok !== 1) throw new Error(`[${schema.model}] Unable to delete document`)
-  if (!_.isNumber(result.result.n) || (result.result.n <= 0)) throw new Error(`[${schema.model}] Unable to delete document`)
+  if (!result.acknowledged) throw new Error(`[${schema.model}] Unable to delete document`)
+  if (result.deletedCount > 0) return true
+  return false
 }
 
-export async function findAndDeleteOne<T>(schema: Schema<T>, query: AnyFilter<T>, options: CommonOptions = {}): Promise<Document<T>> {
+export async function findAndDeleteOne<T extends AnyProps = AnyProps>(schema: Schema<T>, filter: Filter<Document<T>>, options: FindOneAndDeleteOptions = {}): Promise<Document<T>> {
   if (schema.noDeletes === true) throw new Error(`[${schema.model}] Deletions are disallowed for this model`)
 
-  const collection = await db.getCollection(schema.collection)
-  const result = await collection.findOneAndDelete(query as any)
+  const collection = await db.getCollection<Document<T>>(schema.collection)
+  const result = await collection.findOneAndDelete(filter)
 
   if (result.ok !== 1) throw new Error(`[${schema.model}] Unable to delete document`)
   if (!result.value) throw new Error(`[${schema.model}] Unable to return deleted document`)
@@ -27,24 +27,23 @@ export async function findAndDeleteOne<T>(schema: Schema<T>, query: AnyFilter<T>
   return result.value
 }
 
-export async function deleteMany<T>(schema: Schema<T>, query: AnyFilter<T>, options: CommonOptions = {}): Promise<boolean> {
+export async function deleteMany<T extends AnyProps = AnyProps>(schema: Schema<T>, filter: Filter<Document<T>>, options: DeleteOptions = {}): Promise<boolean> {
   if ((schema.noDeletes === true) || (schema.noDeleteMany === true)) throw new Error(`[${schema.model}] Multiple deletions are disallowed for this model`)
 
-  const collection = await db.getCollection(schema.collection)
-  const result = await collection.deleteMany(query as any, options)
+  const collection = await db.getCollection<Document<T>>(schema.collection)
+  const result = await collection.deleteMany(filter, options)
 
-  if (result.result.ok !== 1) throw new Error(`[${schema.model}] Unable to delete documents`)
+  if (!result.acknowledged) throw new Error(`[${schema.model}] Unable to delete documents`)
+  if (result.deletedCount > 0) return true
 
-  if (!_.isNumber(result.result.n) || (result.result.n <= 0)) return false
-
-  return true
+  return false
 }
 
-export async function findManyAndDelete<T>(schema: Schema<T>, query: AnyFilter<T>, options: CommonOptions = {}): Promise<Document<T>[]> {
+export async function findManyAndDelete<T extends AnyProps = AnyProps>(schema: Schema<T>, filter: Filter<Document<T>>, options: FindOneAndDeleteOptions = {}): Promise<Document<T>[]> {
   if ((schema.noDeletes === true) || (schema.noDeleteMany === true)) throw new Error(`[${schema.model}] Multiple deletions are disallowed for this model`)
 
-  const collection = await db.getCollection(schema.collection)
-  const docs = await findMany(schema, query)
+  const collection = await db.getCollection<Document<T>>(schema.collection)
+  const docs = await findMany(schema, filter)
   const n = docs.length
   const results: Document<T>[] = []
 

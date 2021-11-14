@@ -1,4 +1,5 @@
 import _ from 'lodash'
+import { AnyProps } from '../../types'
 import Schema from '../Schema'
 import { groupStageFactory, GroupStageFactorySpec } from './group'
 import { lookupStageFactory, LookupStageFactorySpec } from './lookup'
@@ -21,7 +22,7 @@ export type AggregationPipelineFactoryOptions = {
   pipeline?: AggregationPipeline
 }
 
-export type AggregationPipelineFactoryOperators<T> = {
+export type AggregationPipelineFactoryOperators<P extends AnyProps = AnyProps> = {
   /**
   * Lookup stage spec.
   */
@@ -30,12 +31,12 @@ export type AggregationPipelineFactoryOperators<T> = {
   /**
   * Match stage spec at the beginning of the pipeline.
   */
-  $match?: MatchStageFactorySpec<T>
+  $match?: MatchStageFactorySpec<P>
 
   /**
   * Match stage spec appended to end of the pipeline.
   */
-  $prune?: MatchStageFactorySpec<T>
+  $prune?: MatchStageFactorySpec<P>
 
   /**
   * Group stage spec.
@@ -59,7 +60,7 @@ export type AggregationPipelineFactoryOperators<T> = {
  *
  * @throws {TypeError} Invalid params or options provided.
  */
-export function pipelineFactory<T>(schema: Schema<T>, { $lookup, $match, $prune, $group, $sort }: AggregationPipelineFactoryOperators<T> = {}, { prefix = '', pipeline = [] }: AggregationPipelineFactoryOptions = {}): AggregationPipeline {
+export function pipelineFactory<P extends AnyProps = AnyProps>(schema: Schema<P>, { $lookup, $match, $prune, $group, $sort }: AggregationPipelineFactoryOperators<P> = {}, { prefix = '', pipeline = [] }: AggregationPipelineFactoryOptions = {}): AggregationPipeline {
   // If lookup stage is specified, add it to beginning of the pipeline.
   if ($lookup) pipeline = lookupStageFactory(schema, $lookup, { fromPrefix: prefix, toPrefix: prefix }).concat(pipeline)
 
