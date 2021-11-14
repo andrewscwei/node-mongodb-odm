@@ -18,14 +18,13 @@ const debug = require('debug')('mongodb-odm')
 /**
  * Global MongoDB connection.
  */
-let connection: Connection | undefined
+let globalConnection: Connection | undefined
 
 // Be sure to disconnect the database if the app terminates.
 process.on('SIGINT', async () => {
-  if (connection?.client) {
-    await connection?.disconnect?.()
-    debug('Handling SIGINT error...', 'OK', 'MongoDB client disconnected due to app termination')
-  }
+  if (!globalConnection) return
+  await globalConnection.disconnect?.()
+  debug('Handling SIGINT error...', 'OK', 'MongoDB client disconnected due to app termination')
 
   process.exit(0)
 })
@@ -37,7 +36,7 @@ process.on('SIGINT', async () => {
  */
 export function configureDb(options: ConnectionConfiguration) {
   debug('Configuring ODM... OK', options)
-  connection = new Connection(options)
+  globalConnection = new Connection(options)
 }
 
 /**
@@ -46,7 +45,7 @@ export function configureDb(options: ConnectionConfiguration) {
  * @returns The database connection.
  */
 export function getDbConnection(): Connection | undefined {
-  if (connection) return connection
+  if (globalConnection) return globalConnection
   debug('No MongoDB connection, did you forget to call `configureDb`?')
   return undefined
 }
@@ -61,8 +60,8 @@ export function getDbConnection(): Connection | undefined {
  * @throws {Error} There is no active db connection.
  */
 export function getModel(modelOrCollectionName: string): ReturnType<typeof Model> {
-  if (!connection) throw new Error('There is no active db connection')
-  return connection.getModel(modelOrCollectionName)
+  if (!globalConnection) throw new Error('There is no active db connection')
+  return globalConnection.getModel(modelOrCollectionName)
 }
 
 /**
@@ -78,8 +77,8 @@ export function getModel(modelOrCollectionName: string): ReturnType<typeof Model
  * @throws {Error} There is no active db connection.
  */
 export async function getCollection<T extends AnyDocument = AnyDocument>(modelOrCollectionName: string): Promise<Collection<T>> {
-  if (!connection) throw new Error('There is no active db connection')
-  return connection.getCollection(modelOrCollectionName)
+  if (!globalConnection) throw new Error('There is no active db connection')
+  return globalConnection.getCollection(modelOrCollectionName)
 }
 
 export { ObjectId } from 'mongodb'

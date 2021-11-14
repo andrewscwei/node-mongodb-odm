@@ -57,16 +57,11 @@ jobs:
           restore-keys: ${{ runner.os }}-node-modules-
       - name: Install NPM dependencies
         run: npm install
-      - name: Restore build dir
-        uses: actions/download-artifact@v1
-        with:
-          name: build
       - name: Test
         env:
           MONGODB_HOST: 'mongodb:27017'
         run: |
-          sed -i '/"\*\*\/\*\.spec\.ts"/d' ./tsconfig.json
-          npm run build
+          npm run build:test
           npm test
   deploy:
     name: Deploy

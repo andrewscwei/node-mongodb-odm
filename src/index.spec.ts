@@ -13,18 +13,22 @@ describe('can connect to a database', () => {
 
   it('can connect to db', async () => {
     const connection = getDbConnection()
+    assert(connection)
     await connection.connect()
     assert(connection.isConnected() === true)
   })
 
   it('can disconnect', async () => {
     const connection = getDbConnection()
+    assert(connection)
     await connection.disconnect()
     assert(connection.isConnected() === false)
   })
 
   it('can fetch db instance', async () => {
-    const db = await getDbConnection().getDbInstance()
+    const connection = getDbConnection()
+    assert(connection)
+    const db = await connection.getDbInstance()
     assert(_.isNil(db) === false)
   })
 })
