@@ -1,7 +1,7 @@
 import { AggregateOptions, BulkWriteOptions, Collection, DeleteOptions, FindOneAndDeleteOptions, FindOneAndReplaceOptions, FindOneAndUpdateOptions, InsertOneOptions, ObjectId, ReplaceOptions, UpdateOptions } from 'mongodb'
 import { AnyFilter, AnyProps, AnyUpdate, Document, DocumentFragment } from '../types'
 import { SanitizeUpdateOptions } from '../utils'
-import { AggregationPipeline, AggregationPipelineFactoryOperators, AggregationPipelineFactoryOptions } from './aggregation'
+import * as Aggregation from './aggregation'
 import Schema, { FieldValue } from './Schema'
 
 type LocalModel = {
@@ -223,7 +223,7 @@ export default interface Model<T> {
    *
    * @throws {Error} Model class has no static property `schema` defined.
    */
-  pipeline(queryOrOperators?: AnyFilter<T> | AggregationPipelineFactoryOperators<T>, options?: AggregationPipelineFactoryOptions): AggregationPipeline
+  pipeline(queryOrOperators?: AnyFilter<T> | Aggregation.PipelineFactoryOperators<T>, options?: Aggregation.PipelineFactoryOptions): Aggregation.Pipeline
 
   /**
    * Identifies the ObjectId of exactly one document matching the given filter. Error is thrown if
@@ -271,7 +271,7 @@ export default interface Model<T> {
    * @throws {Error} More or less than 1 document found.
    * @throws {Error} No document found.
    */
-  findOneStrict<R = T>(filter?: AnyFilter<T> | AggregationPipeline, options?: ModelFindOneOptions): Promise<Document<R>>
+  findOneStrict<R = T>(filter?: AnyFilter<T> | Aggregation.Pipeline, options?: ModelFindOneOptions): Promise<Document<R>>
 
   /**
    * Same as the strict find one operation but this method drops all errors and returns `undefined`
@@ -284,7 +284,7 @@ export default interface Model<T> {
    *
    * @see Model.findOneStrict
    */
-  findOne<R = T>(filter?: AnyFilter<T> | AggregationPipeline, options?: ModelFindOneOptions): Promise<Document<R> | undefined>
+  findOne<R = T>(filter?: AnyFilter<T> | Aggregation.Pipeline, options?: ModelFindOneOptions): Promise<Document<R> | undefined>
 
   /**
    * Finds multiple documents of this collection using the aggregation framework. If no query is
@@ -295,7 +295,7 @@ export default interface Model<T> {
    *
    * @returns The matching documents as the fulfillment value.
    */
-  findMany<R = T>(filter?: AnyFilter<T> | AggregationPipeline, options?: ModelFindManyOptions): Promise<Document<R>[]>
+  findMany<R = T>(filter?: AnyFilter<T> | Aggregation.Pipeline, options?: ModelFindManyOptions): Promise<Document<R>[]>
 
   /**
    * Inserts one document into this model's collection. If `doc` is not specified, random fields

@@ -1,4 +1,4 @@
-import { AggregationPipeline } from '.'
+import { Pipeline } from '.'
 import { AnyProps } from '../../types'
 import Schema from '../Schema'
 
@@ -20,8 +20,8 @@ export interface SortStageFactorySpec {
  *
  * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/sort/}
  */
-export function sortStageFactory<P extends AnyProps = AnyProps>(schema: Schema<P>, spec: SortStageFactorySpec): AggregationPipeline {
-  const pipe: AggregationPipeline = []
+export function sortStageFactory<P extends AnyProps = AnyProps>(schema: Schema<P>, spec: SortStageFactorySpec): Pipeline {
+  const pipe: Pipeline = []
   pipe.push({ $sort: spec })
 
   return pipe

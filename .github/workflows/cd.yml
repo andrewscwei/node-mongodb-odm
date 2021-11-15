@@ -60,9 +60,7 @@ jobs:
       - name: Test
         env:
           MONGODB_HOST: 'mongodb:27017'
-        run: |
-          npm run build:test
-          npm test
+        run: npm test
   deploy:
     name: Deploy
     needs: [test]

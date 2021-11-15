@@ -1,4 +1,4 @@
-import { AggregationPipeline } from '.'
+import { Pipeline } from '.'
 import { AnyFilter, AnyProps } from '../../types'
 import { sanitizeFilter } from '../../utils'
 import Schema from '../Schema'
@@ -32,7 +32,7 @@ export type MatchStageFactoryOptions = {
  *
  * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/match/}
  */
-export function matchStageFactory<P extends AnyProps = AnyProps>(schema: Schema<P>, spec: MatchStageFactorySpec<P>, { prefix = '' }: MatchStageFactoryOptions = {}): AggregationPipeline {
+export function matchStageFactory<P extends AnyProps = AnyProps>(schema: Schema<P>, spec: MatchStageFactorySpec<P>, { prefix = '' }: MatchStageFactoryOptions = {}): Pipeline {
   const sanitized = sanitizeFilter(schema, spec, { strict: false })
   const filter: { [key: string]: any } = {}
 

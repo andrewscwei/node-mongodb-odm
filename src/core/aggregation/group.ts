@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { AggregationPipeline } from '.'
+import { Pipeline } from '.'
 import { AnyProps } from '../../types'
 import Schema from '../Schema'
 
@@ -27,8 +27,8 @@ export type GroupStageFactorySpec = string | { [key: string]: any }
  *
  * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/group/}
  */
-export function groupStageFactory<P extends AnyProps = AnyProps>(schema: Schema<P>, spec: GroupStageFactorySpec): AggregationPipeline {
-  const pipe: AggregationPipeline = []
+export function groupStageFactory<P extends AnyProps = AnyProps>(schema: Schema<P>, spec: GroupStageFactorySpec): Pipeline {
+  const pipe: Pipeline = []
 
   if (_.isString(spec)) {
     pipe.push({ $group: { _id: `$${spec}` } })

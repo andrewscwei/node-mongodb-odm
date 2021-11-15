@@ -2,7 +2,7 @@ import _ from 'lodash'
 import { ObjectId } from 'mongodb'
 import * as db from '../..'
 import { AnyFilter, AnyProps } from '../../types'
-import { AggregationPipeline, groupStageFactory, pipelineFactory } from '../aggregation'
+import * as Aggregation from '../aggregation'
 import Schema from '../Schema'
 import { findOne } from './find'
 
@@ -17,18 +17,18 @@ export async function identifyOne<P extends AnyProps = AnyProps>(schema: Schema<
 export async function identifyMany<P extends AnyProps = AnyProps>(schema: Schema<P>, filter: AnyFilter<P>): Promise<ObjectId[]> {
   const collection = await db.getCollection(schema.collection)
 
-  let pipeline: AggregationPipeline
+  let pipeline: Aggregation.Pipeline
 
   if (_.isArray(filter)) {
     pipeline = filter
   }
   else {
-    pipeline = pipelineFactory(schema, { $match: filter })
+    pipeline = Aggregation.pipelineFactory(schema, { $match: filter })
   }
 
   const docs = await collection.aggregate([
     ...pipeline,
-    ...groupStageFactory(schema, {
+    ...Aggregation.groupStageFactory(schema, {
       _id: undefined,
       ids: { $addToSet: '$_id' },
     }),
@@ -41,7 +41,7 @@ export async function identifyMany<P extends AnyProps = AnyProps>(schema: Schema
 
 export async function identifyAll<P extends AnyProps = AnyProps>(schema: Schema<P>): Promise<ObjectId[]> {
   const collection = await db.getCollection(schema.collection)
-  const pipeline = [...pipelineFactory(schema), ...groupStageFactory(schema, {
+  const pipeline = [...Aggregation.pipelineFactory(schema), ...Aggregation.groupStageFactory(schema, {
     _id: undefined,
     ids: { $addToSet: '$_id' },
   })]

@@ -5,13 +5,13 @@ import Faker from 'faker'
 import _ from 'lodash'
 import { describe } from 'mocha'
 import { ObjectId } from 'mongodb'
-import { configureDb } from '..'
-import { AnyFilter, Document } from '../types'
-import typeIsValidObjectId from '../utils/typeIsValidObjectId'
-import { AggregationStageDescriptor, groupStageFactory, lookupStageFactory, matchStageFactory, pipelineFactory, projectStageFactory, sortStageFactory } from './aggregation'
-import { ModelDeleteManyOptions } from './Model'
-import Model from './modelFactory'
-import Schema from './Schema'
+import { groupStageFactory, lookupStageFactory, matchStageFactory, pipelineFactory, PipelineStageDescriptor, projectStageFactory, sortStageFactory } from '.'
+import { configureDb } from '../..'
+import { AnyFilter, Document } from '../../types'
+import { typeIsValidObjectId } from '../../utils'
+import { ModelDeleteManyOptions } from '../Model'
+import Model from '../modelFactory'
+import Schema from '../Schema'
 
 describe('core/Aggregation', () => {
   before(async () => {
@@ -30,8 +30,8 @@ describe('core/Aggregation', () => {
     }]
 
     assert.deepStrictEqual(Object.keys(actual[0]), ['$match'])
-    assert(typeIsValidObjectId((actual[0] as AggregationStageDescriptor).$match._id))
-    assert(expected[0].$match._id.equals((actual[0] as AggregationStageDescriptor).$match._id))
+    assert(typeIsValidObjectId((actual[0] as PipelineStageDescriptor).$match._id))
+    assert(expected[0].$match._id.equals((actual[0] as PipelineStageDescriptor).$match._id))
   })
 
   it('can generate $lookup stage', () => {
@@ -160,8 +160,8 @@ describe('core/Aggregation', () => {
 
     assert(actual.length === expected.length)
     assert(_.isPlainObject(actual[0]))
-    assert((actual[0] as AggregationStageDescriptor).hasOwnProperty('$match'))
-    assert(objectId.equals((expected[0] as AggregationStageDescriptor).$match._id))
+    assert((actual[0] as PipelineStageDescriptor).hasOwnProperty('$match'))
+    assert(objectId.equals((expected[0] as PipelineStageDescriptor).$match._id))
   })
 })
 

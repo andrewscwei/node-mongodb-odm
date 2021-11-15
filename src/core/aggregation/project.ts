@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { AggregationPipeline, AggregationStageDescriptor } from '.'
+import { Pipeline, PipelineStageDescriptor } from '.'
 import * as db from '../..'
 import { AnyProps } from '../../types'
 import Schema, { FieldDescriptor } from '../Schema'
@@ -59,7 +59,7 @@ export interface ProjectStageFactoryOptionsPopulate {
  *
  * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/project/}
  */
-export function projectStageFactory<P extends AnyProps = AnyProps>(schema: Schema<P>, { toPrefix = '', fromPrefix = '', populate = {}, exclude = [] }: ProjectStageFactoryOptions = {}): AggregationPipeline {
+export function projectStageFactory<P extends AnyProps = AnyProps>(schema: Schema<P>, { toPrefix = '', fromPrefix = '', populate = {}, exclude = [] }: ProjectStageFactoryOptions = {}): Pipeline {
   const fields: { [fieldName: string]: FieldDescriptor} = schema.fields
   const out: { [key: string]: any } = { [`${toPrefix}_id`]: `$${fromPrefix}_id` }
   for (const key in fields) {
@@ -69,7 +69,7 @@ export function projectStageFactory<P extends AnyProps = AnyProps>(schema: Schem
     if (populateOpts === false) continue
     const populateRef = fields[key].ref
     const populateSchema = (!_.isNil(populateOpts) && !_.isNil(populateRef)) ? db.getModel(populateRef).schema : undefined
-    out[`${toPrefix}${key}`] = _.isNil(populateSchema) ? `$${fromPrefix}${key}` : (projectStageFactory(populateSchema, populateOpts === true ? undefined : populateOpts) as AggregationStageDescriptor[])[0]['$project']
+    out[`${toPrefix}${key}`] = _.isNil(populateSchema) ? `$${fromPrefix}${key}` : (projectStageFactory(populateSchema, populateOpts === true ? undefined : populateOpts) as PipelineStageDescriptor[])[0]['$project']
   }
   if (schema.timestamps) {
     if (exclude.indexOf('updatedAt') < 0) out[`${toPrefix}updatedAt`] = `$${fromPrefix}updatedAt`

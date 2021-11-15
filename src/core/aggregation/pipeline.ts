@@ -6,23 +6,23 @@ import { lookupStageFactory, LookupStageFactorySpec } from './lookup'
 import { matchStageFactory, MatchStageFactorySpec } from './match'
 import { sortStageFactory, SortStageFactorySpec } from './sort'
 
-export type AggregationStageDescriptor = {
+export type PipelineStageDescriptor = {
   [stageName: string]: {
     [key: string]: any
   }
 }
 
-export type AggregationPipeline = AggregationStageDescriptor[]
+export type Pipeline = PipelineStageDescriptor[]
 
-export type AggregationPipelineFactoryOptions = {
+export type PipelineFactoryOptions = {
   // Prefix for document attributes.
   prefix?: string
 
   // Pipeline to work with.
-  pipeline?: AggregationPipeline
+  pipeline?: Pipeline
 }
 
-export type AggregationPipelineFactoryOperators<P extends AnyProps = AnyProps> = {
+export type PipelineFactoryOperators<P extends AnyProps = AnyProps> = {
   /**
   * Lookup stage spec.
   */
@@ -53,14 +53,14 @@ export type AggregationPipelineFactoryOperators<P extends AnyProps = AnyProps> =
  * Generates a pipeline to pass into the aggregation framework.
  *
  * @param schema - The collection schema.
- * @param operators - @see AggregationPipelineFactoryOperators
- * @param options - @see AggregationPipelineFactoryOptions
+ * @param operators - @see PipelineFactoryOperators
+ * @param options - @see PipelineFactoryOptions
  *
  * @returns The generated aggregate pipeline.
  *
  * @throws {TypeError} Invalid params or options provided.
  */
-export function pipelineFactory<P extends AnyProps = AnyProps>(schema: Schema<P>, { $lookup, $match, $prune, $group, $sort }: AggregationPipelineFactoryOperators<P> = {}, { prefix = '', pipeline = [] }: AggregationPipelineFactoryOptions = {}): AggregationPipeline {
+export function pipelineFactory<P extends AnyProps = AnyProps>(schema: Schema<P>, { $lookup, $match, $prune, $group, $sort }: PipelineFactoryOperators<P> = {}, { prefix = '', pipeline = [] }: PipelineFactoryOptions = {}): Pipeline {
   // If lookup stage is specified, add it to beginning of the pipeline.
   if ($lookup) pipeline = lookupStageFactory(schema, $lookup, { fromPrefix: prefix, toPrefix: prefix }).concat(pipeline)
 
@@ -79,7 +79,7 @@ export function pipelineFactory<P extends AnyProps = AnyProps>(schema: Schema<P>
   return pipeline
 }
 
-export function typeIsAggregationPipeline(value: any): value is AggregationPipeline {
+export function typeIsAggregationPipeline(value: any): value is Pipeline {
   if (_.isArray(value)) return true
   return false
 }

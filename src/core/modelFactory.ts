@@ -10,7 +10,7 @@ import { Collection, Filter, ObjectId, UpdateFilter } from 'mongodb'
 import * as db from '..'
 import { AnyDocument, AnyFilter, AnyProps, AnyUpdate, Document, DocumentFragment } from '../types'
 import { getFieldSpecByKey, sanitizeDocument, sanitizeFilter, sanitizeUpdate, typeIsAnyDocument, typeIsValidObjectId, validateFieldValue } from '../utils'
-import { AggregationPipeline, AggregationPipelineFactoryOperators, AggregationPipelineFactoryOptions, pipelineFactory, typeIsAggregationPipeline } from './aggregation'
+import * as Aggregation from './aggregation'
 import * as CRUD from './crud'
 import Model, { FieldValidationStrategy, ModelCountOptions, ModelDefaultPropertyProvider, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelPropertyFormattingProvider, ModelPropertyValidationProvider, ModelRandomFieldsOptions, ModelRandomPropertyProvider, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions } from './Model'
 import Schema, { FieldDescriptor, MultiFieldDescriptor, typeIsFieldDescriptor } from './Schema'
@@ -80,16 +80,16 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     }
 
     /** @inheritdoc */
-    static pipeline(filterOrOperators?: AnyFilter<P> | AggregationPipelineFactoryOperators<P>, options: AggregationPipelineFactoryOptions = {}): AggregationPipeline {
+    static pipeline(filterOrOperators?: AnyFilter<P> | Aggregation.PipelineFactoryOperators<P>, options: Aggregation.PipelineFactoryOptions = {}): Aggregation.Pipeline {
       if (!this.schema) throw new Error(`[${this.constructor.name}] This model has no schema, you must define this static proerty in the derived class`)
 
       // Check if the argument conforms to aggregation factory operators.
       if (filterOrOperators && Object.keys(filterOrOperators).some(val => val.startsWith('$'))) {
-        return pipelineFactory(this.schema, filterOrOperators as AggregationPipelineFactoryOperators<P>, options)
+        return Aggregation.pipelineFactory(this.schema, filterOrOperators as Aggregation.PipelineFactoryOperators<P>, options)
       }
       // Otherwise the argument is a filter for the $match stage.
       else {
-        return pipelineFactory(this.schema, { $match: filterOrOperators as AnyFilter<P> }, options)
+        return Aggregation.pipelineFactory(this.schema, { $match: filterOrOperators as AnyFilter<P> }, options)
       }
     }
 
@@ -114,9 +114,9 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     }
 
     /** @inheritdoc */
-    static async findOneStrict<R = P>(filter?: AnyFilter<P> | AggregationPipeline, options: ModelFindOneOptions = {}): Promise<Document<R>> {
+    static async findOneStrict<R = P>(filter?: AnyFilter<P> | Aggregation.Pipeline, options: ModelFindOneOptions = {}): Promise<Document<R>> {
       if (filter) {
-        return CRUD.findOne(this.schema, typeIsAggregationPipeline(filter) ? filter : this.pipeline(filter), options)
+        return CRUD.findOne(this.schema, Aggregation.typeIsAggregationPipeline(filter) ? filter : this.pipeline(filter), options)
       }
       else {
         return CRUD.findOneRandom(this.schema)
@@ -124,7 +124,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     }
 
     /** @inheritdoc */
-    static async findOne<R = P>(filter?: AnyFilter<P> | AggregationPipeline, options: ModelFindOneOptions = {}): Promise<Document<R> | undefined> {
+    static async findOne<R = P>(filter?: AnyFilter<P> | Aggregation.Pipeline, options: ModelFindOneOptions = {}): Promise<Document<R> | undefined> {
       try {
         return await this.findOneStrict<R>(filter, options)
       }
@@ -134,9 +134,9 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     }
 
     /** @inheritdoc */
-    static async findMany<R = P>(filter?: AnyFilter<P> | AggregationPipeline, options: ModelFindManyOptions = {}): Promise<Document<R>[]> {
+    static async findMany<R = P>(filter?: AnyFilter<P> | Aggregation.Pipeline, options: ModelFindManyOptions = {}): Promise<Document<R>[]> {
       if (filter) {
-        return CRUD.findMany(this.schema, typeIsAggregationPipeline(filter) ? filter : this.pipeline(filter), options)
+        return CRUD.findMany(this.schema, Aggregation.typeIsAggregationPipeline(filter) ? filter : this.pipeline(filter), options)
       }
       else {
         return CRUD.findAll(this.schema)
