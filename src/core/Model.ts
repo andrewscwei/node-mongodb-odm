@@ -215,15 +215,15 @@ export default interface Model<T> {
   /**
    * Generates an aggregation pipeline specifically for the schema associated with this schema.
    *
-   * @param queryOrOperators - This is either a query for the $match stage or operators for the
-   *                           aggregation factory function.
+   * @param filterOrOperators - This is either a filter for the `$match` stage or operators for the
+   *                            aggregation factory function.
    * @param options - See `AggregationPipelineFactoryOptions`.
    *
    * @returns Aggregation pipeline.
    *
    * @throws {Error} Model class has no static property `schema` defined.
    */
-  pipeline(queryOrOperators?: AnyFilter<T> | Aggregation.PipelineFactoryOperators<T>, options?: Aggregation.PipelineFactoryOptions): Aggregation.Pipeline
+  pipeline(filterOrOperators?: AnyFilter<T> | Aggregation.PipelineFactoryOperators<T>, options?: Aggregation.PipelineFactoryOptions): Aggregation.Pipeline
 
   /**
    * Identifies the ObjectId of exactly one document matching the given filter. Error is thrown if
