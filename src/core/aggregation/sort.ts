@@ -1,6 +1,6 @@
-import { Pipeline } from '.'
 import { AnyProps } from '../../types'
 import Schema from '../Schema'
+import { Pipeline } from './pipeline'
 
 export interface SortStageFactorySpec {
   [key: string]: any

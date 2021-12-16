@@ -1,8 +1,8 @@
 import assert from 'assert'
 import { describe } from 'mocha'
 import { configureDb } from '../..'
+import { Bar, Baz, Foo } from '../../index.spec'
 import { groupStageFactory } from './group'
-import { Bar, Baz, Foo } from './index.spec'
 
 describe('core/aggregation/group', () => {
   before(async () => {

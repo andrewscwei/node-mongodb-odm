@@ -5,7 +5,7 @@ import _ from 'lodash'
 import { describe } from 'mocha'
 import { ObjectId } from 'mongodb'
 import { configureDb } from '../..'
-import { Bar, Baz, Foo } from './index.spec'
+import { Bar, Baz, Foo } from '../../index.spec'
 import { matchStageFactory } from './match'
 import { autoPipelineFactory, PipelineStageDescriptor } from './pipeline'
 

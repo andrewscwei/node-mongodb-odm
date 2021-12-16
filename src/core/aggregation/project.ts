@@ -1,42 +1,46 @@
 import _ from 'lodash'
-import { Pipeline, PipelineStageDescriptor } from '.'
 import * as db from '../..'
 import { AnyProps } from '../../types'
-import Schema, { FieldDescriptor } from '../Schema'
+import prefix from '../../utils/prefix'
+import Schema from '../Schema'
 
 export type ProjectStageFactoryOptions = {
   /**
-   * Prefix for current attributes.
-   */
-  toPrefix?: string
-
-  /**
-   * Prefix for target attributes after project.
+   * Prefix for current document fields.
    */
   fromPrefix?: string
 
   /**
-   * An object containing key/value pairs representing a field belonging to this model that is a
-   * reference (aka foreign key) pointing to another model. The keys equate the name of the field
-   * while the values equate the `options` parameter for the reference models `project()` method.
-   * The values can also just be `true` to omit passing an `options` parameter.
+   * Prefix for target document fields after the project stage.
    */
-  populate?: ProjectStageFactoryOptionsPopulate
+  toPrefix?: string
 
   /**
-   * Schema fields to exclude.
+   * An object specifying how reference fields in this collection pointing to other collections are
+   * populated. Each key represents a reference field (i.e. a field with a `ref` property) while
+   * each corresponding value represents the `ProjectStageFactoryPopulateOptions` to be used in the
+   * `projectStageFactory` method of the target field, or a boolean where: if `true`, the target
+   * field will not be further projected (i.e. `options` param will be omitted when generating its
+   * `$project` stage via `projectStageFactory` method), and if `false`, the reference field will
+   * simply be ignored.
+   */
+  populate?: ProjectStageFactoryPopulateOptions
+
+  /**
+   * Fields to exclude.
    */
   exclude?: string[]
 }
 
-type ProjectStageFactoryOptionsPopulate = {
-  [modelName: string]: boolean | ProjectStageFactoryOptionsPopulate
+type ProjectStageFactoryPopulateOptions = {
+  [modelName: string]: boolean | ProjectStageFactoryPopulateOptions
 }
 
 /**
- * Generates the `$project` stage of the aggregation pipeline.
+ * Generates the `$project` stage of the aggregation pipeline for a collection based on its defined
+ * schema.
  *
- * @param schema - The schema of the database collection.
+ * @param schema - The schema of the collection.
  * @param options - @see ProjectStageFactoryOptions.
  *
  * @returns The aggregation pipeline that handles the generated `$project` stage.
@@ -59,21 +63,48 @@ type ProjectStageFactoryOptionsPopulate = {
  *
  * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/project/}
  */
-export function projectStageFactory<P extends AnyProps = AnyProps>(schema: Schema<P>, { toPrefix = '', fromPrefix = '', populate = {}, exclude = [] }: ProjectStageFactoryOptions = {}): Pipeline {
-  const fields: { [fieldName: string]: FieldDescriptor} = schema.fields
-  const out: { [key: string]: any } = { [`${toPrefix}_id`]: `$${fromPrefix}_id` }
+export function projectStageFactory<P extends AnyProps = AnyProps>(
+  schema: Schema<P>, {
+    exclude = [],
+    fromPrefix = '',
+    populate = {},
+    toPrefix = '',
+  }: ProjectStageFactoryOptions = {},
+) {
+  const fields = schema.fields
+  const out: Record<string, any> = {}
+
+  // Project `_id` unless explicitly excluded.
+  if (exclude.indexOf('_id') < 0) {
+    out[prefix('_id', toPrefix)] = `$${prefix('_id', fromPrefix)}`
+  }
+
+  // Project each field defined in the schema as required by options.
   for (const key in fields) {
     if (!schema.fields.hasOwnProperty(key)) continue
     if (exclude.indexOf(key) > -1) continue
+
+    // Project reference fields (a.k.a. foreign keys) if applicable.
     const populateOpts = populate[key]
     if (populateOpts === false) continue
-    const populateRef = fields[key].ref
-    const populateSchema = (!_.isNil(populateOpts) && !_.isNil(populateRef)) ? db.getModel(populateRef).schema : undefined
-    out[`${toPrefix}${key}`] = _.isNil(populateSchema) ? `$${fromPrefix}${key}` : (projectStageFactory(populateSchema, populateOpts === true ? undefined : populateOpts) as PipelineStageDescriptor[])[0]['$project']
+
+    const targetModel = fields[key].ref
+    const targetSchema = (!_.isNil(populateOpts) && !_.isNil(targetModel)) ? db.getModel(targetModel).schema : undefined
+
+    if (_.isNil(targetSchema)) {
+      out[prefix(key, toPrefix)] = `$${prefix(key, fromPrefix)}`
+    }
+    else {
+      const targetProjectStage = projectStageFactory(targetSchema, populateOpts === true ? undefined : populateOpts)
+      out[prefix(key, toPrefix)] = targetProjectStage
+    }
   }
+
+  // Project timestamps if applicable.
   if (schema.timestamps) {
-    if (exclude.indexOf('updatedAt') < 0) out[`${toPrefix}updatedAt`] = `$${fromPrefix}updatedAt`
-    if (exclude.indexOf('createdAt') < 0) out[`${toPrefix}createdAt`] = `$${fromPrefix}createdAt`
+    if (exclude.indexOf('updatedAt') < 0) out[prefix('updatedAt', toPrefix)] = `$${prefix('updatedAt', fromPrefix)}`
+    if (exclude.indexOf('createdAt') < 0) out[prefix('createdAt', toPrefix)] = `$${prefix('createdAt', fromPrefix)}`
   }
-  return [{ $project: out }]
+
+  return out
 }

@@ -1,7 +1,7 @@
 import assert from 'assert'
 import { describe } from 'mocha'
 import { configureDb } from '../..'
-import { Bar, Baz, Foo } from './index.spec'
+import { Bar, Baz, Foo } from '../../index.spec'
 import { lookupStageFactory } from './lookup'
 
 describe('core/aggregation/lookup', () => {
