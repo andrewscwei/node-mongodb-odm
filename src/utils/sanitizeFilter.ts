@@ -50,7 +50,7 @@ export default function sanitizeFilter<P extends AnyProps = AnyProps>(schema: Sc
     return { _id: new ObjectId(filter) }
   }
   else if (strict) {
-    return sanitizeDocument<P>(schema, filter as DocumentFragment<P>, { accountForDotNotation: true })
+    return sanitizeDocument<P>(schema, filter as DocumentFragment<P>, { accountForDotNotation: true }) as Filter<Document<P>>
   }
   else {
     return filter
