@@ -8,7 +8,7 @@ import _ from 'lodash'
  *
  * @returns Dot notated field with the prepended prefix.
  */
-export default function prefix(field: string, prefix: string = ''): string {
+export default function prefixed(field: string, prefix: string = ''): string {
   const parts = _.compact(`${prefix}.${field}`.split('.'))
   return parts.join('.')
 }

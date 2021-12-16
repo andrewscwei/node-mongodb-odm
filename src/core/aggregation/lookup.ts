@@ -1,19 +1,28 @@
 import _ from 'lodash'
-import { Pipeline } from '.'
 import * as db from '../..'
 import { AnyProps } from '../../types'
-import Schema, { FieldDescriptor } from '../Schema'
+import fieldPath from '../../utils/fieldPath'
+import prefixed from '../../utils/prefixed'
+import Schema from '../Schema'
+
+export type UnwindStage = {
+  $unwind: Record<string, any>
+}
+
+export type LookupStage = {
+  $lookup: Record<string, any>
+}
 
 /**
- * Defines fields to perform lookup on used by #lookupStageFactory(). These fields must be
- * references (i.e. model name as foreign keys) to another model. The fields are represented by the
- * keys in this object. The accepted values of the keys are `true` or another object for recursive
- * lookup of the reference model's foreign keys. If the value is simply `true`, lookup will only be
- * performed on the immediate foreign key, all of its subsequent foreign keys will be ignored. Spec
- * can be nested objects. `$unwind` is immediately followed after the generated `$lookup`.
+ * Defines fields to perform lookup on used by `lookupStageFactory`. These fields must be references
+ * (i.e. model name as foreign keys) to another model. The fields are represented by the keys in
+ * this object. The accepted values of the keys are `true` or another object for recursive lookup of
+ * the reference model's foreign keys. If the value is simply `true`, lookup will only be performed
+ * on the immediate foreign key, all of its inner foreign keys will be ignored. Specs can be nested.
+ * `$unwind` is immediately followed after the generated `$lookup`.
  */
-export type LookupStageFactorySpec = {
-  [modelName: string]: boolean | LookupStageFactorySpec
+export type LookupStageFactorySpecs = {
+  [refField: string]: boolean | LookupStageFactorySpecs
 }
 
 export type LookupStageFactoryOptions = {
@@ -29,13 +38,17 @@ export type LookupStageFactoryOptions = {
 }
 
 /**
- * Generates the `$lookup` stage of the aggregation pipeline.
+ * Generates a series of `$lookup` and `$unwind` stages for a collection to be used in an
+ * aggregation pipeline. The `specs` define which fields to look up. Each field will be unwinded
+ * accordingly so the result of the new field is the looked up document(s) itself.
  *
  * @param schema - The schema of the database collection.
- * @param spec - Spec that defines the `$lookup` stage, supports looking up nested foreign keys.
+ * @param specs - The specifications for the `$lookup` stage, supports looking up nested foreign
+ *                keys.
  * @param options - Additional options.
  *
- * @returns The aggregation pipeline that handles the generated `$lookup` stage.
+ * @returns An abstract aggregation pipeline containing the generated series of `$lookup` and
+ *          `$unwind` stages.
  *
  * @example
  * // Returns [{ "$lookup": { "from": "subModels", "localField": "subModel", "foreignField": "_id", "as": "subModel" } },
@@ -56,50 +69,64 @@ export type LookupStageFactoryOptions = {
  *             { "$unwind": { "path": "$bar.subModel.subSubModel", "preserveNullAndEmptyArrays": true } }]
  * lookupStageFactory(schema, { subModel: { subSubModel: true } }, { fromPrefix: 'foo.', toPrefix: 'bar.' })
  *
- * @see
- * {@link https://docs.mongodb.com/manual/reference/operator/aggregation/lookup/}
+ * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/lookup/}
+ * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/unwind/}
  *
  * @throws {TypeError} Invalid params or options provided.
  * @throws {Error} Field to populate doesn't have a `ref` field specified.
  * @throws {Error} Unable to find the schema for the field to populate.
  */
-export function lookupStageFactory<P extends AnyProps = AnyProps>(schema: Schema<P>, spec: LookupStageFactorySpec, { fromPrefix = '', toPrefix = '' }: LookupStageFactoryOptions = {}): Pipeline {
-  const fields: { [fieldName: string]: FieldDescriptor} = schema.fields
+export function lookupStageFactory<P extends AnyProps = AnyProps>(
+  schema: Schema<P>,
+  specs: LookupStageFactorySpecs, {
+    fromPrefix = '',
+    toPrefix = '',
+  }: LookupStageFactoryOptions = {},
+): (LookupStage | UnwindStage)[] {
+  const fields = schema.fields
 
-  let pipe: Pipeline = []
+  let pipe: (LookupStage | UnwindStage)[] = []
 
-  for (const key in spec) {
-    if (!spec.hasOwnProperty(key)) continue
+  for (const key in specs) {
+    if (!specs.hasOwnProperty(key)) continue
 
-    const val = spec[key]
-    if (!((val === true) || (typeof val === 'object'))) throw new TypeError(`[lookup(${schema}, ${spec}, ${{ fromPrefix, toPrefix }})] Invalid populate properties.`)
+    const spec = specs[key]
+    const isShallowLookup = _.isBoolean(spec)
+    const isDeepLookup = _.isPlainObject(spec)
 
-    const ref = fields[key] && fields[key].ref
-    if (!ref) throw new Error(`[lookup(${schema}, ${spec}, ${{ fromPrefix, toPrefix }})] The field to populate does not have a reference model specified in the schema.`)
+    if (!isShallowLookup && !isDeepLookup) throw new TypeError(`[lookup(${schema}, ${specs}, ${{ fromPrefix, toPrefix }})] Invalid populate properties.`)
 
-    const schemaRef = db.getModel(ref).schema
-    if (!schemaRef) throw new Error(`[lookup(${schema}, ${spec}, ${{ fromPrefix, toPrefix }})] Unable to find the model schema corresponding to the field to populate.`)
+    if (spec === false) continue
 
+    const targetModel = fields[key] && fields[key].ref
+    if (!targetModel) throw new Error(`[lookup(${schema}, ${specs}, ${{ fromPrefix, toPrefix }})] The field to populate does not have a reference model specified in the schema.`)
+
+    const targetSchema = db.getModel(targetModel).schema
+    if (!targetSchema) throw new Error(`[lookup(${schema}, ${specs}, ${{ fromPrefix, toPrefix }})] Unable to find the model schema corresponding to the field to populate.`)
+
+    // Look up the reference field.
     pipe.push({
       $lookup: {
-        from: `${schemaRef.collection}`,
-        localField: `${fromPrefix}${key}`,
+        from: `${targetSchema.collection}`,
+        localField: prefixed(key, fromPrefix),
         foreignField: '_id',
-        as: `${toPrefix}${key}`,
+        as: prefixed(key, toPrefix)
       },
     })
 
+    // Unwind the results of the lookup.
     pipe.push({
       $unwind: {
-        path: `$${toPrefix}${key}`,
+        path: fieldPath(key, toPrefix),
         preserveNullAndEmptyArrays: true,
       },
     })
 
-    if (!_.isBoolean(val)) {
-      pipe = pipe.concat(lookupStageFactory(schemaRef, val, {
-        fromPrefix: `${toPrefix}${key}.`,
-        toPrefix: `${toPrefix}${key}.`,
+    // Recursively look up reference fields.
+    if (isDeepLookup) {
+      pipe = pipe.concat(lookupStageFactory(targetSchema, spec as LookupStageFactorySpecs, {
+        fromPrefix: prefixed(key, toPrefix),
+        toPrefix: prefixed(key, toPrefix),
       }))
     }
   }

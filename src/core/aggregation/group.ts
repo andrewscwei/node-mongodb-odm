@@ -1,21 +1,24 @@
 import _ from 'lodash'
-import { Pipeline } from '.'
 import { AnyProps } from '../../types'
 import Schema from '../Schema'
 
-/**
- * Spec that define the `$group` stage. If this is a string, a simple `$group` stage will be
- * generated with `_id` equal this string.
- */
-export type GroupStageFactorySpec = string | { [key: string]: any }
+export type GroupStage = {
+  $group: Record<string, any>
+}
 
 /**
- * Generates the `$group` stage of the aggregation pipeline.
+ * Specs that define the `$group` stage. If this is a string, a simple `$group` stage will be
+ * generated with `_id` set to the string.
+ */
+export type GroupStageFactorySpecs = string | { [key: string]: any }
+
+/**
+ * Generates a `$group` stage for a collection to be used in an aggregation pipeline.
  *
  * @param schema - The schema of the database collection.
  * @param spec - Spec that define the `$group` stage.
  *
- * @returns The aggregation pipeline that handles the generated `$group` stage.
+ * @returns An abstract aggregation pipeline containing the generated `$group` stage.
  *
  * @example
  * // Returns [{ "$group": { "_id": "$foo" } }]
@@ -27,15 +30,14 @@ export type GroupStageFactorySpec = string | { [key: string]: any }
  *
  * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/group/}
  */
-export function groupStageFactory<P extends AnyProps = AnyProps>(schema: Schema<P>, spec: GroupStageFactorySpec): Pipeline {
-  const pipe: Pipeline = []
-
-  if (_.isString(spec)) {
-    pipe.push({ $group: { _id: `$${spec}` } })
+export function groupStageFactory<P extends AnyProps = AnyProps>(
+  schema: Schema<P>,
+  specs: GroupStageFactorySpecs,
+): [GroupStage] {
+  if (_.isString(specs)) {
+    return [{ $group: { _id: `$${specs}` } }]
   }
   else {
-    pipe.push({ $group: spec })
+    return [{ $group: specs }]
   }
-
-  return pipe
 }

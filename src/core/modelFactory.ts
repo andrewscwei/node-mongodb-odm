@@ -80,12 +80,12 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     }
 
     /** @inheritdoc */
-    static pipeline(filterOrOperators?: AnyFilter<P> | Aggregation.PipelineFactoryOperators<P>, options: Aggregation.PipelineFactoryOptions = {}): Aggregation.Pipeline {
+    static pipeline(filterOrOperators?: AnyFilter<P> | Aggregation.PipelineFactoryStages<P>, options: Aggregation.PipelineFactoryOptions = {}): Aggregation.Pipeline {
       if (!this.schema) throw new Error(`[${this.constructor.name}] This model has no schema, you must define this static proerty in the derived class`)
 
       // Check if the argument conforms to aggregation factory operators.
       if (filterOrOperators && Object.keys(filterOrOperators).some(val => val.startsWith('$'))) {
-        return Aggregation.autoPipelineFactory(this.schema, filterOrOperators as Aggregation.PipelineFactoryOperators<P>, options)
+        return Aggregation.autoPipelineFactory(this.schema, filterOrOperators as Aggregation.PipelineFactoryStages<P>, options)
       }
       // Otherwise the argument is a filter for the $match stage.
       else {

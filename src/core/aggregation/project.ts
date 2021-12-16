@@ -1,17 +1,30 @@
 import _ from 'lodash'
 import * as db from '../..'
 import { AnyProps } from '../../types'
-import prefix from '../../utils/prefix'
+import fieldPath from '../../utils/fieldPath'
+import prefixed from '../../utils/prefixed'
 import Schema from '../Schema'
 
+export type ProjectStageFactorySpecs = {
+  [field: string]: any
+}
+
+export type ProjectStage = {
+  $project: Record<string, any>
+}
+
+/**
+ * Options for `projectStageFactory`. Note that these options are only used if auto projecting all
+ * fields, i.e. `specs` parameter is `undefined`.
+ */
 export type ProjectStageFactoryOptions = {
   /**
-   * Prefix for current document fields.
+   * Prefix for current field paths.
    */
   fromPrefix?: string
 
   /**
-   * Prefix for target document fields after the project stage.
+   * Prefix for new field paths as a result of the `$project` stage.
    */
   toPrefix?: string
 
@@ -37,13 +50,14 @@ type ProjectStageFactoryPopulateOptions = {
 }
 
 /**
- * Generates the `$project` stage of the aggregation pipeline for a collection based on its defined
- * schema.
+ * Generates a `$project` stage for a collection to be used in an aggregation pipeline.
  *
  * @param schema - The schema of the collection.
+ * @param specs - The specifications for the `$project` stage. Set as `undefined` to project all
+ *                fields defined in the schema.
  * @param options - @see ProjectStageFactoryOptions.
  *
- * @returns The aggregation pipeline that handles the generated `$project` stage.
+ * @returns An abstract aggregation pipeline containing the generated `$project` stage.
  *
  * @example
  * // Returns [{ "$project": { "_id": "_id", "a": "a", "b": "b", "c": "c", "model": "model" } }]
@@ -51,60 +65,66 @@ type ProjectStageFactoryPopulateOptions = {
  *
  * @example
  * // Returns [{ "$project": { "foo._id": "bar._id", "foo.a": "bar.a", "foo.b": "bar.b", "foo.c": "bar.c", "foo.model": model.project()[0]["$project"] } }]
- * project(schema, { populate: { 'model': true }, fromPrefix: 'foo.', toPrefix: 'bar.' })
+ * project(schema, undefined, { populate: { 'model': true }, fromPrefix: 'foo.', toPrefix: 'bar.' })
  *
  * @example
  * // Returns [{ "$project": { "_id": "_id", "a": "a", "b": "b", "c": "c", "model": model.project({ "x": "x", "y": "y" })[0]["$project"] } }]
- * project(schema, { populate: { 'model': { 'x': 'x', 'y': 'y' } } })
+ * project(schema, undefined, { populate: { 'model': { 'x': 'x', 'y': 'y' } } })
  *
  * @example
  * // Returns [{ "$project": { "_id": "_id", "b": "b", "c": "c" } }]
- * project(schema, { exclude: ['a', 'model'] })
+ * project(schema, undefined, { exclude: ['a', 'model'] })
  *
  * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/project/}
  */
 export function projectStageFactory<P extends AnyProps = AnyProps>(
-  schema: Schema<P>, {
+  schema: Schema<P>,
+  specs?: ProjectStageFactorySpecs, {
     exclude = [],
     fromPrefix = '',
     populate = {},
     toPrefix = '',
   }: ProjectStageFactoryOptions = {},
-) {
-  const fields = schema.fields
-  const out: Record<string, any> = {}
-
-  // Project `_id` unless explicitly excluded.
-  if (exclude.indexOf('_id') < 0) {
-    out[prefix('_id', toPrefix)] = `$${prefix('_id', fromPrefix)}`
+): [ProjectStage] {
+  if (specs !== undefined) {
+    return [{ $project: specs }]
   }
+  else {
+    const fields = schema.fields
+    const out: Record<string, any> = {}
 
-  // Project each field defined in the schema as required by options.
-  for (const key in fields) {
-    if (!schema.fields.hasOwnProperty(key)) continue
-    if (exclude.indexOf(key) > -1) continue
-
-    // Project reference fields (a.k.a. foreign keys) if applicable.
-    const populateOpts = populate[key]
-    if (populateOpts === false) continue
-
-    const targetModel = fields[key].ref
-    const targetSchema = (!_.isNil(populateOpts) && !_.isNil(targetModel)) ? db.getModel(targetModel).schema : undefined
-
-    if (_.isNil(targetSchema)) {
-      out[prefix(key, toPrefix)] = `$${prefix(key, fromPrefix)}`
+    // Project `_id` unless explicitly excluded.
+    if (exclude.indexOf('_id') < 0) {
+      out[prefixed('_id', toPrefix)] = fieldPath('_id', fromPrefix)
     }
-    else {
-      const targetProjectStage = projectStageFactory(targetSchema, populateOpts === true ? undefined : populateOpts)
-      out[prefix(key, toPrefix)] = targetProjectStage
+
+    // Project each field defined in the schema as required by options.
+    for (const key in fields) {
+      if (!schema.fields.hasOwnProperty(key)) continue
+      if (exclude.indexOf(key) > -1) continue
+
+      // Project reference fields (a.k.a. foreign keys) if applicable.
+      const populateOpts = populate[key]
+      if (populateOpts === false) continue
+
+      const targetModel = fields[key].ref
+      const targetSchema = (!_.isNil(populateOpts) && !_.isNil(targetModel)) ? db.getModel(targetModel).schema : undefined
+
+      if (_.isNil(targetSchema)) {
+        out[prefixed(key, toPrefix)] = fieldPath(key, fromPrefix)
+      }
+      else {
+        const targetProjectStage = projectStageFactory(targetSchema, undefined, populateOpts === true ? undefined : populateOpts)
+        out[prefixed(key, toPrefix)] = targetProjectStage[0].$project
+      }
     }
-  }
 
-  // Project timestamps if applicable.
-  if (schema.timestamps) {
-    if (exclude.indexOf('updatedAt') < 0) out[prefix('updatedAt', toPrefix)] = `$${prefix('updatedAt', fromPrefix)}`
-    if (exclude.indexOf('createdAt') < 0) out[prefix('createdAt', toPrefix)] = `$${prefix('createdAt', fromPrefix)}`
-  }
+    // Project timestamps if applicable.
+    if (schema.timestamps) {
+      if (exclude.indexOf('updatedAt') < 0) out[prefixed('updatedAt', toPrefix)] = fieldPath('updatedAt', fromPrefix)
+      if (exclude.indexOf('createdAt') < 0) out[prefixed('createdAt', toPrefix)] = fieldPath('createdAt', fromPrefix)
+    }
 
-  return out
+    return [{ $project: out }]
+  }
 }

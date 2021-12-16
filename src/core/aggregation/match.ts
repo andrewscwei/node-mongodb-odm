@@ -1,22 +1,30 @@
-import { Pipeline } from '.'
 import { AnyFilter, AnyProps } from '../../types'
 import { sanitizeFilter } from '../../utils'
+import prefixed from '../../utils/prefixed'
 import Schema from '../Schema'
 
-export type MatchStageFactorySpec<P> = AnyFilter<P>
+export type MatchStage = {
+  $match: Record<string, any>
+}
+
+export type MatchStageFactorySpecs<P> = AnyFilter<P>
 
 export type MatchStageFactoryOptions = {
-  prefix?: string
+  /**
+   * Prefix to prepend to fields in the `$match` stage specifications.
+   */
+  toPrefix?: string
 }
 
 /**
- * Generates the `$match` stage of the aggregation pipeline.
+ * Generates a `$match` stage for a collection to be used in an aggregation pipeline.
  *
  * @param schema - The schema of the database collection.
- * @param spec - Spec (aka filter in this case) that defines the match.
+ * @param specs - The specifications (a.k.a. filter in this case) for the `$match` stage. The value
+ *                can be any supported value for `sanitizeFilter`.
  * @param options - Additional options.
  *
- * @returns The aggregation pipeline that handles the generated `$match` stage.
+ * @returns An abstract aggregation pipeline containing the generated `$match` stage.
  *
  * @example
  * // Returns [{ "$match": { "_id": 5927f337c5178b9665b56b1e } }]
@@ -24,21 +32,26 @@ export type MatchStageFactoryOptions = {
  *
  * @example
  * // Returns [{ "$match": { "foo._id": 5927f337c5178b9665b56b1e } }]
- * matchStageFactory(schema, '5927f337c5178b9665b56b1e', { prefix: 'foo.' })
+ * matchStageFactory(schema, '5927f337c5178b9665b56b1e', { toPrefix: 'foo.' })
  *
  * @example
  * // Returns [{ "$match": { "foo._id": 5927f337c5178b9665b56b1e, "foo.bar": 34 } }]
- * matchStageFactory(schema, { _id: 5927f337c5178b9665b56b1e, bar: 34 }, { prefix: 'foo.' })
+ * matchStageFactory(schema, { _id: 5927f337c5178b9665b56b1e, bar: 34 }, { toPrefix: 'foo.' })
  *
  * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/match/}
  */
-export function matchStageFactory<P extends AnyProps = AnyProps>(schema: Schema<P>, spec: MatchStageFactorySpec<P>, { prefix = '' }: MatchStageFactoryOptions = {}): Pipeline {
-  const sanitized = sanitizeFilter(schema, spec, { strict: false })
-  const filter: { [key: string]: any } = {}
+export function matchStageFactory<P extends AnyProps = AnyProps>(
+  schema: Schema<P>,
+  specs: MatchStageFactorySpecs<P>, {
+    toPrefix = '',
+  }: MatchStageFactoryOptions = {},
+): [MatchStage] {
+  const sanitized = sanitizeFilter(schema, specs, { strict: false })
+  const filter: Record<string, any> = {}
 
   for (const key in sanitized) {
     if (!sanitized.hasOwnProperty(key)) continue
-    filter[`${prefix}${key}`] = (sanitized as any)[key as keyof P]
+    filter[prefixed(key, toPrefix)] = sanitized[key]
   }
 
   return [{ $match: filter }]

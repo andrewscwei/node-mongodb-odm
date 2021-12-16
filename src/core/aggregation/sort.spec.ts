@@ -15,12 +15,12 @@ describe('core/aggregation/sort', () => {
 
   it('can generate $sort stage', () => {
     assert.deepStrictEqual(sortStageFactory(Foo.schema, {
-      a: 1,
-      b: -1,
+      aString: 1,
+      aFoo: -1,
     }), [{
       $sort: {
-        a: 1,
-        b: -1,
+        aString: 1,
+        aFoo: -1,
       },
     }])
   })

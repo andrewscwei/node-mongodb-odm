@@ -15,33 +15,39 @@ describe('core/aggregation/project', () => {
   })
 
   it('can generate $project stage for an entire schema', () => {
-    assert.deepStrictEqual(projectStageFactory(Foo.schema), {
-      ..._.mapValues(Foo.schema.fields, (value: any, key: string) => `$${key}`),
-      _id: '$_id',
-      createdAt: '$createdAt',
-      updatedAt: '$updatedAt',
-    })
+    assert.deepStrictEqual(projectStageFactory(Foo.schema), [{
+      $project: {
+        ..._.mapValues(Foo.schema.fields, (value: any, key: string) => `$${key}`),
+        _id: '$_id',
+        createdAt: '$createdAt',
+        updatedAt: '$updatedAt',
+      },
+    }])
   })
 
   it('can generate $project stage with prefixes for an entire schema and its foreign keys', () => {
-    assert.deepStrictEqual(projectStageFactory(Foo.schema, { populate: { aBar: true }, fromPrefix: 'foo', toPrefix: 'bar' }), {
-      ..._(Foo.schema.fields).mapValues((v, k) => `$foo.${k}`).mapKeys((v, k) => `bar.${k}`).value(),
-      ['bar._id']: '$foo._id',
-      ['bar.createdAt']: '$foo.createdAt',
-      ['bar.updatedAt']: '$foo.updatedAt',
-      ['bar.aBar']: {
-        ..._(Bar.schema.fields).mapValues((v, k) => `$${k}`).value(),
-        ['_id']: '$_id',
+    assert.deepStrictEqual(projectStageFactory(Foo.schema, undefined, { populate: { aBar: true }, fromPrefix: 'foo', toPrefix: 'bar' }), [{
+      $project: {
+        ..._(Foo.schema.fields).mapValues((v, k) => `$foo.${k}`).mapKeys((v, k) => `bar.${k}`).value(),
+        ['bar._id']: '$foo._id',
+        ['bar.createdAt']: '$foo.createdAt',
+        ['bar.updatedAt']: '$foo.updatedAt',
+        ['bar.aBar']: {
+          ..._(Bar.schema.fields).mapValues((v, k) => `$${k}`).value(),
+          ['_id']: '$_id',
+        },
       },
-    })
+    }])
   })
 
   it('can generate $project stage with exclusions for a schema', () => {
-    assert.deepStrictEqual(projectStageFactory(Foo.schema, {
+    assert.deepStrictEqual(projectStageFactory(Foo.schema, undefined, {
       exclude: ['createdAt', 'updatedAt'],
-    }), {
-      ['_id']: '$_id',
-      ..._(Foo.schema.fields).mapValues((v, k) => `$${k}`).value(),
-    })
+    }), [{
+      $project: {
+        ['_id']: '$_id',
+        ..._(Foo.schema.fields).mapValues((v, k) => `$${k}`).value(),
+      },
+    }])
   })
 })
