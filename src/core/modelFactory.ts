@@ -85,11 +85,11 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
 
       // Check if the argument conforms to aggregation factory operators.
       if (filterOrOperators && Object.keys(filterOrOperators).some(val => val.startsWith('$'))) {
-        return Aggregation.pipelineFactory(this.schema, filterOrOperators as Aggregation.PipelineFactoryOperators<P>, options)
+        return Aggregation.autoPipelineFactory(this.schema, filterOrOperators as Aggregation.PipelineFactoryOperators<P>, options)
       }
       // Otherwise the argument is a filter for the $match stage.
       else {
-        return Aggregation.pipelineFactory(this.schema, { $match: filterOrOperators as AnyFilter<P> }, options)
+        return Aggregation.autoPipelineFactory(this.schema, { $match: filterOrOperators as AnyFilter<P> }, options)
       }
     }
 

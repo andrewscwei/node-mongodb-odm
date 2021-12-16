@@ -60,7 +60,7 @@ export type PipelineFactoryOperators<P extends AnyProps = AnyProps> = {
  *
  * @throws {TypeError} Invalid params or options provided.
  */
-export function pipelineFactory<P extends AnyProps = AnyProps>(schema: Schema<P>, { $lookup, $match, $prune, $group, $sort }: PipelineFactoryOperators<P> = {}, { prefix = '', pipeline = [] }: PipelineFactoryOptions = {}): Pipeline {
+export function autoPipelineFactory<P extends AnyProps = AnyProps>(schema: Schema<P>, { $lookup, $match, $prune, $group, $sort }: PipelineFactoryOperators<P> = {}, { prefix = '', pipeline = [] }: PipelineFactoryOptions = {}): Pipeline {
   // If lookup stage is specified, add it to beginning of the pipeline.
   if ($lookup) pipeline = lookupStageFactory(schema, $lookup, { fromPrefix: prefix, toPrefix: prefix }).concat(pipeline)
 

@@ -23,7 +23,7 @@ export async function identifyMany<P extends AnyProps = AnyProps>(schema: Schema
     pipeline = filter
   }
   else {
-    pipeline = Aggregation.pipelineFactory(schema, { $match: filter })
+    pipeline = Aggregation.autoPipelineFactory(schema, { $match: filter })
   }
 
   const docs = await collection.aggregate([
@@ -41,7 +41,7 @@ export async function identifyMany<P extends AnyProps = AnyProps>(schema: Schema
 
 export async function identifyAll<P extends AnyProps = AnyProps>(schema: Schema<P>): Promise<ObjectId[]> {
   const collection = await db.getCollection(schema.collection)
-  const pipeline = [...Aggregation.pipelineFactory(schema), ...Aggregation.groupStageFactory(schema, {
+  const pipeline = [...Aggregation.autoPipelineFactory(schema), ...Aggregation.groupStageFactory(schema, {
     _id: undefined,
     ids: { $addToSet: '$_id' },
   })]

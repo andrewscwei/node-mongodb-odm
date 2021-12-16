@@ -14,7 +14,7 @@ export async function findOne<P extends AnyProps = AnyProps, R extends AnyProps 
 }
 
 export async function findOneRandom<P extends AnyProps = AnyProps, R extends AnyProps = P>(schema: Schema<P>): Promise<Document<R>> {
-  const pipeline = Aggregation.pipelineFactory(schema).concat([{ $sample: { size: 1 } }])
+  const pipeline = Aggregation.autoPipelineFactory(schema).concat([{ $sample: { size: 1 } }])
   const docs = await findMany<P, R>(schema, pipeline)
 
   if (docs.length !== 1) throw new Error(`[${schema.model}] More or less than 1 random document found even though only 1 was supposed to be found.`)
@@ -31,7 +31,7 @@ export async function findMany<P extends AnyProps = AnyProps, R extends AnyProps
     pipeline = filter
   }
   else {
-    pipeline = Aggregation.pipelineFactory(schema, { $match: filter })
+    pipeline = Aggregation.autoPipelineFactory(schema, { $match: filter })
   }
 
   const docs = await collection.aggregate<Document<R>>(pipeline, options).toArray()
@@ -41,7 +41,7 @@ export async function findMany<P extends AnyProps = AnyProps, R extends AnyProps
 
 export async function findAll<P extends AnyProps, R extends AnyProps = P>(schema: Schema<P>): Promise<Document<R>[]> {
   const collection = await db.getCollection<Document<P>>(schema.collection)
-  const docs = await collection.aggregate<Document<R>>(Aggregation.pipelineFactory(schema)).toArray()
+  const docs = await collection.aggregate<Document<R>>(Aggregation.autoPipelineFactory(schema)).toArray()
 
   return docs
 }

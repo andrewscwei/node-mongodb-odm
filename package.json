@@ -6,7 +6,7 @@
   "scripts": {
     "clean": "rimraf build",
     "build": "npm run clean && tsc",
-    "test": "npm run clean && tsc --project tsconfig.test.json && cross-env DEBUG=mongodb-odm* mocha --timeout 10000 --reporter spec --full-trace --colors --exit \"build/**/*.spec.js\"",
+    "test": "npm run clean && tsc --project tsconfig.test.json && mocha --timeout 10000 --reporter spec --full-trace --colors --exit \"build/**/*.spec.js\"",
     "test:ts": "cross-env DEBUG=mongodb-odm* NODE_ENV=development mocha -r ts-node/register --timeout 10000 --reporter spec --full-trace --colors --exit \"src/**/*.spec.ts\"",
     "db": "docker run --name node-mongodb-odm-db -d --rm -p 27017:27017 -v ${PWD}/.data/db:/data/db mongo:4.0.4",
     "db:stop": "docker stop node-mongodb-odm-db",

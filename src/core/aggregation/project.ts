@@ -4,7 +4,7 @@ import * as db from '../..'
 import { AnyProps } from '../../types'
 import Schema, { FieldDescriptor } from '../Schema'
 
-export interface ProjectStageFactoryOptions {
+export type ProjectStageFactoryOptions = {
   /**
    * Prefix for current attributes.
    */
@@ -29,7 +29,7 @@ export interface ProjectStageFactoryOptions {
   exclude?: string[]
 }
 
-export interface ProjectStageFactoryOptionsPopulate {
+type ProjectStageFactoryOptionsPopulate = {
   [modelName: string]: boolean | ProjectStageFactoryOptionsPopulate
 }
 
@@ -37,7 +37,7 @@ export interface ProjectStageFactoryOptionsPopulate {
  * Generates the `$project` stage of the aggregation pipeline.
  *
  * @param schema - The schema of the database collection.
- * @param options - Additional options.
+ * @param options - @see ProjectStageFactoryOptions.
  *
  * @returns The aggregation pipeline that handles the generated `$project` stage.
  *
