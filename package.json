@@ -1,6 +1,6 @@
 {
   "name": "@andrewscwei/mongodb-odm",
-  "version": "0.76.0",
+  "version": "0.77.0",
   "description": "ODM for MongoDB",
   "main": "build/index.js",
   "scripts": {
@@ -8,7 +8,7 @@
     "prebuild": "npm run lint",
     "build": "npm run clean && tsc",
     "build:test": "npm run build -- --project tsconfig.test.json",
-    "test": "npm run build:test && mocha --timeout 10000 --reporter spec --full-trace --colors --exit \"build/**/*.spec.js\"",
+    "test": "mocha --timeout 10000 --reporter spec --full-trace --colors --exit \"build/**/*.spec.js\"",
     "test:ts": "cross-env DEBUG=mongodb-odm* NODE_ENV=development mocha -r ts-node/register --timeout 10000 --reporter spec --full-trace --colors --exit \"src/**/*.spec.ts\"",
     "db": "docker run --name node-mongodb-odm-db -d --rm -p 27017:27017 -v ${PWD}/.data/db:/data/db mongo:4.0.4",
     "db:stop": "docker stop node-mongodb-odm-db",
