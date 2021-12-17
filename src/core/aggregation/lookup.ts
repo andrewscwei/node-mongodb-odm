@@ -110,7 +110,7 @@ export function lookupStageFactory<P extends AnyProps = AnyProps>(
         from: `${targetSchema.collection}`,
         localField: prefixed(key, fromPrefix),
         foreignField: '_id',
-        as: prefixed(key, toPrefix)
+        as: prefixed(key, toPrefix),
       },
     })
 

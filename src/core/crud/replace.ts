@@ -1,10 +1,10 @@
 import { Filter, FindOneAndReplaceOptions, ReplaceOptions } from 'mongodb'
 import * as db from '../..'
-import { AnyProps, Document } from '../../types'
+import { AnyProps, Document, OptionallyIdentifiableDocument } from '../../types'
 import Schema from '../Schema'
 import { findOne } from './find'
 
-export async function replaceOne<P extends AnyProps = AnyProps>(schema: Schema<P>, filter: Filter<Document<P>>, replacement: Document<P>, options: ReplaceOptions = {}): Promise<void> {
+export async function replaceOne<P extends AnyProps = AnyProps>(schema: Schema<P>, filter: Filter<Document<P>>, replacement: OptionallyIdentifiableDocument<P>, options: ReplaceOptions = {}): Promise<void> {
   const collection = await db.getCollection<Document<P>>(schema.collection)
   const result = await collection.replaceOne(filter, replacement, { ...options })
 
@@ -12,7 +12,7 @@ export async function replaceOne<P extends AnyProps = AnyProps>(schema: Schema<P
   if (result.matchedCount <= 0) throw new Error(`[${schema.model}] Unable to find and replace document`)
 }
 
-export async function findOneAndReplace<P extends AnyProps = AnyProps>(schema: Schema<P>, filter: Filter<Document<P>>, replacement: Document<P>, options: FindOneAndReplaceOptions = {}): Promise<[Document<P>, Document<P>]> {
+export async function findOneAndReplace<P extends AnyProps = AnyProps>(schema: Schema<P>, filter: Filter<Document<P>>, replacement: OptionallyIdentifiableDocument<P>, options: FindOneAndReplaceOptions = {}): Promise<[Document<P>, Document<P>]> {
   const collection = await db.getCollection<Document<P>>(schema.collection)
   const result = await collection.findOneAndReplace(filter, replacement, { ...options, returnDocument: 'before' })
 

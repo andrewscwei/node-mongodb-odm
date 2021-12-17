@@ -22,7 +22,7 @@ export type PipelineFactoryOptions = {
   pipeline?: Pipeline
 }
 
-export type PipelineFactoryStages<P extends AnyProps = AnyProps> = {
+export type PipelineFactoryOperators<P extends AnyProps = AnyProps> = {
   /**
   * Lookup stage spec.
   */
@@ -53,7 +53,7 @@ export type PipelineFactoryStages<P extends AnyProps = AnyProps> = {
  * Generates a pipeline to pass into the aggregation framework.
  *
  * @param schema - The collection schema.
- * @param operators - @see PipelineFactoryStages
+ * @param operators - @see PipelineFactoryOperators
  * @param options - @see PipelineFactoryOptions
  *
  * @returns The generated aggregate pipeline.
@@ -67,13 +67,13 @@ export function autoPipelineFactory<P extends AnyProps = AnyProps>(
     $prune,
     $group,
     $sort,
-  }: PipelineFactoryStages<P> = {}, {
+  }: PipelineFactoryOperators<P> = {}, {
     toPrefix = '',
     pipeline = [],
   }: PipelineFactoryOptions = {},
 ): Pipeline {
   // If `$lookup` stage is specified, add it to beginning of the pipeline.
-  if ($lookup) pipeline = (lookupStageFactory(schema, $lookup, { fromPrefix: toPrefix, toPrefix: toPrefix }) as Pipeline).concat(pipeline)
+  if ($lookup) pipeline = (lookupStageFactory(schema, $lookup, { fromPrefix: toPrefix, toPrefix }) as Pipeline).concat(pipeline)
 
   // If `$match` stage is specified, add it to the beginning of the pipeline.
   if ($match) pipeline = (matchStageFactory(schema, $match, { toPrefix }) as Pipeline).concat(pipeline)

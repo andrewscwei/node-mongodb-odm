@@ -15,6 +15,11 @@ export type Document<P extends AnyProps = AnyProps> = P & {
 }
 
 /**
+ * A document without `_id`.
+ */
+export type OptionallyIdentifiableDocument<P extends AnyProps = AnyProps> = Pick<Partial<Document<P>>, '_id'> & Omit<Document<P>, '_id'>
+
+/**
  * A generic `Document`.
  */
 export type AnyDocument = { [key: string]: any }

@@ -4,9 +4,7 @@ import { SanitizeUpdateOptions } from '../utils'
 import * as Aggregation from './aggregation'
 import Schema, { FieldValue } from './Schema'
 
-type LocalModel = {
-
-}
+type LocalModel = any
 
 export type ModelRandomPropertyProvider<P extends AnyProps = AnyProps> = { [K in keyof P]?: FieldRandomValueFunction<NonNullable<P[K]>> }
 
@@ -56,13 +54,9 @@ export type ModelRandomFieldsOptions = {
   includeOptionals?: boolean
 }
 
-export type ModelFindOneOptions = AggregateOptions & {
+export type ModelFindOneOptions = AggregateOptions
 
-}
-
-export type ModelFindManyOptions = AggregateOptions & {
-
-}
+export type ModelFindManyOptions = AggregateOptions
 
 export type ModelInsertOneOptions = ModelValidateDocumentOptions & InsertOneOptions & {
   /**
@@ -120,13 +114,9 @@ export type ModelDeleteManyOptions = DeleteOptions & FindOneAndReplaceOptions & 
   returnDocs?: boolean
 }
 
-export type ModelReplaceOneOptions = ReplaceOptions & FindOneAndReplaceOptions & ModelInsertOneOptions & {
+export type ModelReplaceOneOptions = ReplaceOptions & FindOneAndReplaceOptions & ModelInsertOneOptions
 
-}
-
-export type ModelCountOptions = ModelFindManyOptions & {
-
-}
+export type ModelCountOptions = ModelFindManyOptions
 
 export type ModelValidateDocumentOptions = {
   /**
@@ -223,7 +213,7 @@ export default interface Model<T> {
    *
    * @throws {Error} Model class has no static property `schema` defined.
    */
-  pipeline(filterOrOperators?: AnyFilter<T> | Aggregation.PipelineFactoryStages<T>, options?: Aggregation.PipelineFactoryOptions): Aggregation.Pipeline
+  pipeline(filterOrOperators?: AnyFilter<T> | Aggregation.PipelineFactoryOperators<T>, options?: Aggregation.PipelineFactoryOptions): Aggregation.Pipeline
 
   /**
    * Identifies the ObjectId of exactly one document matching the given filter. Error is thrown if

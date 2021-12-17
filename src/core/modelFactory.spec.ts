@@ -1,5 +1,3 @@
-/* eslint-disable max-classes-per-file, @typescript-eslint/no-non-null-assertion */
-
 import assert from 'assert'
 import bcrypt from 'bcrypt'
 import Faker from 'faker'
@@ -8,7 +6,7 @@ import { describe, it } from 'mocha'
 import { ObjectId } from 'mongodb'
 import { configureDb, getDbConnection } from '..'
 import { Bar, BarProps, Foo } from '../index.spec'
-import { Document, DocumentFragment } from '../types'
+import { DocumentFragment } from '../types'
 
 describe('core/Model', () => {
   before(async () => {
@@ -84,7 +82,7 @@ describe('core/Model', () => {
     const t = [{ aString: Faker.random.alphaNumeric(10) }, { aString: Faker.random.alphaNumeric(10) }, { aString: Faker.random.alphaNumeric(10) }]
     const docs = await Bar.insertMany(t)
     assert(docs.length === t.length)
-    assert(docs!.reduce((prev, curr) => prev && ObjectId.isValid(curr._id), true))
+    assert(docs.reduce((prev, curr) => prev && ObjectId.isValid(curr._id), true))
     docs.forEach((doc, i) => assert(doc.aString === t[i].aString))
   })
 
@@ -117,14 +115,15 @@ describe('core/Model', () => {
   it('can format documents according to the schema', async () => {
     const t = { aFormattedString: Faker.random.alphaNumeric(10) }
     const res = await Bar.formatDocument(t)
-    assert(Bar.formatProps.aFormattedString(t.aFormattedString!) === res.aFormattedString)
+    assert(Bar.formatProps.aFormattedString(t.aFormattedString) === res.aFormattedString)
   })
 
   it('can encrypt document fields according to the schema', async () => {
     const s = Faker.random.alphaNumeric(10)
     const t = { anEncryptedString: s }
     const res = await Bar.formatDocument(t)
-    assert(await bcrypt.compare(s, res.anEncryptedString!))
+    assert(res.anEncryptedString)
+    assert(await bcrypt.compare(s, res.anEncryptedString))
   })
 
   it('should automatically generate default values on insert', async () => {
@@ -136,7 +135,7 @@ describe('core/Model', () => {
   it('should automatically format values on insert according to the schema', async () => {
     const t = { aString: Faker.random.alphaNumeric(10), aFormattedString: Faker.random.alphaNumeric(10) }
     const res = await Bar.insertOneStrict(t)
-    assert(Bar.formatProps.aFormattedString(t.aFormattedString!) === res.aFormattedString)
+    assert(Bar.formatProps.aFormattedString(t.aFormattedString) === res.aFormattedString)
   })
 
   it('can update an existing doc', async () => {
@@ -144,15 +143,17 @@ describe('core/Model', () => {
     const t = { aString: Faker.random.alphaNumeric(10) }
     await Bar.insertOneStrict(t)
     const updated = await Bar.updateOneStrict(t, { aString: s }, { returnDoc: true })
-    assert((updated as Document<BarProps>).aString === s)
+    assert(!_.isBoolean(updated))
+    assert(updated.aString === s)
   })
 
   it('can update a field of an embedded doc within a doc', async () => {
     const s = Faker.random.alphaNumeric(10)
     const t = { aString: s }
-    let bar = await Bar.insertOneStrict(t)
-    bar = await Bar.updateOneStrict(bar._id, { 'anObject.aString': 'foo' } as any, { returnDoc: true }) as Document<BarProps>
-    assert(bar.anObject && bar.anObject.aString === 'foo')
+    const bar = await Bar.insertOneStrict(t)
+    const newBar = await Bar.updateOneStrict(bar._id, { 'anObject.aString': 'foo' }, { returnDoc: true })
+    assert(!_.isBoolean(newBar))
+    assert(newBar.anObject && newBar.anObject.aString === 'foo')
   })
 
   it('can upsert a doc if it does not already exist', async () => {
@@ -194,8 +195,9 @@ describe('core/Model', () => {
     const res = await Bar.updateOne({ aString: s }, { aFormattedString: t }, { returnDoc: true })
 
     assert(!_.isNil(res))
-    assert((res as Document<BarProps>).aFormattedString !== t)
-    assert((res as Document<BarProps>).aFormattedString === Bar.formatProps.aFormattedString(t))
+    assert(!_.isBoolean(res))
+    assert(res.aFormattedString !== t)
+    assert(res.aFormattedString === Bar.formatProps.aFormattedString(t))
   })
 
   it('should automatically format values on upsert according to the schema', async () => {
@@ -204,8 +206,8 @@ describe('core/Model', () => {
 
     assert(!_.isNil(res))
     assert(!_.isBoolean(res))
-    assert((res as Document<BarProps>).aFormattedString !== s)
-    assert((res as Document<BarProps>).aFormattedString === Bar.formatProps.aFormattedString(s))
+    assert(res.aFormattedString !== s)
+    assert(res.aFormattedString === Bar.formatProps.aFormattedString(s))
   })
 
   it('can update multiple existing docs', async () => {
@@ -215,10 +217,11 @@ describe('core/Model', () => {
     const docs = await Bar.insertMany(q)
 
     assert(docs)
-    assert(docs!.reduce((prev, curr) => prev && ObjectId.isValid(curr._id), true))
+    assert(docs.reduce((prev, curr) => prev && ObjectId.isValid(curr._id), true))
 
-    const res = await Bar.updateMany({ aString: s }, { aString: t }, { returnDocs: true }) as Document<BarProps>[]
+    const res = await Bar.updateMany({ aString: s }, { aString: t }, { returnDocs: true })
 
+    assert(!_.isBoolean(res))
     assert(res.length === docs.length)
     assert(res.reduce((o, v) => o && (v.aString === t), true))
   })
@@ -227,8 +230,9 @@ describe('core/Model', () => {
     const s = Faker.random.alphaNumeric(10)
     const t = Faker.random.alphaNumeric(10)
 
-    const res = await Bar.updateMany({ aString: s }, { aFormattedString: t }, { returnDocs: true, upsert: true }) as Document<BarProps>[]
+    const res = await Bar.updateMany({ aString: s }, { aFormattedString: t }, { returnDocs: true, upsert: true })
 
+    assert(!_.isBoolean(res))
     assert(res.length === 1)
     assert(!_.isNil(await Bar.findOne({ aString: s })))
   })
@@ -237,7 +241,7 @@ describe('core/Model', () => {
     const s = Faker.random.alphaNumeric(10)
     const t = Faker.random.alphaNumeric(10)
 
-    const res = await Bar.updateMany({ aString: s }, { aFormattedString: t }, { upsert: true }) as boolean
+    const res = await Bar.updateMany({ aString: s }, { aFormattedString: t }, { upsert: true })
 
     assert(res === true)
     assert(!_.isNil(await Bar.findOne({ aString: s })))
@@ -267,7 +271,8 @@ describe('core/Model', () => {
     const res = await Bar.deleteOne({ aString: s }, { returnDoc: true })
 
     assert(res !== undefined)
-    assert((res as Document<BarProps>)._id.equals(objectId))
+    assert(!_.isBoolean(res))
+    assert(res._id.equals(objectId))
     assert(_.isUndefined(await Bar.findOne({ aString: s })))
   })
 
@@ -293,7 +298,7 @@ describe('core/Model', () => {
     const res = await Bar.deleteMany({ aString: s }, { returnDocs: true })
 
     assert(_.isArray(res))
-    assert((res as Document<BarProps>[]).length === 3)
+    assert(res.length === 3)
   })
 
   it('can replace an existing doc and return the old doc', async () => {
@@ -334,6 +339,7 @@ describe('core/Model', () => {
     assert(!exists)
     const baz = await Bar.updateOneStrict({ aString: t }, { aNumber: undefined }, { upsert: true, returnDoc: true })
     assert(baz)
-    assert(_.isUndefined((baz as Document<BarProps>).aNumber))
+    assert(!_.isBoolean(baz))
+    assert(_.isUndefined(baz.aNumber))
   })
 })

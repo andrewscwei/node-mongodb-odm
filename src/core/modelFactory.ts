@@ -8,7 +8,7 @@ import bcrypt from 'bcrypt'
 import _ from 'lodash'
 import { Collection, Filter, ObjectId, UpdateFilter } from 'mongodb'
 import * as db from '..'
-import { AnyDocument, AnyFilter, AnyProps, AnyUpdate, Document, DocumentFragment } from '../types'
+import { AnyDocument, AnyFilter, AnyProps, AnyUpdate, Document, DocumentFragment, OptionallyIdentifiableDocument } from '../types'
 import { getFieldSpecByKey, sanitizeDocument, sanitizeFilter, sanitizeUpdate, typeIsAnyDocument, typeIsValidObjectId, validateFieldValue } from '../utils'
 import * as Aggregation from './aggregation'
 import * as CRUD from './crud'
@@ -80,12 +80,12 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     }
 
     /** @inheritdoc */
-    static pipeline(filterOrOperators?: AnyFilter<P> | Aggregation.PipelineFactoryStages<P>, options: Aggregation.PipelineFactoryOptions = {}): Aggregation.Pipeline {
+    static pipeline(filterOrOperators?: AnyFilter<P> | Aggregation.PipelineFactoryOperators<P>, options: Aggregation.PipelineFactoryOptions = {}): Aggregation.Pipeline {
       if (!this.schema) throw new Error(`[${this.constructor.name}] This model has no schema, you must define this static proerty in the derived class`)
 
       // Check if the argument conforms to aggregation factory operators.
       if (filterOrOperators && Object.keys(filterOrOperators).some(val => val.startsWith('$'))) {
-        return Aggregation.autoPipelineFactory(this.schema, filterOrOperators as Aggregation.PipelineFactoryStages<P>, options)
+        return Aggregation.autoPipelineFactory(this.schema, filterOrOperators as Aggregation.PipelineFactoryOperators<P>, options)
       }
       // Otherwise the argument is a filter for the $match stage.
       else {
@@ -514,7 +514,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
      *
      * @returns Document to be inserted/upserted to the database.
      */
-    private static async beforeInsert(doc: DocumentFragment<P>, options: ModelInsertOneOptions | ModelInsertManyOptions = {}): Promise<Document<P>> {
+    private static async beforeInsert(doc: DocumentFragment<P>, options: ModelInsertOneOptions | ModelInsertManyOptions = {}): Promise<OptionallyIdentifiableDocument<P>> {
       // Call event hook first.
       const modifiedDoc = await this.willInsertDocument(doc)
 
@@ -547,7 +547,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       // error if the inserted doc violates those indexes.
       await this.validateDocument(sanitizedDoc, { ignoreUniqueIndex: true, strict: true, accountForDotNotation: false, ...options })
 
-      return sanitizedDoc as Document<P>
+      return sanitizedDoc as OptionallyIdentifiableDocument<P>
     }
 
     /**
