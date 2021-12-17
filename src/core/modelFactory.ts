@@ -80,20 +80,6 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     }
 
     /** @inheritdoc */
-    static pipeline(filterOrOperators?: AnyFilter<P> | Aggregation.PipelineFactoryOperators<P>, options: Aggregation.PipelineFactoryOptions = {}): Aggregation.Pipeline {
-      if (!this.schema) throw new Error(`[${this.constructor.name}] This model has no schema, you must define this static proerty in the derived class`)
-
-      // Check if the argument conforms to aggregation factory operators.
-      if (filterOrOperators && Object.keys(filterOrOperators).some(val => val.startsWith('$'))) {
-        return Aggregation.autoPipelineFactory(this.schema, filterOrOperators as Aggregation.PipelineFactoryOperators<P>, options)
-      }
-      // Otherwise the argument is a filter for the $match stage.
-      else {
-        return Aggregation.autoPipelineFactory(this.schema, { $match: filterOrOperators as AnyFilter<P> }, options)
-      }
-    }
-
-    /** @inheritdoc */
     static async identifyOneStrict(filter: AnyFilter<P>): Promise<ObjectId> {
       return CRUD.identifyOne(this.schema, filter)
     }
@@ -116,7 +102,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     /** @inheritdoc */
     static async findOneStrict<R = P>(filter?: AnyFilter<P> | Aggregation.Pipeline, options: ModelFindOneOptions = {}): Promise<Document<R>> {
       if (filter) {
-        return CRUD.findOne(this.schema, Aggregation.typeIsAggregationPipeline(filter) ? filter : this.pipeline(filter), options)
+        return CRUD.findOne(this.schema, filter, options)
       }
       else {
         return CRUD.findOneRandom(this.schema)
@@ -136,7 +122,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     /** @inheritdoc */
     static async findMany<R = P>(filter?: AnyFilter<P> | Aggregation.Pipeline, options: ModelFindManyOptions = {}): Promise<Document<R>[]> {
       if (filter) {
-        return CRUD.findMany(this.schema, Aggregation.typeIsAggregationPipeline(filter) ? filter : this.pipeline(filter), options)
+        return CRUD.findMany(this.schema, filter, options)
       }
       else {
         return CRUD.findAll(this.schema)

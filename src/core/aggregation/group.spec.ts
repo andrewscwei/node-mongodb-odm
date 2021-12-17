@@ -1,7 +1,7 @@
 import assert from 'assert'
 import { describe } from 'mocha'
 import { configureDb } from '../..'
-import { Bar, Baz, Foo } from '../../index.spec'
+import { Foo } from '../../index.spec'
 import { groupStageFactory } from './group'
 
 describe('core/aggregation/group', () => {
@@ -9,7 +9,7 @@ describe('core/aggregation/group', () => {
     configureDb({
       host: process.env.MONGODB_HOST ?? 'localhost:27017',
       name: 'mongodb_odm_test',
-      models: { Foo, Bar, Baz },
+      models: { Foo },
     })
   })
 

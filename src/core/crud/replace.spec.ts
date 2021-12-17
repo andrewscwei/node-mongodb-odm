@@ -49,7 +49,7 @@ describe('core/crud/replace', () => {
 
     await collection?.insertOne({ aString: s })
 
-    const [oldDoc, newDoc] = await findOneAndReplace(Bar.schema, { aString: s }, { ...randomBarProps(), aString: t })
+    const [, newDoc] = await findOneAndReplace(Bar.schema, { aString: s }, { ...randomBarProps(), aString: t })
 
     assert(!_.isNil(newDoc))
     assert(newDoc.aString === t)

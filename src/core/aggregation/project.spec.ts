@@ -2,7 +2,7 @@ import assert from 'assert'
 import _ from 'lodash'
 import { describe } from 'mocha'
 import { configureDb } from '../..'
-import { Bar, Baz, Foo } from '../../index.spec'
+import { Bar, Foo } from '../../index.spec'
 import { projectStageFactory } from './project'
 
 describe('core/aggregation/project', () => {
@@ -10,7 +10,7 @@ describe('core/aggregation/project', () => {
     configureDb({
       host: process.env.MONGODB_HOST ?? 'localhost:27017',
       name: 'mongodb_odm_test',
-      models: { Foo, Bar, Baz },
+      models: { Foo, Bar },
     })
   })
 

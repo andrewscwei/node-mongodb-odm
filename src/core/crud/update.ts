@@ -74,7 +74,7 @@ export async function findManyAndUpdate<P extends AnyProps = AnyProps>(schema: S
   const newDocs: Document<P>[] = []
 
   if ((n <= 0) && (options.upsert === true)) {
-    const [oldDoc, newDoc] = await findOneAndUpdate(schema, filter, update, options)
+    const [, newDoc] = await findOneAndUpdate(schema, filter, update, options)
     newDocs.push(newDoc)
   }
   else {
