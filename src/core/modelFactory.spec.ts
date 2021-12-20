@@ -327,7 +327,7 @@ describe('core/Model', () => {
 
   it('can remove a property of a doc by updating it to `undefined`', async () => {
     const baz = await Bar.insertOneStrict()
-    assert(baz.aNumber)
+    assert(_.isNumber(baz.aNumber))
     await Bar.updateOneStrict(baz._id, { aNumber: undefined })
     const res = await Bar.findOneStrict(baz._id)
     assert(_.isUndefined(res.aNumber))
