@@ -8,8 +8,8 @@ import typeIsValidObjectId from './typeIsValidObjectId'
  * Checks a value against field properties definied in a schema.
  *
  * @param value - The value to check.
- * @param spec - @see FieldDescriptor
- * @param strategy - @see FieldValidationStrategy
+ * @param spec - See {@link FieldDescriptor}.
+ * @param strategy - See {@link FieldValidationStrategy}.
  *
  * @throws {TypeError} Value is marked as required in the spec but it is null or undefined.
  * @throws {TypeError} Value is supposed to be a string but it is not.

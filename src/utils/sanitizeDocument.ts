@@ -16,7 +16,7 @@ export type SanitizeDocumentOptions = {
  *
  * @param schema - The collection schema.
  * @param doc - The partial document to sanitize.
- * @param options - @see SanitizeDocumentOptions
+ * @param options - @see {@link SanitizeDocumentOptions}
  *
  * @returns The sanitized partial document.
  *

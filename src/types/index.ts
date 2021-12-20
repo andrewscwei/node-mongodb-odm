@@ -20,7 +20,7 @@ export type Document<P extends AnyProps = AnyProps> = P & {
 export type OptionallyIdentifiableDocument<P extends AnyProps = AnyProps> = Pick<Partial<Document<P>>, '_id'> & Omit<Document<P>, '_id'>
 
 /**
- * A generic `Document`.
+ * A generic {@link Document}.
  */
 export type AnyDocument = { [key: string]: any }
 
@@ -30,7 +30,7 @@ export type AnyDocument = { [key: string]: any }
 export type DocumentFragment<P> = Partial<Document<P>>
 
 /**
- * A generic `DocumentFragment`.
+ * A generic {@link DocumentFragment}.
  */
 export type AnyDocumentFragment = Partial<AnyDocument>
 

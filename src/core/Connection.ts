@@ -31,7 +31,7 @@ export default class Connection {
   collections: { [collectionName: string]: Collection<any> }
 
   /**
-   * Creates a new `Connection` instance with the provided configuration options.
+   * Creates a new {@link Connection} instance with the provided configuration options.
    *
    * @param config - The configuration options.
    */
@@ -69,7 +69,7 @@ export default class Connection {
    * Establishes a new connection to the database based on the initialized configuration. If there
    * already exists one, this method does nothing.
    *
-   * @throws {Error} ODM is not configured.
+   * @throws {Error} When unable to establish MongoDB connection.
    */
   async connect(): Promise<void> {
     if (this.isConnected()) return
@@ -80,11 +80,18 @@ export default class Connection {
     // Database client URL.
     const url = `mongodb://${authentication ? `${authentication}@` : ''}${this.config.host}/${this.config.name}${this.config.replicaSet ? `?replicaSet=${this.config.replicaSet}` : ''}`
 
-    this.client = await MongoClient.connect(url, {
+    try {
+      this.client = await MongoClient.connect(url, {
 
-    })
+      })
 
-    debug('Establishing MongoDB client connection...', 'OK', url)
+      debug('Establishing MongoDB client connection...', 'OK', url)
+    }
+    catch (err) {
+      debug('Establishing MongoDB client connection...', 'ERR', err)
+
+      throw err
+    }
   }
 
   /**
@@ -108,7 +115,7 @@ export default class Connection {
    *
    * @returns The MongoDB collection.
    *
-   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html}
+   * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html}
    *
    * @throws {Error} There are no models registered.
    * @throws {Error} Unable to find the model associated with the model or collection name.
@@ -154,7 +161,7 @@ export default class Connection {
   getModel(modelOrCollectionName: string): ReturnType<typeof modelFactory> {
     const models = this.config.models
 
-    if (!models) throw new Error('You must register models using the #configureDb() function')
+    if (!models) throw new Error('There are no models registered in the ODM registry')
 
     if (models.hasOwnProperty(modelOrCollectionName)) return models[modelOrCollectionName]
 
@@ -166,6 +173,6 @@ export default class Connection {
       if (ModelClass.schema.collection === modelOrCollectionName) return ModelClass
     }
 
-    throw new Error('No model found for given model/collection name')
+    throw new Error(`No model found in the ODM registry for model/collection name "${modelOrCollectionName}"`)
   }
 }

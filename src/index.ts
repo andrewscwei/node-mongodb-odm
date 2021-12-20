@@ -72,7 +72,7 @@ export function getModel(modelOrCollectionName: string): ReturnType<typeof Model
  *
  * @returns The MongoDB collection.
  *
- * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html}
+ * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html}
  *
  * @throws {Error} There is no active db connection.
  */

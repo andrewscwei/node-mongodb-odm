@@ -19,13 +19,13 @@ export type SanitizeFilterOptions = {
  * following:
  *   1. Wraps an `ObjectId` instance or string representing an `ObjectId` into a proper filter.
  *   2. If strict mode is enabled, the provided schema will be used to strip out all extraneous
- *      fields from the input. @see sanitizeDocument
+ *      fields from the input. See {@link sanitizeDocument}.
  *
  * @param schema - The collection schema.
  * @param filter - The filter to sanitize.
- * @param options - @see SanitizeFilterOptions
+ * @param options - See {@link SanitizeFilterOptions}
  *
- * @returns The sanitized filter.
+ * @returns The sanitized {@link Filter}.
  *
  * @example
  * // Returns { "_id": 5927f337c5178b9665b56b1e }

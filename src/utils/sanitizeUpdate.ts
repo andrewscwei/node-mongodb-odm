@@ -10,12 +10,13 @@ export type SanitizeUpdateOptions = {
 }
 
 /**
- * Transforms the generic update descriptor specific to this library to an `UpdateQuery` object that
- * is readable by the MongoDB driver.
+ * Transforms the generic update descriptor specific to this library to an {@link UpdateFilter}
+ * object that is readable by the MongoDB driver.
  *
  * @param update The update object to sanitize.
  *
- * @returns The `UpdateQuery` object that can be passed to the MongoDB driver to perform updates.
+ * @returns The {@link UpdateFilter} object that can be passed to the MongoDB driver to perform
+ *          updates.
  *
  * @throws
  */

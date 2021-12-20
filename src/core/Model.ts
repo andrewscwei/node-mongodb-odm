@@ -32,7 +32,7 @@ export type ModelPropertyValidationProvider<P extends AnyProps = AnyProps> = { [
 
 /**
  * The validation strategy can be one of several types. The behavior per type is as follows:
- *   1. RegExp: The value to be validated must pass for RegExp.test().
+ *   1. RegExp: The value to be validated must pass for {@link RegExp.test}.
  *   2. number: The value to be validated must be <= this number. If the value is a string, its
  *              length must be <= this number.
  *   3. any[]: The value to be validated must be one of the elements of this array.
@@ -194,7 +194,7 @@ export default interface Model<T> {
    * to generate unrequired fields as well.
    *
    * @param fixedFields - A collection of fields that must be present in the output.
-   * @param options - See `ModelRandomFieldsOptions`.
+   * @param options - See {@link ModelRandomFieldsOptions}.
    *
    * @returns A collection of fields whose values are randomly generated.
    *
@@ -203,15 +203,15 @@ export default interface Model<T> {
   randomFields(fixedFields?: DocumentFragment<T>, options?: ModelRandomFieldsOptions): Promise<DocumentFragment<T>>
 
   /**
-   * Identifies the ObjectId of exactly one document matching the given filter. Error is thrown if
+   * Identifies the `ObjectId` of exactly one document matching the given filter. Error is thrown if
    * the document cannot be identified.
    *
    * @param filter - Filter used for the `$match` stage of the aggregation pipeline.
    *
-   * @returns The matching ObjectId.
+   * @returns The matching `ObjectId`.
    *
    * @throws {Error} No document is found with the given filter.
-   * @throws {Error} ID of the found document is not a valid ObjectId.
+   * @throws {Error} ID of the found document is not a valid `ObjectId`.
    */
   identifyOneStrict(filter: AnyFilter<T>): Promise<ObjectId>
 
@@ -221,7 +221,7 @@ export default interface Model<T> {
    *
    * @param filter - Filter used for the `$match` stage of the aggregation pipeline.
    *
-   * @returns The matching ObjectId.
+   * @returns The matching `ObjectId`.
    *
    * @see Model.identifyOneStrict
    */
@@ -230,7 +230,7 @@ export default interface Model<T> {
   /**
    * Returns an array of document IDs that match the filter.
    *
-   * @param filter - AnyFilter for this model.
+   * @param filter - {@link AnyFilter} for this model.
    *
    * @returns Array of matching IDs.
    */
@@ -241,9 +241,11 @@ export default interface Model<T> {
    * specified, a random document will be fetched.
    *
    * @param filter - Filter used for the `$match` stage of the aggregation pipeline.
-   * @param options - See `module:mongodb.Collection#aggregate`.
+   * @param options - Options passed to MongoDB driver's `Collection#aggregate`.
    *
    * @returns The matching document as the fulfillment value.
+   *
+   * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#aggregate}
    *
    * @throws {Error} More or less than 1 document found.
    * @throws {Error} No document found.
@@ -255,11 +257,12 @@ export default interface Model<T> {
    * when no document is found.
    *
    * @param filter - Filter used for the `$match` stage of the aggregation pipeline.
-   * @param options - See `module:mongodb.Collection#aggregate`.
+   * @param options - Options passed to MongoDB driver's `Collection#aggregate`.
    *
    * @returns The matching document as the fulfillment value.
    *
-   * @see Model.findOneStrict
+   * @see {@link Model.findOneStrict}
+   * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#aggregate}
    */
   findOne<R = T>(filter?: AnyFilter<T> | Aggregation.Pipeline, options?: ModelFindOneOptions): Promise<Document<R> | undefined>
 
@@ -268,9 +271,11 @@ export default interface Model<T> {
    * specified, all documents are fetched.
    *
    * @param filter - Filter used for the `$match` stage of the aggregation pipeline.
-   * @param options - See `module:mongodb.Collection#aggregate`.
+   * @param options - Options passed to MongoDB driver's `Collection#aggregate`.
    *
    * @returns The matching documents as the fulfillment value.
+   *
+   * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#aggregate}
    */
   findMany<R = T>(filter?: AnyFilter<T> | Aggregation.Pipeline, options?: ModelFindManyOptions): Promise<Document<R>[]>
 
@@ -278,17 +283,15 @@ export default interface Model<T> {
    * Inserts one document into this model's collection. If `doc` is not specified, random fields
    * will be generated.
    *
-   * @param doc - Document to be inserted. See `module:mongodb.Collection#insertOne`.
-   * @param options - See `ModelInsertOneOptions`.
+   * @param doc - Document to be inserted. See MongoDB driver's `Collection#insertOne`.
+   * @param options - See {@link ModelInsertOneOptions}.
    *
    * @returns The inserted document.
    *
-   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#insertOne}
-   * @see
-   * {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~insertWriteOpResult}
+   * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#insertOne}
    *
    * @throws {Error} This method is called even though insertions are disabled in the schema.
-   * @throws {MongoError} collection#insertOne failed.
+   * @throws {MongoError} `Collection#insertOne` failed.
    */
   insertOneStrict(doc?: DocumentFragment<T>, options?: ModelInsertOneOptions): Promise<Document<T>>
 
@@ -296,31 +299,31 @@ export default interface Model<T> {
    * Same as the strict insert one operation except this method swallows all errors and returns
    * `undefined` if the document cannot be inserted.
    *
-   * @param doc - Document to be inserted. See `module:mongodb.Collection#insertOne`.
-   * @param options - See `ModelInsertOneOptions`.
+   * @param doc - Document to be inserted. See MongoDB driver's `Collection#insertOne`.
+   * @param options - See {@link ModelInsertOneOptions}.
    *
    * @returns The inserted document.
    *
-   * @see Model.insertOneStrict
+   * @see {@link Model.insertOneStrict}
+   * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#insertOne}
    */
   insertOne(doc?: DocumentFragment<T>, options?: ModelInsertOneOptions): Promise<Document<T> | undefined>
 
   /**
    * Inserts multiple documents into this model's collection.
    *
-   * @param docs - Array of documents to insert. See `module:mongodb.Collection#insertMany`.
-   * @param options - See `module:mongodb.Collection#insertMany`.
+   * @param docs - Array of documents to insert. See MongoDB driver's `Collection#insertMany`.
+   * @param options - See {@link ModelInsertManyOptions}.
    *
    * @returns The inserted documents.
    *
-   * @todo This method iterates through every document to apply the
-   *       `beforeInsert` hook. Consider a more cost-efficient approach?
+   * @todo This method iterates through every document to apply the `beforeInsert` hook. Consider a
+   *       more cost-efficient approach?
    *
-   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#insertMany}
-   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~insertWriteOpResult}
+   * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#insertMany}
    *
-   * @throws {Error} This method is called even though insertions or multiple
-   *                 insertions are disabled in the schema.
+   * @throws {Error} This method is called even though insertions or multiple insertions are
+   *                 disabled in the schema.
    */
   insertMany(docs: DocumentFragment<T>[], options?: ModelInsertManyOptions): Promise<Document<T>[]>
 
@@ -331,17 +334,14 @@ export default interface Model<T> {
    * @param filter - Filter for the document to update.
    * @param update - Either an object whose key/value pair represent the fields belonging to this
    *                 model to update to, or an update query.
-   * @param options - See `ModelUpdateOneOptions`.
+   * @param options - See {@link ModelUpdateOneOptions}.
    *
-   * @returns The updated doc if `returnDoc` is set to `true`, or a boolean indicating whether a
-   *          doc was updated or upserted.
+   * @returns The updated doc if `returnDoc` is set to `true`, or a boolean indicating whether a doc
+   *          was updated or upserted.
    *
    * @see {@link https://docs.mongodb.com/manual/reference/operator/update-field/}
-   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#updateOne}
-   * @see
-   * {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndUpdate}
-   * @see
-   * {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
+   * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#updateOne}
+   * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#findOneAndUpdate}
    *
    * @throws {Error} This method is called even though updates are disabled in the schema.
    * @throws {Error} Filter is invalid.
@@ -357,12 +357,12 @@ export default interface Model<T> {
    * @param filter - Filter for the document to update.
    * @param update - Either an object whose key/value pair represent the fields belonging to this
    *                 model to update to, or an update query.
-   * @param options - See `ModelUpdateOneOptions`.
+   * @param options - See {@link ModelUpdateOneOptions}.
    *
    * @returns The updated doc if `returnDoc` is set to `true`, else either `true` or `false`
    *          depending on whether the operation was successful.
    *
-   * @see Model.updateOneStrict
+   * @see {@link Model.updateOneStrict}
    */
   updateOne(filter: AnyFilter<T>, update: AnyUpdate<T>, options?: ModelUpdateOneOptions): Promise<boolean | Document<T> | undefined>
 
@@ -372,17 +372,14 @@ export default interface Model<T> {
    * @param filter - Filter for document to update.
    * @param update - Either an object whose key/value pair represent the fields belonging to this
    *                 model to update to, or an update query.
-   * @param options - See `ModelUpdateManyOptions`.
+   * @param options - See {@link ModelUpdateManyOptions}.
    *
    * @returns The updated docs if `returnDocs` is set to `true`, else `true` or `false` depending on
    *          whether or not the operation was successful.
    *
    * @see {@link https://docs.mongodb.com/manual/reference/operator/update-field/}
-   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#updateMany}
-   * @see
-   * {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndUpdate}
-   * @see
-   * {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~updateWriteOpResult}
+   * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#updateMany}
+   * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#findOneAndUpdate}
    *
    * @throws {Error} This method is called even though updates or multiple updates are disabled in
    *                 the schema.
@@ -394,14 +391,13 @@ export default interface Model<T> {
    * Deletes one document matched by `filter`.
    *
    * @param filter - Filter for document to delete.
-   * @param options - See `ModelDeleteOneOptions`.
+   * @param options - See {@link ModelDeleteOneOptions}.
    *
    * @returns The deleted doc if `returnDoc` is set to `true`, or a boolean indicating whether the
    *          doc is deleted.
    *
-   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#deleteOne}
-   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndDelete}
-   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~deleteWriteOpResult}
+   * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#deleteOne}
+   * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#findOneAndDelete}
    *
    * @throws {Error} This method is called even though deletions are disabled in the schema.
    * @throws {Error} Unable to return the deleted document when `returnDoc` is `true`.
@@ -413,12 +409,12 @@ export default interface Model<T> {
    * Same as the strict delete one operation except this method drops all errors.
    *
    * @param filter - Filter for document to delete.
-   * @param options - See `ModelDeleteOneOptions`.
+   * @param options - See {@link ModelDeleteOneOptions}.
    *
    * @returns The deleted doc if `returnDoc` is set to `true`, else `true` or `false` depending on
    *          whether or not the operation was successful.
    *
-   * @see Model.deleteOneStrict
+   * @see {@link Model.deleteOneStrict}
    */
   deleteOne(filter: AnyFilter<T>, options?: ModelDeleteOneOptions): Promise<Document<T> | boolean | undefined>
 
@@ -426,16 +422,13 @@ export default interface Model<T> {
    * Deletes multiple documents matched by `filter`.
    *
    * @param filter - AnyFilter to match documents for deletion.
-   * @param options - See `ModelDeleteManyOptions`.
+   * @param options - See {@link ModelDeleteManyOptions}.
    *
    * @returns The deleted docs if `returnDocs` is set to `true`, else `true` or `false` depending on
    *          whether or not the operation was successful.
    *
-   * @see {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#deleteMany}
-   * @see
-   * {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndDelete}
-   * @see
-   * {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~deleteWriteOpResult}
+   * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#deleteMany}
+   * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#findOneAndDelete}
    *
    * @throws {Error} This method is called even though deletions or multiple deletions are disabled
    *                 in the schema.
@@ -448,15 +441,12 @@ export default interface Model<T> {
    *
    * @param filter - Filter for document to replace.
    * @param replacement - The replacement document.
-   * @param options - See `ModelReplaceOneOptions`.
+   * @param options - See {@link ModelReplaceOneOptions}.
    *
    * @returns The replaced document (by default) or the new document (depending on the
    *          `returnDocument` option).
    *
-   * @see
-   * {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#findOneAndReplace}
-   * @see
-   * {@link http://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#~findAndModifyWriteOpResult}
+   * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#findOneAndReplace}
    *
    * @throws {Error} The old document cannot be returned.
    * @throws {Error} The doc is replaced but it cannot be fetched.
@@ -468,12 +458,12 @@ export default interface Model<T> {
    *
    * @param filter - Filter for document to replace.
    * @param replacement - The replacement document.
-   * @param options - See `ModelReplaceOneOptions`.
+   * @param options - See {@link ModelReplaceOneOptions}.
    *
    * @returns The replaced document (by default) or the new document (depending on the
    *          `returnDocument` option) if available, `undefined` otherwise.
    *
-   * @see Model.findAndReplaceOneStrict
+   * @see {@link Model.findAndReplaceOneStrict}
    */
   findAndReplaceOne(filter: AnyFilter<T>, replacement?: DocumentFragment<T>, options?: ModelReplaceOneOptions): Promise<Document<T> | undefined>
 
@@ -516,7 +506,7 @@ export default interface Model<T> {
    *   4. No required fields are missing (only if `strict` is enabled).
    *
    * @param doc - The doc to validate.
-   * @param options - See `ModelValidateDocumentOptions`.
+   * @param options - See {@link ModelValidateDocumentOptions}.
    *
    * @throws {Error} Document is not an object.
    * @throws {Error} Document is empty.

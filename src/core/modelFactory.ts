@@ -30,31 +30,28 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     /** @see {@link Model.schema} */
     static readonly schema = schema
 
-    /**
-     * Dictionary of random value generators for this model's props.
-     */
+    /** @see {@link Model.randomProps} */
     static readonly randomProps: ModelRandomPropertyProvider<P> = {}
 
-    /** @inheritdoc */
+    /** @see {@link Model.defaultProps} */
     static readonly defaultProps: ModelDefaultPropertyProvider<P> = {}
 
-    /** @inheritdoc */
+    /** @see {@link Model.formatProps} */
     static readonly formatProps: ModelPropertyFormattingProvider<P> = {}
 
-    /** @inheritdoc */
+    /** @see {@link Model.validateProps} */
     static readonly validateProps: ModelPropertyValidationProvider<P> = {}
 
-    /** @inheritdoc */
     constructor() {
       throw new Error('This is a static class and is prohibited from being instantiated')
     }
 
-    /** @inheritdoc */
+    /** @see {@link Model.getCollection} */
     static async getCollection(): Promise<Collection> {
       return db.getCollection(this.schema.collection)
     }
 
-    /** @inheritdoc */
+    /** @see {@link Model.randomFields} */
     static async randomFields(fixedFields: DocumentFragment<P> = {}, { includeOptionals = false }: ModelRandomFieldsOptions = {}): Promise<DocumentFragment<P>> {
       const o: DocumentFragment<P> = {}
 
@@ -81,12 +78,12 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       return o
     }
 
-    /** @inheritdoc */
+    /** @see {@link Model.identifyOneStrict} */
     static async identifyOneStrict(filter: AnyFilter<P>): Promise<ObjectId> {
       return CRUD.identifyOne(this.schema, filter)
     }
 
-    /** @inheritdoc */
+    /** @see {@link Model.identifyOne} */
     static async identifyOne(filter: AnyFilter<P>): Promise<ObjectId | undefined> {
       try {
         return await this.identifyOneStrict(filter)
@@ -96,12 +93,12 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       }
     }
 
-    /** @inheritdoc */
+    /** @see {@link Model.identifyMany} */
     static async identifyMany(filter?: AnyFilter<P>): Promise<ObjectId[]> {
       return filter ? CRUD.identifyMany(this.schema, filter) : CRUD.identifyAll(this.schema)
     }
 
-    /** @inheritdoc */
+    /** @see {@link Model.findOneStrict} */
     static async findOneStrict<R = P>(filter?: AnyFilter<P> | Aggregation.Pipeline, options: ModelFindOneOptions = {}): Promise<Document<R>> {
       if (filter) {
         return CRUD.findOne(this.schema, filter, options)
@@ -111,7 +108,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       }
     }
 
-    /** @inheritdoc */
+    /** @see {@link Model.findOne} */
     static async findOne<R = P>(filter?: AnyFilter<P> | Aggregation.Pipeline, options: ModelFindOneOptions = {}): Promise<Document<R> | undefined> {
       try {
         return await this.findOneStrict<R>(filter, options)
@@ -121,7 +118,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       }
     }
 
-    /** @inheritdoc */
+    /** @see {@link Model.findMany} */
     static async findMany<R = P>(filter?: AnyFilter<P> | Aggregation.Pipeline, options: ModelFindManyOptions = {}): Promise<Document<R>[]> {
       if (filter) {
         return CRUD.findMany(this.schema, filter, options)
@@ -131,7 +128,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       }
     }
 
-    /** @inheritdoc */
+    /** @see {@link Model.insertOneStrict} */
     static async insertOneStrict(doc?: DocumentFragment<P>, options: ModelInsertOneOptions = {}): Promise<Document<P>> {
       if (schema.noInserts === true) throw new Error(`[${this.schema.model}] Insertions are disallowed for this model`)
 
@@ -141,7 +138,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       return result
     }
 
-    /** @inheritdoc */
+    /** @see {@link Model.insertOne} */
     static async insertOne(doc?: DocumentFragment<P>, options: ModelInsertOneOptions = {}): Promise<Document<P> | undefined> {
       try {
         return await this.insertOneStrict(doc, options)
@@ -151,7 +148,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       }
     }
 
-    /** @inheritdoc */
+    /** @see {@link Model.insertMany} */
     static async insertMany(docs: DocumentFragment<P>[], options: ModelInsertManyOptions = {}): Promise<Document<P>[]> {
       if ((this.schema.noInserts === true) || (this.schema.noInsertMany === true)) throw new Error(`[${this.schema.model}] Multiple insertions are disallowed for this model`)
 
@@ -169,7 +166,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       return insertedDocs
     }
 
-    /** @inheritdoc */
+    /** @see {@link Model.updateOneStrict} */
     static async updateOneStrict(filter: AnyFilter<P>, update: AnyUpdate<P>, options: ModelUpdateOneOptions = {}): Promise<boolean | Document<P>> {
       if (this.schema.noUpdates === true) throw new Error(`[${this.schema.model}] Updates are disallowed for this model`)
 
@@ -196,7 +193,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       }
     }
 
-    /** @inheritdoc */
+    /** @see {@link Model.updateOne} */
     static async updateOne(filter: AnyFilter<P>, update: AnyUpdate<P>, options: ModelUpdateOneOptions = {}): Promise<boolean | Document<P> | undefined> {
       try {
         const result = await this.updateOneStrict(filter, update, options)
@@ -213,7 +210,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       }
     }
 
-    /** @inheritdoc */
+    /** @see {@link Model.updateMany} */
     static async updateMany(filter: AnyFilter<P>, update: AnyUpdate<P>, options: ModelUpdateManyOptions = {}): Promise<Document<P>[] | boolean> {
       if ((this.schema.noUpdates === true) || (this.schema.noUpdateMany === true)) throw new Error(`[${this.schema.model}] Multiple updates are disallowed for this model`)
 
@@ -240,7 +237,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       }
     }
 
-    /** @inheritdoc */
+    /** @see {@link Model.deleteOneStrict} */
     static async deleteOneStrict(filter: AnyFilter<P>, options: ModelDeleteOneOptions = {}): Promise<Document<P> | boolean> {
       if (this.schema.noDeletes === true) throw new Error(`[${this.schema.model}] Deletions are disallowed for this model`)
 
@@ -267,7 +264,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       }
     }
 
-    /** @inheritdoc */
+    /** @see {@link Model.deleteOne} */
     static async deleteOne(filter: AnyFilter<P>, options: ModelDeleteOneOptions = {}): Promise<Document<P> | boolean | undefined> {
       try {
         const result = await this.deleteOneStrict(filter, options)
@@ -284,7 +281,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       }
     }
 
-    /** @inheritdoc */
+    /** @see {@link Model.deleteMany} */
     static async deleteMany(filter: AnyFilter<P>, options: ModelDeleteManyOptions = {}): Promise<boolean | Document<P>[]> {
       if ((this.schema.noDeletes === true) || (this.schema.noDeleteMany === true)) throw new Error(`[${this.schema.model}] Multiple deletions are disallowed for this model`)
 
@@ -312,7 +309,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       }
     }
 
-    /** @inheritdoc */
+    /** @see {@link Model.findAndReplaceOneStrict} */
     static async findAndReplaceOneStrict(filter: AnyFilter<P>, replacement?: DocumentFragment<P>, options: ModelReplaceOneOptions = {}): Promise<Document<P>> {
       const f = sanitizeFilter(this.schema, filter)
       const r = await this.beforeInsert(replacement ?? (await this.randomFields()), options)
@@ -327,7 +324,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       return options.returnDocument === 'before' ? oldDoc : newDoc
     }
 
-    /** @inheritdoc */
+    /** @see {@link Model.findAndReplaceOne} */
     static async findAndReplaceOne(filter: AnyFilter<P>, replacement?: DocumentFragment<P>, options: ModelReplaceOneOptions = {}): Promise<Document<P> | undefined> {
       try {
         return await this.findAndReplaceOneStrict(filter, replacement, options)
@@ -337,21 +334,21 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       }
     }
 
-    /** @inheritdoc */
+    /** @see {@link Model.exists} */
     static async exists(filter: AnyFilter<P>): Promise<boolean> {
       const id = await this.identifyOne(filter)
 
       return id ? true : false
     }
 
-    /** @inheritdoc */
+    /** @see {@link Model.count} */
     static async count(filter: AnyFilter<P>, options: ModelCountOptions = {}): Promise<number> {
       const result = await this.findMany(filter, options)
 
       return result.length
     }
 
-    /** @inheritdoc */
+    /** @see {@link Model.formatDocument} */
     static async formatDocument(doc: DocumentFragment<P>): Promise<DocumentFragment<P>> {
       const formattedDoc = _.cloneDeep(doc)
       const fields = this.schema.fields
@@ -379,7 +376,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       return formattedDoc
     }
 
-    /** @inheritdoc */
+    /** @see {@link Model.validateDocument} */
     static async validateDocument(doc: DocumentFragment<P>, options: ModelValidateDocumentOptions = {}) {
       if (_.isEmpty(doc)) throw new Error(`[${this.schema.model}] Empty objects are not permitted`)
 
@@ -498,7 +495,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
      * Processes a document before it is inserted. This is also used during an upsert operation.
      *
      * @param doc - The document to be inserted/upserted.
-     * @param options - See `ModelBeforeInsertOptions`.
+     * @param options - See {@link ModelInsertOneOptions} and {@link ModelInsertManyOptions}.
      *
      * @returns Document to be inserted/upserted to the database.
      */
@@ -552,7 +549,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
      *
      * @param filter - Filter for document to update.
      * @param update - The update to apply.
-     * @param options - See `ModelUpdateOneOptions` and `ModelUpdateManyOptions`.
+     * @param options - See {@link ModelUpdateOneOptions} and {@link ModelUpdateManyOptions}.
      *
      * @returns The modified update to apply.
      *
@@ -612,7 +609,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
      * Handler invoked before a deletion.
      *
      * @param filter - Filter for document to delete.
-     * @param options - See `ModelDeleteOneOptions` and `ModelDeleteManyOptions`.
+     * @param options - See {@link ModelDeleteOneOptions} and {@link ModelDeleteManyOptions}.
      *
      * @returns The processed filter for deletion.
      */

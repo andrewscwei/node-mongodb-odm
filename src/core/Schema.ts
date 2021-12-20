@@ -3,12 +3,12 @@ import { CreateIndexesOptions, IndexSpecification, ObjectId } from 'mongodb'
 import { AnyProps } from '../types'
 
 /**
- * Data type for describing multiple (can be nested) fields in the `Schema`.
+ * Data type for describing multiple (can be nested) fields in the {@link Schema}.
  */
 export type MultiFieldDescriptor<P extends AnyProps = AnyProps> = { [K in keyof P]: FieldDescriptor }
 
 /**
- * Data type for describing a single (can be nested) field in the `Schema`.
+ * Data type for describing a single (can be nested) field in the {@link Schema}.
  */
 export type FieldDescriptor = {
 
@@ -18,7 +18,7 @@ export type FieldDescriptor = {
   type: FieldType | MultiFieldDescriptor
 
   /**
-   * When the `type` is an ObjectId, that means this field is a foreign key to another collection.
+   * When the `type` is an `ObjectId`, that means this field is a foreign key to another collection.
    * This `ref` value indicates the name of model in which the foreign key belongs to.
    */
   ref?: string
@@ -36,12 +36,12 @@ export type FieldDescriptor = {
 
 /**
  * Data type representing primitive field types only, that are acceptable values of
- * `FieldDescriptor.type`.
+ * {@link FieldDescriptor.type}.
  */
 export type FieldPrimitiveType = typeof String | typeof Number | typeof Boolean | typeof Date | typeof ObjectId | typeof Array
 
 /**
- * Data type for all acceptable values of `FieldDescriptor.type`.
+ * Data type for all acceptable values of {@link FieldDescriptor.type}.
  */
 export type FieldType = FieldPrimitiveType | FieldPrimitiveType[]
 
@@ -61,16 +61,16 @@ export type FieldValue = undefined | FieldPrimitiveValue | FieldPrimitiveValue[]
 export type SchemaIndex = {
 
   /**
-   * Spec to be passed to `Collection#createIndex`.
+   * Spec to be passed to MongoDB driver's `Collection#createIndex`.
    *
-   * @see {@link https://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#createIndex}
+   * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#createIndex}
    */
   spec: IndexSpecification
 
   /**
-   * Options to be passed to `Collection#createIndex`.
+   * Options to be passed to MongoDB driver's `Collection#createIndex`.
    *
-   * @see {@link https://mongodb.github.io/node-mongodb-native/2.2/api/Collection.html#createIndex}
+   * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#createIndex}
    */
   options?: CreateIndexesOptions
 }
@@ -78,19 +78,20 @@ export type SchemaIndex = {
 export default interface Schema<P extends AnyProps = AnyProps> {
 
   /**
-   * Name of the model. Should be in upper cammel-case, i.e. `Model`.
+   * Name of the model. Should be in upper cammel-case, i.e. "FooBar".
    */
   model: string
 
   /**
    * Name of the collection in the MongoDB. Should be in lower camel-case and pluralized, i.e.
-   * `models`.
+   * "fooBars".
    */
   collection: string
 
   /**
    * Specifies whether timestamp fields will be automatically generated and tracked per CRUD
-   * operation. The genrated fields are `updatedAt` and `createdAt`, which are both `Date` values.
+   * operation. The genrated fields are `updatedAt` and `createdAt`, which are both {@link Date}
+   * values.
    */
   timestamps?: boolean
 
@@ -153,7 +154,7 @@ export default interface Schema<P extends AnyProps = AnyProps> {
 }
 
 /**
- * Checks if a value is a MultiFieldDescriptor object.
+ * Checks if a value is a {@link MultiFieldDescriptor} object.
  *
  * @param value
  *

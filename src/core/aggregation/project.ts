@@ -14,8 +14,8 @@ export type ProjectStage = {
 }
 
 /**
- * Options for `projectStageFactory`. Note that these options are only used if auto projecting all
- * fields, i.e. `specs` parameter is `undefined`.
+ * Options for {@link projectStageFactory}. Note that these options are only used if auto projecting
+ * all fields, i.e. `specs` parameter is `undefined`.
  */
 export type ProjectStageFactoryOptions = {
   /**
@@ -31,11 +31,11 @@ export type ProjectStageFactoryOptions = {
   /**
    * An object specifying how reference fields in this collection pointing to other collections are
    * populated. Each key represents a reference field (i.e. a field with a `ref` property) while
-   * each corresponding value represents the `ProjectStageFactoryPopulateOptions` to be used in the
-   * `projectStageFactory` method of the target field, or a boolean where: if `true`, the target
-   * field will not be further projected (i.e. `options` param will be omitted when generating its
-   * `$project` stage via `projectStageFactory` method), and if `false`, the reference field will
-   * simply be ignored.
+   * each corresponding value represents the {@link ProjectStageFactoryPopulateOptions} to be used
+   * in the {@link projectStageFactory} method of the target field, or a boolean where: if `true`,
+   * the target field will not be further projected (i.e. `options` param will be omitted when
+   * generating its `$project` stage via {@link projectStageFactory} method), and if `false`, the
+   * reference field will simply be ignored.
    */
   populate?: ProjectStageFactoryPopulateOptions
 
@@ -55,7 +55,7 @@ type ProjectStageFactoryPopulateOptions = {
  * @param schema - The schema of the collection.
  * @param specs - The specifications for the `$project` stage. Set as `undefined` to project all
  *                fields defined in the schema.
- * @param options - @see ProjectStageFactoryOptions.
+ * @param options - Additional options, {@link ProjectStageFactoryOptions}.
  *
  * @returns An abstract aggregation pipeline containing the generated `$project` stage.
  *
@@ -79,7 +79,8 @@ type ProjectStageFactoryPopulateOptions = {
  */
 export function projectStageFactory<P extends AnyProps = AnyProps>(
   schema: Schema<P>,
-  specs?: ProjectStageFactorySpecs, {
+  specs?: ProjectStageFactorySpecs,
+  {
     exclude = [],
     fromPrefix = '',
     populate = {},

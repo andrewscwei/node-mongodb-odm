@@ -1,12 +1,12 @@
 import ObjectIdGet from './ObjectIdGet'
 
 /**
- * Checks to see if 2 values are equal `ObjectId`'s.
+ * Checks to see if 2 values are equal `ObjectId`s.
  *
  * @param value1 - First value to compare.
  * @param value2 - Second value to compare.
  *
- * @returns `true` if they are equal `ObjectId`'s, `false` otherwise.
+ * @returns `true` if they are equal `ObjectId`s, `false` otherwise.
  */
 export default function ObjectIdEqual(value1: any, value2: any): boolean {
   const objectId1 = ObjectIdGet(value1)
