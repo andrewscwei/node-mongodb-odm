@@ -20,7 +20,7 @@ describe('core/aggregation/lookup', () => {
       $unwind: { path: '$aBar', preserveNullAndEmptyArrays: true },
     }])
 
-    assert.deepStrictEqual(lookupStageFactory(Foo.schema, { aBar: { aBar: true } }), [{
+    assert.deepStrictEqual(lookupStageFactory(Foo.schema, { aBar: { lookup: { aBar: true } } }), [{
       $lookup: { from: 'bars', localField: 'aBar', foreignField: '_id', as: 'aBar' },
     }, {
       $unwind: { path: '$aBar', preserveNullAndEmptyArrays: true },
@@ -30,7 +30,7 @@ describe('core/aggregation/lookup', () => {
       $unwind: { path: '$aBar.aBar', preserveNullAndEmptyArrays: true },
     }])
 
-    assert.deepStrictEqual(lookupStageFactory(Foo.schema, { aBar: { aBar: true }, aFoo: true }), [{
+    assert.deepStrictEqual(lookupStageFactory(Foo.schema, { aBar: { lookup: { aBar: true } }, aFoo: true }), [{
       $lookup: { from: 'bars', localField: 'aBar', foreignField: '_id', as: 'aBar' },
     }, {
       $unwind: { path: '$aBar', preserveNullAndEmptyArrays: true },
@@ -44,7 +44,7 @@ describe('core/aggregation/lookup', () => {
       $unwind: { path: '$aFoo', preserveNullAndEmptyArrays: true },
     }])
 
-    assert.deepStrictEqual(lookupStageFactory(Foo.schema, { aBar: { aBar: true }, aFoo: true }, { fromPrefix: 'foo.', toPrefix: 'bar.' }), [{
+    assert.deepStrictEqual(lookupStageFactory(Foo.schema, { aBar: { lookup: { aBar: true } }, aFoo: true }, { fromPrefix: 'foo', toPrefix: 'bar' }), [{
       $lookup: { from: 'bars', localField: 'foo.aBar', foreignField: '_id', as: 'bar.aBar' },
     }, {
       $unwind: { path: '$bar.aBar', preserveNullAndEmptyArrays: true },

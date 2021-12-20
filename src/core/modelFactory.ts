@@ -27,10 +27,12 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
 
   return class {
 
-    /** @inheritdoc */
+    /** @see {@link Model.schema} */
     static readonly schema = schema
 
-    /** @inheritdoc */
+    /**
+     * Dictionary of random value generators for this model's props.
+     */
     static readonly randomProps: ModelRandomPropertyProvider<P> = {}
 
     /** @inheritdoc */
