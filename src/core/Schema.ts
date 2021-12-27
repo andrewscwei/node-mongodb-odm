@@ -133,8 +133,9 @@ export default interface Schema<P extends AnyProps = AnyProps> {
   /**
    * Indicates whether cascade deletion should occur if a document of this collection is deleted.
    * This array should contain a list of model names indicating that once a document in this
-   * collection is deleted, other documents in the models listed in this array should also be
-   * deleted if it has a foreign key to the deleted document.
+   * collection is deleted, other documents of the models listed in this array should also be
+   * deleted if they have a foreign key to the deleted document. Cascade deletion occurs **after**
+   * all event hooks.
    */
   cascade?: string[]
 

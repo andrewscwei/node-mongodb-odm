@@ -15,9 +15,9 @@ export type Document<P extends AnyProps = AnyProps> = P & {
 }
 
 /**
- * A document without `_id`.
+ * An insertable document.
  */
-export type OptionallyIdentifiableDocument<P extends AnyProps = AnyProps> = Pick<Partial<Document<P>>, '_id'> & Omit<Document<P>, '_id'>
+export type InsertableDocument<P extends AnyProps = AnyProps> = Pick<Partial<Document<P>>, '_id'> & Omit<Document<P>, '_id'>
 
 /**
  * A generic {@link Document}.

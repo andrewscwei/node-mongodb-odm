@@ -4,7 +4,7 @@ import Faker from 'faker'
 import _ from 'lodash'
 import { describe, it } from 'mocha'
 import { ObjectId } from 'mongodb'
-import { configureDb, getDbConnection } from '..'
+import { configureDb, getDbConnection, typeIsIdentifiableDocument } from '..'
 import { Bar, BarProps, Foo } from '../index.spec'
 import { DocumentFragment } from '../types'
 
@@ -142,8 +142,9 @@ describe('core/Model', () => {
     const s = Faker.random.alphaNumeric(10)
     const t = { aString: Faker.random.alphaNumeric(10) }
     await Bar.insertOneStrict(t)
-    const updated = await Bar.updateOneStrict(t, { aString: s }, { returnDoc: true })
+    const updated = await Bar.updateOneStrict(t, { aString: s }, { returnDocument: 'after' })
     assert(!_.isBoolean(updated))
+    assert(typeIsIdentifiableDocument(updated))
     assert(updated.aString === s)
   })
 
@@ -151,8 +152,9 @@ describe('core/Model', () => {
     const s = Faker.random.alphaNumeric(10)
     const t = { aString: s }
     const bar = await Bar.insertOneStrict(t)
-    const newBar = await Bar.updateOneStrict(bar._id, { 'anObject.aString': 'foo' }, { returnDoc: true })
+    const newBar = await Bar.updateOneStrict(bar._id, { 'anObject.aString': 'foo' }, { returnDocument: 'after' })
     assert(!_.isBoolean(newBar))
+    assert(typeIsIdentifiableDocument(newBar))
     assert(newBar.anObject && newBar.anObject.aString === 'foo')
   })
 
@@ -177,13 +179,13 @@ describe('core/Model', () => {
     assert(didThrow)
   })
 
-  it('should return `false` if update fails and `returnDoc` is `false`', async () => {
+  it('should return `false` if update fails and `returnDocument` is unspecified', async () => {
     const res = await Bar.updateOne(new ObjectId(), { aString: Faker.random.alphaNumeric(10) })
     assert(res === false)
   })
 
-  it('should return `undefined` if update fails and `returnDoc` is `true`', async () => {
-    const res = await Bar.updateOne(new ObjectId(), { aString: Faker.random.alphaNumeric(10) }, { returnDoc: true })
+  it('should return `undefined` if update fails and `returnDocument` is `after`', async () => {
+    const res = await Bar.updateOne(new ObjectId(), { aString: Faker.random.alphaNumeric(10) }, { returnDocument: 'after' })
     assert(_.isUndefined(res))
   })
 
@@ -192,7 +194,7 @@ describe('core/Model', () => {
     const t = Faker.random.alphaNumeric(10)
 
     await Bar.insertOne({ aString: s })
-    const res = await Bar.updateOne({ aString: s }, { aFormattedString: t }, { returnDoc: true })
+    const res = await Bar.updateOne({ aString: s }, { aFormattedString: t }, { returnDocument: 'after' })
 
     assert(!_.isNil(res))
     assert(!_.isBoolean(res))
@@ -202,7 +204,7 @@ describe('core/Model', () => {
 
   it('should automatically format values on upsert according to the schema', async () => {
     const s = Faker.random.alphaNumeric(10)
-    const res = await Bar.updateOne({ aString: Faker.random.alphaNumeric(10) }, { aFormattedString: s }, { upsert: true, returnDoc: true })
+    const res = await Bar.updateOne({ aString: Faker.random.alphaNumeric(10) }, { aFormattedString: s }, { upsert: true, returnDocument: 'after' })
 
     assert(!_.isNil(res))
     assert(!_.isBoolean(res))
@@ -219,25 +221,25 @@ describe('core/Model', () => {
     assert(docs)
     assert(docs.reduce((prev, curr) => prev && ObjectId.isValid(curr._id), true))
 
-    const res = await Bar.updateMany({ aString: s }, { aString: t }, { returnDocs: true })
+    const res = await Bar.updateMany({ aString: s }, { aString: t }, { returnDocument: 'after' })
 
     assert(!_.isBoolean(res))
     assert(res.length === docs.length)
     assert(res.reduce((o, v) => o && (v.aString === t), true))
   })
 
-  it('can upsert a doc in an `updateMany` op while `returnDocs` is `true`', async () => {
+  it('can upsert a doc in an `updateMany` op while `returnDocument` is `after`', async () => {
     const s = Faker.random.alphaNumeric(10)
     const t = Faker.random.alphaNumeric(10)
 
-    const res = await Bar.updateMany({ aString: s }, { aFormattedString: t }, { returnDocs: true, upsert: true })
+    const res = await Bar.updateMany({ aString: s }, { aFormattedString: t }, { returnDocument: 'after', upsert: true })
 
     assert(!_.isBoolean(res))
     assert(res.length === 1)
     assert(!_.isNil(await Bar.findOne({ aString: s })))
   })
 
-  it('can upsert a doc in an `updateMany` op while `returnDocs` is false', async () => {
+  it('can upsert a doc in an `updateMany` op while `returnDocument` is unspecified', async () => {
     const s = Faker.random.alphaNumeric(10)
     const t = Faker.random.alphaNumeric(10)
 
@@ -268,7 +270,7 @@ describe('core/Model', () => {
 
     const objectId = doc._id
 
-    const res = await Bar.deleteOne({ aString: s }, { returnDoc: true })
+    const res = await Bar.deleteOne({ aString: s }, { returnDocument: true })
 
     assert(res !== undefined)
     assert(!_.isBoolean(res))
@@ -295,7 +297,7 @@ describe('core/Model', () => {
 
     assert((await Bar.count({ aString: s })) === 3)
 
-    const res = await Bar.deleteMany({ aString: s }, { returnDocs: true })
+    const res = await Bar.deleteMany({ aString: s }, { returnDocument: true })
 
     assert(_.isArray(res))
     assert(res.length === 3)
@@ -307,9 +309,10 @@ describe('core/Model', () => {
 
     await Bar.insertOne({ aString: s })
 
-    const doc = await Bar.findAndReplaceOneStrict({ aString: s }, { aString: t }, { returnDocument: 'before' })
+    const doc = await Bar.replaceOneStrict({ aString: s }, { aString: t }, { returnDocument: 'before' })
 
     assert(!_.isNil(doc))
+    assert(typeIsIdentifiableDocument(doc))
     assert(doc.aString === s)
   })
 
@@ -319,9 +322,10 @@ describe('core/Model', () => {
 
     await Bar.insertOne({ aString: s })
 
-    const doc = await Bar.findAndReplaceOneStrict({ aString: s }, { aString: t }, { returnDocument: 'after' })
+    const doc = await Bar.replaceOneStrict({ aString: s }, { aString: t }, { returnDocument: 'after' })
 
     assert(!_.isNil(doc))
+    assert(typeIsIdentifiableDocument(doc))
     assert(doc.aString === t)
   })
 
@@ -337,7 +341,7 @@ describe('core/Model', () => {
     const t = Faker.random.alphaNumeric(10)
     const exists = await Bar.exists({ aString: t })
     assert(!exists)
-    const baz = await Bar.updateOneStrict({ aString: t }, { aNumber: undefined }, { upsert: true, returnDoc: true })
+    const baz = await Bar.updateOneStrict({ aString: t }, { aNumber: undefined }, { upsert: true, returnDocument: 'after' })
     assert(baz)
     assert(!_.isBoolean(baz))
     assert(_.isUndefined(baz.aNumber))

@@ -1,26 +1,32 @@
 /**
- * @file This is a static, abstract model that provides ORM for a single MongoDB collection. Every
- *       other model must inherit this class. It sets up the ground work for basic CRUD operations,
- *       event triggers, filter validations, etc. All returned documents are native JSON objects.
+ * @file This is the factory of abstract, static model classes that provide one-to-one
+ *       object-relational mapping to MongoDB collections. Each model registered in this ODM library
+ *       must inherit the generated model class to leverage its ORM features, such as eventful CRUD
+ *       operations, default fields, field validations, etc. All MongoDB documents returned by the
+ *       model are native JSON objects.
+ *
+ * @see {@link Model}
  */
 
 import bcrypt from 'bcrypt'
 import _ from 'lodash'
-import { Collection, Filter, ObjectId, UpdateFilter } from 'mongodb'
+import { Collection, DeleteOptions, Filter, FindOneAndDeleteOptions, FindOneAndReplaceOptions, FindOneAndUpdateOptions, ObjectId, ReplaceOptions, UpdateFilter, UpdateOptions } from 'mongodb'
 import * as db from '..'
-import { AnyDocument, AnyFilter, AnyProps, AnyUpdate, Document, DocumentFragment, OptionallyIdentifiableDocument } from '../types'
+import { AnyDocument, AnyFilter, AnyProps, AnyUpdate, Document, DocumentFragment, InsertableDocument } from '../types'
 import { getFieldSpecByKey, sanitizeDocument, sanitizeFilter, sanitizeUpdate, typeIsAnyDocument, typeIsValidObjectId, validateFieldValue } from '../utils'
 import * as Aggregation from './aggregation'
 import * as CRUD from './crud'
-import Model, { FieldValidationStrategy, ModelCountOptions, ModelDefaultPropertyProvider, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelPropertyFormattingProvider, ModelPropertyValidationProvider, ModelRandomFieldsOptions, ModelRandomPropertyProvider, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions } from './Model'
+import Model, { FieldValidationStrategy, ModelDefaultPropertyProvider, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelPropertyFormattingProvider, ModelPropertyValidationProvider, ModelRandomFieldsOptions, ModelRandomPropertyProvider, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions } from './Model'
 import Schema, { FieldDescriptor, MultiFieldDescriptor, typeIsFieldDescriptor } from './Schema'
 
 /**
- * Creates a static model class with the provided schema.
+ * Generates an abstract, static model class with the provided schema.
  *
  * @param schema - The schema of the model to be generated.
  *
- * @returns The generated static model.
+ * @returns The generated model class.
+ *
+ * @see {@link Model}
  */
 export default function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): Model<P> {
   const debug = require('debug')(`mongodb-odm:model:${schema.model}`)
@@ -86,7 +92,8 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     /** @see {@link Model.identifyOne} */
     static async identifyOne(filter: AnyFilter<P>): Promise<ObjectId | undefined> {
       try {
-        return await this.identifyOneStrict(filter)
+        const res = await this.identifyOneStrict(filter)
+        return res
       }
       catch (err) {
         return undefined
@@ -111,7 +118,8 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     /** @see {@link Model.findOne} */
     static async findOne<R = P>(filter?: AnyFilter<P> | Aggregation.Pipeline, options: ModelFindOneOptions = {}): Promise<Document<R> | undefined> {
       try {
-        return await this.findOneStrict<R>(filter, options)
+        const res = await this.findOneStrict<R>(filter, options)
+        return res
       }
       catch (err) {
         return undefined
@@ -132,16 +140,19 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     static async insertOneStrict(doc?: DocumentFragment<P>, options: ModelInsertOneOptions = {}): Promise<Document<P>> {
       if (schema.noInserts === true) throw new Error(`[${this.schema.model}] Insertions are disallowed for this model`)
 
-      const docToInsert = await this.beforeInsert(doc ?? (await this.randomFields()), { strict: true, ...options })
-      const result = await CRUD.insertOne(this.schema, docToInsert, options)
-      await this.afterInsert(result)
-      return result
+      const docToInsert = await this.beforeInsertOne(doc ?? await this.randomFields(), { strict: true, ...options })
+      const insertedDoc = await CRUD.insertOne(this.schema, docToInsert, options)
+
+      await this.afterInsertOne(insertedDoc)
+
+      return insertedDoc
     }
 
     /** @see {@link Model.insertOne} */
     static async insertOne(doc?: DocumentFragment<P>, options: ModelInsertOneOptions = {}): Promise<Document<P> | undefined> {
       try {
-        return await this.insertOneStrict(doc, options)
+        const res = await this.insertOneStrict(doc, options)
+        return res
       }
       catch (err) {
         return undefined
@@ -152,43 +163,33 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     static async insertMany(docs: DocumentFragment<P>[], options: ModelInsertManyOptions = {}): Promise<Document<P>[]> {
       if ((this.schema.noInserts === true) || (this.schema.noInsertMany === true)) throw new Error(`[${this.schema.model}] Multiple insertions are disallowed for this model`)
 
-      const docsToInsert = await Promise.all(docs.map(doc => this.beforeInsert(doc)))
+      const docsToInsert = await this.beforeInsertMany(docs, { strict: true, ...options })
       const insertedDocs = await CRUD.insertMany(this.schema, docsToInsert, options)
 
       debug('Inserting multiple documents...', 'OK', docsToInsert, insertedDocs)
 
-      const n = insertedDocs.length
-
-      for (let i = 0; i < n; i++) {
-        await this.afterInsert(insertedDocs[i])
-      }
+      await this.afterInsertMany(insertedDocs)
 
       return insertedDocs
     }
 
     /** @see {@link Model.updateOneStrict} */
-    static async updateOneStrict(filter: AnyFilter<P>, update: AnyUpdate<P>, options: ModelUpdateOneOptions = {}): Promise<boolean | Document<P>> {
+    static async updateOneStrict(filter: AnyFilter<P>, update: AnyUpdate<P>, options: ModelUpdateOneOptions = {}): Promise<boolean | Document<P> | undefined> {
       if (this.schema.noUpdates === true) throw new Error(`[${this.schema.model}] Updates are disallowed for this model`)
 
-      const f = sanitizeFilter(this.schema, filter)
-      const u = await this.beforeUpdate(f, sanitizeUpdate(this.schema, update, options), options)
+      const filterToApply = sanitizeFilter(this.schema, filter)
+      const updateToApply = await this.beforeUpdateOne(filterToApply, update, options)
 
-      if (options.returnDoc === true) {
-        const [oldDoc, newDoc] = await CRUD.findOneAndUpdate(this.schema, f, u, options)
-
-        debug('Updating an existing document...', 'OK', f, u, options, oldDoc, newDoc)
-
-        await this.afterUpdate(oldDoc, newDoc)
-
-        return newDoc
+      if (options.returnDocument) {
+        const [oldDoc, newDoc] = await CRUD.findOneAndUpdate(this.schema, filterToApply, updateToApply, options as Exclude<ModelUpdateOneOptions, UpdateOptions>)
+        debug('Updating an existing document...', 'OK', filterToApply, updateToApply, options, oldDoc, newDoc)
+        await this.afterUpdateOne(oldDoc, newDoc)
+        return options.returnDocument === 'after' ? newDoc : oldDoc
       }
       else {
-        const result = await CRUD.updateOne(this.schema, f, u, options)
-
-        debug('Updating an existing document...', 'OK', f, u, options)
-
-        await this.afterUpdate()
-
+        const result = await CRUD.updateOne(this.schema, filterToApply, updateToApply, options as Exclude<ModelUpdateOneOptions, FindOneAndUpdateOptions>)
+        debug('Updating an existing document...', 'OK', filterToApply, updateToApply, options)
+        await this.afterUpdateOne()
         return result
       }
     }
@@ -196,88 +197,64 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     /** @see {@link Model.updateOne} */
     static async updateOne(filter: AnyFilter<P>, update: AnyUpdate<P>, options: ModelUpdateOneOptions = {}): Promise<boolean | Document<P> | undefined> {
       try {
-        const result = await this.updateOneStrict(filter, update, options)
-
-        if (!_.isBoolean(result) && options.returnDoc === true) {
-          return result
-        }
-        else {
-          return result
-        }
+        const res = await this.updateOneStrict(filter, update, options)
+        return res
       }
       catch (err) {
-        return options.returnDoc === true ? undefined : false
+        return options.returnDocument ? undefined : false
       }
     }
 
     /** @see {@link Model.updateMany} */
-    static async updateMany(filter: AnyFilter<P>, update: AnyUpdate<P>, options: ModelUpdateManyOptions = {}): Promise<Document<P>[] | boolean> {
+    static async updateMany(filter: AnyFilter<P>, update: AnyUpdate<P>, options: ModelUpdateManyOptions = {}): Promise<boolean | Document<P>[]> {
       if ((this.schema.noUpdates === true) || (this.schema.noUpdateMany === true)) throw new Error(`[${this.schema.model}] Multiple updates are disallowed for this model`)
 
-      const f = sanitizeFilter(this.schema, filter)
-      const u = await this.beforeUpdate(f, sanitizeUpdate(this.schema, update, options), options)
+      const filterToApply = sanitizeFilter(this.schema, filter)
+      const updateToApply = await this.beforeUpdateMany(filterToApply, update, options)
 
-      if (options.returnDocs === true) {
-        const [oldDocs, newDocs] = await CRUD.findManyAndUpdate(this.schema, f, u, options)
-
-        debug('Updating multiple existing documents...', 'OK', f, u, options, newDocs)
-
-        await this.afterUpdate(oldDocs, newDocs)
-
-        return newDocs
+      if (options.returnDocument) {
+        const [, newDocs] = await CRUD.findManyAndUpdate(this.schema, filterToApply, updateToApply, options as Exclude<ModelUpdateManyOptions, UpdateOptions>)
+        debug('Updating multiple existing documents...', 'OK', filterToApply, updateToApply, options, newDocs)
+        await this.afterUpdateMany(undefined, newDocs)
+        return options.returnDocument === 'after' ? newDocs : []
       }
       else {
-        const result = await CRUD.updateMany(this.schema, f, u, options)
-
-        debug('Updating multiple existing documents...', 'OK', f, u, options, result)
-
-        await this.afterUpdate()
-
+        const result = await CRUD.updateMany(this.schema, filterToApply, updateToApply, options as Exclude<ModelUpdateManyOptions, FindOneAndUpdateOptions>)
+        debug('Updating multiple existing documents...', 'OK', filterToApply, updateToApply, options, result)
+        await this.afterUpdateMany()
         return result
       }
     }
 
     /** @see {@link Model.deleteOneStrict} */
-    static async deleteOneStrict(filter: AnyFilter<P>, options: ModelDeleteOneOptions = {}): Promise<Document<P> | boolean> {
+    static async deleteOneStrict(filter: AnyFilter<P>, options: ModelDeleteOneOptions = {}): Promise<boolean | Document<P>> {
       if (this.schema.noDeletes === true) throw new Error(`[${this.schema.model}] Deletions are disallowed for this model`)
 
-      const f = sanitizeFilter(this.schema, filter)
-      await this.beforeDelete(f, options)
+      const filterToApply = sanitizeFilter(this.schema, filter)
+      await this.beforeDeleteOne(filterToApply, options)
 
-      if (options.returnDoc === true) {
-        const deletedDoc = await CRUD.findAndDeleteOne(this.schema, f, options)
-
+      if (options.returnDocument === true) {
+        const deletedDoc = await CRUD.findAndDeleteOne(this.schema, filterToApply, options as Exclude<ModelDeleteOneOptions, DeleteOptions>)
         debug('Deleting an existing document...', 'OK', filter, deletedDoc)
-
-        await this.afterDelete(deletedDoc)
-
+        await this.afterDeleteOne(deletedDoc)
         return deletedDoc
       }
       else {
-        const result = await CRUD.deleteOne(this.schema, f, options)
-
+        const result = await CRUD.deleteOne(this.schema, filterToApply, options as Exclude<ModelDeleteOneOptions, FindOneAndDeleteOptions>)
         debug('Deleting an existing document...', 'OK', filter)
-
-        await this.afterDelete()
-
+        await this.afterDeleteOne()
         return result
       }
     }
 
     /** @see {@link Model.deleteOne} */
-    static async deleteOne(filter: AnyFilter<P>, options: ModelDeleteOneOptions = {}): Promise<Document<P> | boolean | undefined> {
+    static async deleteOne(filter: AnyFilter<P>, options: ModelDeleteOneOptions = {}): Promise<boolean | Document<P> | undefined> {
       try {
-        const result = await this.deleteOneStrict(filter, options)
-
-        if (!_.isBoolean(result) && options.returnDoc === true) {
-          return result
-        }
-        else {
-          return result
-        }
+        const res = await this.deleteOneStrict(filter, options)
+        return res
       }
       catch (err) {
-        return options.returnDoc === true ? undefined : false
+        return options.returnDocument === true ? undefined : false
       }
     }
 
@@ -285,49 +262,49 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     static async deleteMany(filter: AnyFilter<P>, options: ModelDeleteManyOptions = {}): Promise<boolean | Document<P>[]> {
       if ((this.schema.noDeletes === true) || (this.schema.noDeleteMany === true)) throw new Error(`[${this.schema.model}] Multiple deletions are disallowed for this model`)
 
-      const f = sanitizeFilter(this.schema, filter)
+      const filterToApply = sanitizeFilter(this.schema, filter)
+      await this.beforeDeleteMany(filterToApply, options)
 
-      await this.beforeDelete(f, options)
-
-      if (options.returnDocs === true) {
-        const deletedDocs = await CRUD.findManyAndDelete(this.schema, f, options)
-
-        debug('Deleting multiple existing documents...:', 'OK', f, deletedDocs)
-
-        await this.afterDelete(deletedDocs)
-
+      if (options.returnDocument === true) {
+        const deletedDocs = await CRUD.findManyAndDelete(this.schema, filterToApply, options as Exclude<ModelDeleteManyOptions, DeleteOptions>)
+        debug('Deleting multiple existing documents...:', 'OK', filterToApply, deletedDocs)
+        await this.afterDeleteMany(deletedDocs)
         return deletedDocs
       }
       else {
-        await CRUD.deleteMany(this.schema, f, options)
-
-        debug('Deleting multiple existing documents...:', 'OK', f)
-
-        await this.afterDelete()
-
+        await CRUD.deleteMany(this.schema, filterToApply, options as Exclude<ModelDeleteManyOptions, FindOneAndDeleteOptions>)
+        debug('Deleting multiple existing documents...:', 'OK', filterToApply)
+        await this.afterDeleteMany()
         return true
       }
     }
 
-    /** @see {@link Model.findAndReplaceOneStrict} */
-    static async findAndReplaceOneStrict(filter: AnyFilter<P>, replacement?: DocumentFragment<P>, options: ModelReplaceOneOptions = {}): Promise<Document<P>> {
-      const f = sanitizeFilter(this.schema, filter)
-      const r = await this.beforeInsert(replacement ?? (await this.randomFields()), options)
+    /** @see {@link Model.replaceOneStrict} */
+    static async replaceOneStrict(filter: AnyFilter<P>, replacement?: DocumentFragment<P>, options: ModelReplaceOneOptions = {}): Promise<boolean | Document<P>> {
+      if (options.upsert === true) throw new Error('Replacement upserts are not supported at this point')
 
-      const [oldDoc, newDoc] = await CRUD.findOneAndReplace(this.schema, f, r, options)
+      const filterToApply = sanitizeFilter(this.schema, filter)
+      const replacementToApply = await this.beforeReplaceOne(filterToApply, replacement ?? await this.randomFields(), options)
 
-      debug('Replacing an existing document...', 'OK', f, r, oldDoc, newDoc)
-
-      await this.afterDelete(oldDoc)
-      await this.afterInsert(newDoc)
-
-      return options.returnDocument === 'before' ? oldDoc : newDoc
+      if (options.returnDocument) {
+        const [oldDoc, newDoc] = await CRUD.findOneAndReplace(this.schema, filterToApply, replacementToApply, options as Exclude<ModelReplaceOneOptions, ReplaceOptions>)
+        debug('Replacing an existing document...', 'OK', filterToApply, replacementToApply, oldDoc, newDoc)
+        await this.afterReplaceOne(oldDoc, newDoc)
+        return options.returnDocument === 'before' ? oldDoc : newDoc
+      }
+      else {
+        const result = await CRUD.replaceOne(this.schema, filterToApply, replacementToApply, options as Exclude<ModelReplaceOneOptions, FindOneAndReplaceOptions>)
+        debug('Replacing an existing document...', 'OK', filterToApply, replacementToApply)
+        await this.afterReplaceOne()
+        return result
+      }
     }
 
-    /** @see {@link Model.findAndReplaceOne} */
-    static async findAndReplaceOne(filter: AnyFilter<P>, replacement?: DocumentFragment<P>, options: ModelReplaceOneOptions = {}): Promise<Document<P> | undefined> {
+    /** @see {@link Model.replaceOne} */
+    static async replaceOne(filter: AnyFilter<P>, replacement?: DocumentFragment<P>, options: ModelReplaceOneOptions = {}): Promise<boolean | Document<P> | undefined> {
       try {
-        return await this.findAndReplaceOneStrict(filter, replacement, options)
+        const res = await this.replaceOneStrict(filter, replacement, options)
+        return res
       }
       catch (err) {
         return undefined
@@ -337,14 +314,12 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     /** @see {@link Model.exists} */
     static async exists(filter: AnyFilter<P>): Promise<boolean> {
       const id = await this.identifyOne(filter)
-
       return id ? true : false
     }
 
     /** @see {@link Model.count} */
-    static async count(filter: AnyFilter<P>, options: ModelCountOptions = {}): Promise<number> {
-      const result = await this.findMany(filter, options)
-
+    static async count(filter: AnyFilter<P>): Promise<number> {
+      const result = await this.identifyMany(filter)
       return result.length
     }
 
@@ -432,218 +407,242 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     }
 
     /**
-     * Handler called before an attempt to insert document into the database. This is a good place
-     * to apply any custom pre-processing to the document before it is inserted into the document.
-     * This method must return the document to be inserted.
+     * Handler invoked at the beginning of {@link insertOne} to apply any custom pre-processing to
+     * the document prior to inserting. Throwing an error within this handler will terminate
+     * {@link insertOne} immediately.
      *
      * @param doc - The document to be inserted.
      * @param options - Additional options.
      *
      * @returns The document to be inserted.
      */
-    protected static async willInsertDocument(doc: DocumentFragment<P>): Promise<DocumentFragment<P>> {
+    protected static async willInsertOne(doc: DocumentFragment<P>): Promise<DocumentFragment<P>> {
       return doc
     }
 
     /**
-     * Handler called after the document is successfully inserted.
+     * Hanlder invoked after a successful {@link insertOne} operation. Throwing an error within this
+     * handler can prohib {@link insertOne} from returning.
      *
      * @param doc - The inserted document.
      */
-    protected static async didInsertDocument(doc: Readonly<Document<P>>): Promise<void> {}
+    protected static async didInsertOne(doc: Readonly<Document<P>>): Promise<void> {}
 
     /**
-     * Handler called before an attempted update operation. This method must return the filter and
-     * update descriptor for the update operation.
+     * Handler invoked at the beginning of {@link insertMany} to apply any custom pre-processing to
+     * the documents prior to inserting. Throwing an error within this handler will terminate
+     * {@link insertMany} immediately.
      *
-     * @param filter - The filter for document(s) to update.
-     * @param update - The update descriptor.
+     * @param docs - The documents to be inserted.
      *
-     * @returns A tuple of the filter and the update descriptor.
+     * @returns The modified documents to be inserted.
      */
-    protected static async willUpdateDocument(filter: Readonly<Filter<Document<P>>>, update: UpdateFilter<Document<P>>): Promise<AnyUpdate<P>> {
+    protected static async willInsertMany(docs: DocumentFragment<P>[]): Promise<DocumentFragment<P>[]> {
+      return docs
+    }
+
+    /**
+     * Handler invoked after a successful {@link insertMany} operation. Throwing an error within
+     * this hanlder can prohibit {@link insertMany} from returning.
+     *
+     * @param docs - The inserted documents.
+     */
+    protected static async didInsertMany(docs: Readonly<Document<P>[]>): Promise<void> {}
+
+    /**
+     * Handler invoked at the beginning of {@link updateOne} to apply any custom pre-processing to
+     * the update filter prior to updating. Throwing an error within this handler will terminate
+     * {@link updateOne} immediately.
+     *
+     * @param filter - The filter for the document to update.
+     * @param update - The update to be applied.
+     *
+     * @returns The modified update to be applied.
+     */
+    protected static async willUpdateOne(filter: Readonly<Filter<Document<P>>>, update: UpdateFilter<Document<P>>): Promise<AnyUpdate<P>> {
       return update
     }
 
     /**
-     * Handler called after a document or a set of documents have been successfully updated.
+     * Handler invoked after a successful {@link updateOne} operation. Throwing an error within this
+     * handler can prohibit {@link updateOne} from returning.
      *
-     * @param prevDoc - The document before it is updated. This is only available if `returnDoc` was
-     *                  enabled, and only for updateOne().
-     * @param newDocs - The updated document(s). This is only available if `returnDoc` or
-     *                  `returnDocs` was enabled.
+     * @param oldDoc - The document before the update. This is only available if `returnDocument`
+     *                 was set during {@link updateOne}.
+     * @param newDoc - The document after the update. This is only available if `returnDocument` was
+     *                 set during {@link updateOne}.
      */
-    protected static async didUpdateDocument(prevDoc?: Readonly<Document<P>>, newDocs?: Readonly<Document<P>> | Readonly<Document<P>[]>): Promise<void> {}
+    protected static async didUpdateOne(oldDoc?: Readonly<Document<P>>, newDoc?: Readonly<Document<P>>): Promise<void> {}
 
     /**
-     * Handler called before an attempt to delete a document.
+     * Handler invoked at the beginning of {@link updateMany} to apply any custom pre-processing to
+     * the update filter prior to updating. Throwing an error within this handler will terminate
+     * {@link updateMany} immediately.
+     *
+     * @param filter - The filter for the documents to update.
+     * @param update - The update to be applied.
+     *
+     * @returns The modified update to be applied.
+     */
+    protected static async willUpdateMany(filter: Readonly<Filter<Document<P>>>, update: UpdateFilter<Document<P>>): Promise<AnyUpdate<P>> {
+      return update
+    }
+
+    /**
+     * Handler invoked after a successful {@link updateMany} operation. Throwing an error within
+     * this handler can prohibit {@link updateMany} from returning.
+     *
+     * @param oldDocs - The documents before the update. They are only available if `returnDocument`
+     *                  was set during {@link updateMany}.
+     * @param newDocs - The documents after the update (array order consistency with `oldDocs` not
+     *                  guaranteed). They are only available if `returnDocument` was set during
+     *                  {@link updateMany}.
+     */
+    protected static async didUpdateMany(oldDocs?: Readonly<Document<P>[]>, newDocs?: Readonly<Document<P>[]>): Promise<void> {}
+
+    /**
+     * Handler invoked at the beginning of {@link deleteOne}. Throwing an error within this handler
+     * will terminate {@link deleteOne} immediately.
      *
      * @param filter - The filter for the document to be deleted.
-     *
-     * @returns The document to be deleted.
      */
-    protected static async willDeleteDocument(filter: Readonly<Filter<Document<P>>>): Promise<void> {}
+    protected static async willDeleteOne(filter: Readonly<Filter<Document<P>>>): Promise<void> {}
 
     /**
-     * Handler called after a document or a set of documents are successfully deleted.
+     * Handler invoked after a successful {@link deleteOne} operation. Throwing an error within this
+     * handler can prohibit {@link deleteOne} from returning.
      *
-     * @param docs - The deleted document(s) if available.
+     * @param doc - The deleted document.
      */
-    protected static async didDeleteDocument(docs?: Readonly<Document<P>> | Readonly<Document<P>[]>): Promise<void> {}
+    protected static async didDeleteOne(doc?: Readonly<Document<P>>): Promise<void> {}
 
     /**
-     * Processes a document before it is inserted. This is also used during an upsert operation.
+     * Handler invoked at the beginning of {@link deleteMany}. Throwing an error within this handler
+     * will terminate {@link deleteMany} immediately.
      *
-     * @param doc - The document to be inserted/upserted.
-     * @param options - See {@link ModelInsertOneOptions} and {@link ModelInsertManyOptions}.
-     *
-     * @returns Document to be inserted/upserted to the database.
+     * @param filter - The filter for the documents to be deleted.
      */
-    private static async beforeInsert(doc: DocumentFragment<P>, options: ModelInsertOneOptions | ModelInsertManyOptions = {}): Promise<OptionallyIdentifiableDocument<P>> {
-      // Call event hook first.
-      const modifiedDoc = await this.willInsertDocument(doc)
+    protected static async willDeleteMany(filter: Readonly<Filter<Document<P>>>): Promise<void> {}
 
-      let sanitizedDoc = sanitizeDocument(this.schema, modifiedDoc)
+    /**
+     * Handler invoked after a successful {@link deleteMany} operation. Throwing an error within
+     * this handler can prohibit {@link deleteMany} from returning.
+     *
+     * @param docs - The deleted documents.
+     */
+    protected static async didDeleteMany(docs?: Readonly<Document<P>[]>): Promise<void> {}
 
-      // Unless specified, always renew the `createdAt` and `updatedAt` fields.
-      if ((this.schema.timestamps === true) && (options.ignoreTimestamps !== true)) {
-        if (!_.isDate(sanitizedDoc.createdAt)) sanitizedDoc.createdAt = new Date() as any
-        if (!_.isDate(sanitizedDoc.updatedAt)) sanitizedDoc.updatedAt = new Date() as any
-      }
-
-      // Before inserting this document, go through each field and make sure that it has default
-      // values and that they are formatted correctly.
-      for (const key in this.schema.fields) {
-        if (!this.schema.fields.hasOwnProperty(key)) continue
-        if (sanitizedDoc.hasOwnProperty(key)) continue
-
-        const defaultValue = this.defaultProps[key]
-
-        // Check if the field has a default value defined in the schema. If so, apply it.
-        if (_.isUndefined(defaultValue)) continue
-
-        sanitizedDoc[key] = (_.isFunction(defaultValue)) ? defaultValue() : defaultValue
-      }
-
-      // Apply format function defined in the schema if applicable.
-      sanitizedDoc = await this.formatDocument(sanitizedDoc)
-
-      // Finally, validate the document. Ignore unique indexes in this step. Let the db throw an
-      // error if the inserted doc violates those indexes.
-      await this.validateDocument(sanitizedDoc, { ignoreUniqueIndex: true, strict: true, accountForDotNotation: false, ...options })
-
-      return sanitizedDoc as OptionallyIdentifiableDocument<P>
+    /**
+     * Handler invoked at the beginning of {@link replaceOne} to apply any custom pre-processing to
+     * the new document prior to replacement. Throwing an error within this handler will terminate
+     * {@link replaceOne} immediately.
+     *
+     * @param filter - The filter for the document to be replaced.
+     * @param replacement - The replacement document.
+     *
+     * @returns The modified replacement document.
+     */
+    protected static async willReplaceOne(filter: Readonly<Filter<Document<P>>>, replacement: DocumentFragment<P>): Promise<DocumentFragment<P>> {
+      return replacement
     }
 
     /**
-     * Handler invoked right after a document insertion.
+     * Handler invoked after a successful {@link replaceOne} operation. Throwing an error within
+     * this handler can prohibit {@link replaceOne} from returning.
      *
-     * @param doc - The inserted document.
+     * @param oldDoc - The document that was replaced. This is only available if `returnDocument`
+     *                 was set during {@link replaceOne}.
+     * @param newDoc - The new document. This is only available if `returnDocument` was set during
+     *                 {@link replaceOne}.
      */
-    private static async afterInsert(doc: Document<P>): Promise<void> {
-      await this.didInsertDocument(doc)
+    protected static async didReplaceOne(oldDoc?: Readonly<Document<P>>, newDoc?: Readonly<Document<P>>): Promise<void> {}
+
+    private static async beforeInsertOne(doc: DocumentFragment<P>, options: ModelInsertOneOptions = {}): Promise<InsertableDocument<P>> {
+      const modifiedDoc = await this.willInsertOne(doc)
+      const res = await this.processDocumentBeforeInsert(modifiedDoc, options)
+      return res
     }
 
-    /**
-     * Handler invoked right before an update. This is NOT invoked on an insertion.
-     *
-     * @param filter - Filter for document to update.
-     * @param update - The update to apply.
-     * @param options - See {@link ModelUpdateOneOptions} and {@link ModelUpdateManyOptions}.
-     *
-     * @returns The modified update to apply.
-     *
-     * @throws {Error} Attempting to upsert even though upserts are disabled in the schema.
-     *
-     * @todo Handle remaining update operators.
-     */
-    private static async beforeUpdate(filter: Filter<Document<P>>, update: UpdateFilter<Document<P>>, options: ModelUpdateOneOptions | ModelUpdateManyOptions = {}): Promise<UpdateFilter<Document<P>>> {
-      if ((options.upsert === true) && (this.schema.allowUpserts !== true)) throw new Error(`[${this.schema.model}] Attempting to upsert a document while upserting is disallowed in the schema`)
+    private static async afterInsertOne(doc: Document<P>): Promise<void> {
+      await this.didInsertOne(doc)
+    }
 
-      const u = await this.willUpdateDocument(filter, update)
+    private static async beforeInsertMany(docs: DocumentFragment<P>[], options: ModelInsertManyOptions = {}): Promise<InsertableDocument<P>[]> {
+      const modifiedDocs = await this.willInsertMany(docs)
+      const docsToInsert: InsertableDocument<P>[] = []
 
-      // Format all fields in the update filter.
-      if (u.$set) {
-        u.$set = await this.formatDocument(u.$set as Document<P>)
+      for (let i = 0, n = modifiedDocs.length; i < n; i++) {
+        const doc = modifiedDocs[i]
+        const docToInsert = await this.processDocumentBeforeInsert(doc, options)
+        docsToInsert.push(docToInsert)
       }
 
-      // In the case of an upsert, we need to preprocess the filter as if this was an insertion. We
-      // also need to tell the database to save all fields in the filter as well, unless they are
-      // already in the update query.
-      if (options.upsert === true && typeIsAnyDocument(filter)) {
-        // Make a copy of the filter in case it is manipulated by the hooks.
-        const docIfUpsert = await this.beforeInsert(filter as DocumentFragment<P>, { ...options, strict: false })
-        const setOnInsert = _.omit({
-          ...u.$setOnInsert ?? {},
-          ...docIfUpsert,
-        }, [
-          ...Object.keys(u.$set ?? {}),
-          ...Object.keys(u.$unset ?? {}),
-        ]) as DocumentFragment<P>
+      return docsToInsert
+    }
 
-        if (!_.isEmpty(setOnInsert)) {
-          u.$setOnInsert = setOnInsert
+    private static async afterInsertMany(docs: Document<P>[]): Promise<void> {
+      await this.didInsertMany(docs)
+    }
+
+    private static async beforeUpdateOne(filter: Filter<Document<P>>, update: UpdateFilter<Document<P>>, options: ModelUpdateOneOptions = {}): Promise<UpdateFilter<Document<P>>> {
+      const res = await this.processUpdateBeforeUpdate(filter, update, options)
+      return res
+    }
+
+    private static async afterUpdateOne(oldDoc?: Document<P>, newDoc?: Document<P>): Promise<void> {
+      await this.didUpdateOne(oldDoc, newDoc)
+    }
+
+    private static async beforeUpdateMany(filter: Filter<Document<P>>, update: UpdateFilter<Document<P>>, options: ModelUpdateManyOptions = {}): Promise<UpdateFilter<Document<P>>> {
+      const res = await this.processUpdateBeforeUpdate(filter, update, options)
+      return res
+    }
+
+    private static async afterUpdateMany(oldDocs?: Document<P>[], newDocs?: Document<P>[]): Promise<void> {
+      await this.didUpdateMany(oldDocs, newDocs)
+    }
+
+    private static async beforeDeleteOne(filter: Filter<Document<P>>, options: ModelDeleteOneOptions): Promise<void> {
+      await this.willDeleteOne(filter)
+    }
+
+    private static async afterDeleteOne(doc?: Document<P>): Promise<void> {
+      if (doc) {
+        if (typeIsValidObjectId(doc._id)) {
+          await this.cascadeDelete(doc._id)
         }
       }
 
-      // Validate all fields in the update. Account for dot notations to facilitate updating fields
-      // in nested fields.
-      if (u.$set && !_.isEmpty(u.$set)) {
-        await this.validateDocument(u.$set as DocumentFragment<P>, { ...options, ignoreUniqueIndex: true, accountForDotNotation: true })
-      }
-
-      return u
+      await this.didDeleteOne(doc)
     }
 
-    /**
-     * Handler invoked right after an update. This does not account for insertions.
-     *
-     * @param oldDoc - The original document.
-     * @param newDocOrNewDocs - The updated document(s).
-     */
-    private static async afterUpdate(oldDoc?: Document<P>, newDocOrNewDocs?: Document<P> | Document<P>[]) {
-      await this.didUpdateDocument(oldDoc, newDocOrNewDocs)
+    private static async beforeDeleteMany(filter: Filter<Document<P>>, options: ModelDeleteManyOptions): Promise<void> {
+      this.willDeleteMany(filter)
     }
 
-    /**
-     * Handler invoked before a deletion.
-     *
-     * @param filter - Filter for document to delete.
-     * @param options - See {@link ModelDeleteOneOptions} and {@link ModelDeleteManyOptions}.
-     *
-     * @returns The processed filter for deletion.
-     */
-    private static async beforeDelete(filter: Filter<Document<P>>, options: ModelDeleteOneOptions | ModelDeleteManyOptions): Promise<void> {
-      await this.willDeleteDocument(filter)
-    }
-
-    /**
-     * Handler invoked after a deletion.
-     *
-     * @param docOrDocs - The deleted doc(s), if available.
-     *
-     * @todo Cascade deletion only works for first-level foreign keys so far.
-     */
-    private static async afterDelete(docOrDocs?: Document<P> | Document<P>[]) {
-      if (docOrDocs) {
-        if (_.isArray(docOrDocs)) {
-          const docs = docOrDocs
-
-          for (const doc of docs) {
-            if (!typeIsValidObjectId(doc._id)) continue
-            await this.cascadeDelete(doc._id)
-          }
-        }
-        else {
-          const doc = docOrDocs
-
-          if (typeIsValidObjectId(doc._id)) {
-            await this.cascadeDelete(doc._id)
-          }
+    private static async afterDeleteMany(docs?: Document<P>[]): Promise<void> {
+      if (docs) {
+        for (const doc of docs) {
+          if (!typeIsValidObjectId(doc._id)) continue
+          await this.cascadeDelete(doc._id)
         }
       }
 
-      await this.didDeleteDocument(docOrDocs)
+      await this.didDeleteMany(docs)
+    }
+
+    private static async beforeReplaceOne(filter: Filter<Document<P>>, doc: DocumentFragment<P>, options: ModelReplaceOneOptions = {}): Promise<InsertableDocument<P>> {
+      const modifiedDoc = await this.willReplaceOne(filter, doc)
+      const res = await this.processDocumentBeforeInsert(modifiedDoc, options)
+      return res
+    }
+
+    private static async afterReplaceOne(oldDoc?: Document<P>, newDoc?: Document<P>): Promise<void> {
+      if (oldDoc) {
+        await this.cascadeDelete(oldDoc._id)
+      }
+
+      await this.didReplaceOne(oldDoc, newDoc)
     }
 
     /**
@@ -680,6 +679,80 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
           }
         }
       }
+    }
+
+    private static async processDocumentBeforeInsert(doc: DocumentFragment<P>, { ignoreTimestamps, ...opts }: ModelInsertOneOptions | ModelInsertManyOptions = {}): Promise<InsertableDocument<P>> {
+      let docToInsert = sanitizeDocument(this.schema, doc)
+
+      // Unless specified, always renew the `createdAt` and `updatedAt` fields.
+      if ((this.schema.timestamps === true) && (ignoreTimestamps !== true)) {
+        if (!_.isDate(docToInsert.createdAt)) docToInsert.createdAt = new Date() as any
+        if (!_.isDate(docToInsert.updatedAt)) docToInsert.updatedAt = new Date() as any
+      }
+
+      // Before inserting this document, go through each field and make sure that it has default
+      // values and that they are formatted correctly.
+      for (const key in this.schema.fields) {
+        if (!this.schema.fields.hasOwnProperty(key)) continue
+        if (docToInsert.hasOwnProperty(key)) continue
+
+        const defaultValue = this.defaultProps[key]
+
+        // Check if the field has a default value defined in the schema. If so, apply it.
+        if (_.isUndefined(defaultValue)) continue
+
+        docToInsert[key] = (_.isFunction(defaultValue)) ? defaultValue() : defaultValue
+      }
+
+      // Apply format function defined in the schema if applicable.
+      docToInsert = await this.formatDocument(docToInsert)
+
+      // Finally, validate the document. Ignore unique indexes in this step. Let the db throw an
+      // error if the inserted doc violates those indexes.
+      await this.validateDocument(docToInsert, { ignoreUniqueIndex: true, strict: true, accountForDotNotation: false, ...opts })
+
+      return docToInsert as InsertableDocument<P>
+    }
+
+    /**
+     * @todo Handle remaining update operators.
+     */
+    private static async processUpdateBeforeUpdate(filter: Filter<Document<P>>, update: UpdateFilter<Document<P>>, options: ModelUpdateOneOptions | ModelUpdateManyOptions = {}): Promise<UpdateFilter<Document<P>>> {
+      if ((options.upsert === true) && (this.schema.allowUpserts !== true)) throw new Error(`[${this.schema.model}] Attempting to upsert a document while upserting is disallowed in the schema`)
+
+      const updateToApply = sanitizeUpdate(this.schema, update, options)
+
+      // Format all fields in the update filter.
+      if (updateToApply.$set) {
+        updateToApply.$set = await this.formatDocument(updateToApply.$set as Document<P>)
+      }
+
+      // In the case of an upsert, we need to preprocess the filter as if this was an insertion. We
+      // also need to tell the database to save all fields in the filter as well, unless they are
+      // already in the update query.
+      if (options.upsert === true && typeIsAnyDocument(filter)) {
+        // Make a copy of the filter in case it is manipulated by the hooks.
+        const docIfUpsert = await this.processDocumentBeforeInsert(filter as DocumentFragment<P>, { ...options, strict: false })
+        const setOnInsert = _.omit({
+          ...updateToApply.$setOnInsert ?? {},
+          ...docIfUpsert,
+        }, [
+          ...Object.keys(updateToApply.$set ?? {}),
+          ...Object.keys(updateToApply.$unset ?? {}),
+        ]) as DocumentFragment<P>
+
+        if (!_.isEmpty(setOnInsert)) {
+          updateToApply.$setOnInsert = setOnInsert
+        }
+      }
+
+      // Validate all fields in the update. Account for dot notations to facilitate updating fields
+      // in nested fields.
+      if (updateToApply.$set && !_.isEmpty(updateToApply.$set)) {
+        await this.validateDocument(updateToApply.$set as DocumentFragment<P>, { ...options, ignoreUniqueIndex: true, accountForDotNotation: true })
+      }
+
+      return updateToApply
     }
 
     /**

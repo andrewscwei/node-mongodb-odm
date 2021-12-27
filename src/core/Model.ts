@@ -58,65 +58,43 @@ export type ModelFindOneOptions = AggregateOptions
 
 export type ModelFindManyOptions = AggregateOptions
 
-export type ModelInsertOneOptions = ModelValidateDocumentOptions & InsertOneOptions & {
+export type ModelInsertOneOptions = InsertOneOptions & SanitizeUpdateOptions & ModelValidateDocumentOptions
+
+export type ModelInsertManyOptions = BulkWriteOptions & SanitizeUpdateOptions & ModelValidateDocumentOptions
+
+export type ModelUpdateOptions = {
   /**
-   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are automatically
-   * generated before insertion.
+   * Specifies whether the document(s) (before the update or after the update) is returned when
+   * update completes. If unspecified, no document(s) will be returned, resulting in a lighter
+   * update operation.
    */
-  ignoreTimestamps?: boolean
+  returnDocument?: 'before' | 'after'
 }
 
-export type ModelInsertManyOptions = ModelValidateDocumentOptions & BulkWriteOptions & {
+export type ModelUpdateOneOptions = (UpdateOptions | FindOneAndUpdateOptions) & SanitizeUpdateOptions & ModelValidateDocumentOptions & ModelUpdateOptions
+
+export type ModelUpdateManyOptions = (UpdateOptions | FindOneAndUpdateOptions) & SanitizeUpdateOptions & ModelValidateDocumentOptions & ModelUpdateOptions
+
+export type ModelDeleteOptions = {
   /**
-   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are automatically
-   * generated before insertion.
+   * Specifies whether the deleted document(s) should be returned. If unspecified, no document(s)
+   * will be returned, resulting in a lighter delete operation.
    */
-  ignoreTimestamps?: boolean
+  returnDocument?: boolean
 }
 
-export type ModelUpdateOneOptions = ModelValidateDocumentOptions & SanitizeUpdateOptions & UpdateOptions & FindOneAndUpdateOptions & {
-  /**
-   * Specifies whether updated doc is returned when update completes.
-   */
-  returnDoc?: boolean
+export type ModelDeleteOneOptions = (DeleteOptions | FindOneAndDeleteOptions) & ModelDeleteOptions
 
+export type ModelDeleteManyOptions = (DeleteOptions | FindOneAndDeleteOptions) & ModelDeleteOptions
+
+export type ModelReplaceOneOptions = (ReplaceOptions | FindOneAndReplaceOptions) & {
   /**
-   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are automatically
-   * generated before insertion.
+   * Specifies whether the document(s) (before the replacement or after the replacement) is returned
+   * when replacement completes. If unspecified, no document(s) will be returned, resulting in a
+   * lighter replace operation.
    */
-  ignoreTimestamps?: boolean
+  returnDocument?: 'before' | 'after'
 }
-
-export type ModelUpdateManyOptions = ModelValidateDocumentOptions & SanitizeUpdateOptions & UpdateOptions & FindOneAndUpdateOptions & {
-  /**
-   * Specifies whether updated docs are returned when update completes.
-   */
-  returnDocs?: boolean
-
-  /**
-   * Specifies whether timestamp fields (i.e. `createdAt` and `updatedAt`) are automatically
-   * generated before insertion.
-   */
-  ignoreTimestamps?: boolean
-}
-
-export type ModelDeleteOneOptions = DeleteOptions & FindOneAndDeleteOptions & {
-  /**
-   * Specifies whether deleted doc is returned when deletion completes.
-   */
-  returnDoc?: boolean
-}
-
-export type ModelDeleteManyOptions = DeleteOptions & FindOneAndReplaceOptions & {
-  /**
-   * Specifies whether deleted docs are returned when deletion completes.
-   */
-  returnDocs?: boolean
-}
-
-export type ModelReplaceOneOptions = ReplaceOptions & FindOneAndReplaceOptions & ModelInsertOneOptions
-
-export type ModelCountOptions = ModelFindManyOptions
 
 export type ModelValidateDocumentOptions = {
   /**
@@ -317,7 +295,7 @@ export default interface Model<T> {
    *
    * @returns The inserted documents.
    *
-   * @todo This method iterates through every document to apply the `beforeInsert` hook. Consider a
+   * @todo This method iterates through every document to apply the `beforeInsertOne` hook. Consider a
    *       more cost-efficient approach?
    *
    * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#insertMany}
@@ -336,31 +314,37 @@ export default interface Model<T> {
    *                 model to update to, or an update query.
    * @param options - See {@link ModelUpdateOneOptions}.
    *
-   * @returns The updated doc if `returnDoc` is set to `true`, or a boolean indicating whether a doc
-   *          was updated or upserted.
+   * @returns A boolean indicating whether a document was updated or upserted if `returnDocument`
+   *          was unspecified, or the updated document if `returnDocument` was set to `after`, or
+   *          the document before the update if `returnDocument` was set to `before` and it existed,
+   *          otherwise `undefined`.
    *
    * @see {@link https://docs.mongodb.com/manual/reference/operator/update-field/}
-   * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#updateOne}
-   * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#findOneAndUpdate}
+   * @see
+   * {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#updateOne}
+   * @see
+   * {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#findOneAndUpdate}
    *
-   * @throws {Error} This method is called even though updates are disabled in the schema.
+   * @throws {Error} This method is called even though upserts are disabled in the schema.
    * @throws {Error} Filter is invalid.
    * @throws {Error} A doc is updated but it cannot be found.
    */
-  updateOneStrict(query: AnyFilter<T>, update: AnyUpdate<T>, options?: ModelUpdateOneOptions): Promise<boolean | Document<T>>
+  updateOneStrict(query: AnyFilter<T>, update: AnyUpdate<T>, options?: ModelUpdateOneOptions): Promise<boolean | Document<T> | undefined>
 
   /**
-   * Same as the strict update one operation except this method drops all errors and returns
-   * `undefined` if no document was updated (and that `returnDoc` is `true`) or `true`/`false` (if
-   * `returnDoc` is `false`).
+   * Same as the {@link updateOneStrict} except this method drops all errors and returns `undefined`
+   * if no document was updated (if `returnDocument` is set) or `true`/`false` (if `returnDocument`
+   * is unspecified).
    *
    * @param filter - Filter for the document to update.
    * @param update - Either an object whose key/value pair represent the fields belonging to this
    *                 model to update to, or an update query.
    * @param options - See {@link ModelUpdateOneOptions}.
    *
-   * @returns The updated doc if `returnDoc` is set to `true`, else either `true` or `false`
-   *          depending on whether the operation was successful.
+   * @returns A boolean indicating whether document was updated or upserted if `returnDocument` was
+   *          unspecified, or the updated document if `returnDocument` was set to `after`, or the
+   *          document before the update if `returnDocument` was set to `before` and it existed,
+   *          otherwise `undefined`.
    *
    * @see {@link Model.updateOneStrict}
    */
@@ -374,8 +358,9 @@ export default interface Model<T> {
    *                 model to update to, or an update query.
    * @param options - See {@link ModelUpdateManyOptions}.
    *
-   * @returns The updated docs if `returnDocs` is set to `true`, else `true` or `false` depending on
-   *          whether or not the operation was successful.
+   * @returns A boolean indicating whether documents were updated or upserted if `returnDocument`
+   *          was unspecified, or the updated documents if `returnDocument` was set to `after`, or
+   *          the documents before the update if `returnDocument` was set to `before`.
    *
    * @see {@link https://docs.mongodb.com/manual/reference/operator/update-field/}
    * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#updateMany}
@@ -385,7 +370,7 @@ export default interface Model<T> {
    *                 the schema.
    * @throws {Error} One of the updated docs are not returned.
    */
-  updateMany(filter: AnyFilter<T>, update: AnyUpdate<T>, options?: ModelUpdateManyOptions): Promise<Document<T>[] | boolean>
+  updateMany(filter: AnyFilter<T>, update: AnyUpdate<T>, options?: ModelUpdateManyOptions): Promise<boolean | Document<T>[]>
 
   /**
    * Deletes one document matched by `filter`.
@@ -393,30 +378,30 @@ export default interface Model<T> {
    * @param filter - Filter for document to delete.
    * @param options - See {@link ModelDeleteOneOptions}.
    *
-   * @returns The deleted doc if `returnDoc` is set to `true`, or a boolean indicating whether the
-   *          doc is deleted.
+   * @returns A boolean indicating whether a document was deleted if `returnDocument` was
+   *          unspecified, or the deleted document if `returnDocument` was set to `true`.
    *
    * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#deleteOne}
    * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#findOneAndDelete}
    *
    * @throws {Error} This method is called even though deletions are disabled in the schema.
-   * @throws {Error} Unable to return the deleted document when `returnDoc` is `true`.
+   * @throws {Error} Unable to return the deleted document when `returnDocument` is `true`.
    * @throws {Error} Unable to delete document.
    */
-  deleteOneStrict(filter: AnyFilter<T>, options?: ModelDeleteOneOptions): Promise<Document<T> | boolean>
+  deleteOneStrict(filter: AnyFilter<T>, options?: ModelDeleteOneOptions): Promise<boolean | Document<T>>
 
   /**
-   * Same as the strict delete one operation except this method drops all errors.
+   * Same as the {@link deleteOneStrict} except this method drops all errors.
    *
    * @param filter - Filter for document to delete.
    * @param options - See {@link ModelDeleteOneOptions}.
    *
-   * @returns The deleted doc if `returnDoc` is set to `true`, else `true` or `false` depending on
-   *          whether or not the operation was successful.
+   * @returns A boolean indicating whether a document was deleted if `returnDocument` was
+   *          unspecified, or the deleted document if `returnDocument` was set to `true`.
    *
    * @see {@link Model.deleteOneStrict}
    */
-  deleteOne(filter: AnyFilter<T>, options?: ModelDeleteOneOptions): Promise<Document<T> | boolean | undefined>
+  deleteOne(filter: AnyFilter<T>, options?: ModelDeleteOneOptions): Promise<boolean | Document<T> | undefined>
 
   /**
    * Deletes multiple documents matched by `filter`.
@@ -424,8 +409,8 @@ export default interface Model<T> {
    * @param filter - AnyFilter to match documents for deletion.
    * @param options - See {@link ModelDeleteManyOptions}.
    *
-   * @returns The deleted docs if `returnDocs` is set to `true`, else `true` or `false` depending on
-   *          whether or not the operation was successful.
+   * @returns A boolean indicating whether a document was deleted if `returnDocument` was
+   *          unspecified, or the deleted documents if `returnDocument` was set to `true`.
    *
    * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#deleteMany}
    * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#findOneAndDelete}
@@ -443,29 +428,31 @@ export default interface Model<T> {
    * @param replacement - The replacement document.
    * @param options - See {@link ModelReplaceOneOptions}.
    *
-   * @returns The replaced document (by default) or the new document (depending on the
-   *          `returnDocument` option).
+   * @returns A boolean indicating whether document was replaced if `returnDocument` was
+   *          unspecified, or the new document if `returnDocument` was set to `after`, or the
+   *          document before the replacement if `returnDocument` was set to `before`.
    *
    * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#findOneAndReplace}
    *
    * @throws {Error} The old document cannot be returned.
    * @throws {Error} The doc is replaced but it cannot be fetched.
    */
-  findAndReplaceOneStrict(filter: AnyFilter<T>, replacement?: DocumentFragment<T>, options?: ModelReplaceOneOptions): Promise<Document<T>>
+  replaceOneStrict(filter: AnyFilter<T>, replacement?: DocumentFragment<T>, options?: ModelReplaceOneOptions): Promise<boolean | Document<T>>
 
   /**
-   * Same as the strict find and replace one operation except this method drops all errors.
+   * Same as {@link replaceOneStrict} except this method drops all errors.
    *
    * @param filter - Filter for document to replace.
    * @param replacement - The replacement document.
    * @param options - See {@link ModelReplaceOneOptions}.
    *
-   * @returns The replaced document (by default) or the new document (depending on the
-   *          `returnDocument` option) if available, `undefined` otherwise.
+   * @returns A boolean indicating whether document was replaced if `returnDocument` was
+   *          unspecified, or the new document if `returnDocument` was set to `after`, or the
+   *          document before the replacement if `returnDocument` was set to `before`.
    *
-   * @see {@link Model.findAndReplaceOneStrict}
+   * @see {@link Model.replaceOneStrict}
    */
-  findAndReplaceOne(filter: AnyFilter<T>, replacement?: DocumentFragment<T>, options?: ModelReplaceOneOptions): Promise<Document<T> | undefined>
+  replaceOne(filter: AnyFilter<T>, replacement?: DocumentFragment<T>, options?: ModelReplaceOneOptions): Promise<boolean | Document<T> | undefined>
 
   /**
    * Checks if a document exists.
@@ -479,11 +466,11 @@ export default interface Model<T> {
   /**
    * Counts the documents that match the provided `filter`.
    *
-   * @param filter - Filter used for the `$match` stage of the aggregation pipeline.
+   * @param filter - Filter for documents to count.
    *
    * @returns The total number of documents found. The minimum is 0.
    */
-  count(filter: AnyFilter<T>, options?: ModelCountOptions): Promise<number>
+  count(filter: AnyFilter<T>): Promise<number>
 
   /**
    * Returns a document whose values are formatted according to the format functions defined in the
