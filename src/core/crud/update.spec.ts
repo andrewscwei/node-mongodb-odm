@@ -39,7 +39,7 @@ describe('core/crud/update', () => {
 
     assert(insertRes && insertRes.acknowledged && insertRes.insertedId)
 
-    const [, newDoc] = await findOneAndUpdate(Bar.schema, insertRes.insertedId, { $set: { 'anObject.aString': 'foo' } })
+    const [, newDoc] = await findOneAndUpdate(Bar.schema, { _id: insertRes.insertedId }, { $set: { 'anObject.aString': 'foo' } })
 
     assert(newDoc.anObject && newDoc.anObject.aString === 'foo')
   })
