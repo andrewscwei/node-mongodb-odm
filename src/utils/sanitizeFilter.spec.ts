@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
 import assert from 'assert'
+import _ from 'lodash'
 import { describe, it } from 'mocha'
 import { ObjectId } from 'mongodb'
 import { Baz } from '../index.spec'
@@ -58,6 +59,6 @@ describe('utils/sanitizeFilter', () => {
       strict: false,
     })
 
-    assert(actual.anExtraneousField === 'baz')
+    assert(_.get(actual, 'anExtraneousField') === 'baz')
   })
 })

@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import { Filter, ObjectId } from 'mongodb'
 import Schema from '../core/Schema'
-import { AnyFilter, AnyProps, Document, DocumentFragment } from '../types'
+import { AnyFilter, AnyProps, Document } from '../types'
 import sanitizeDocument from './sanitizeDocument'
 import typeIsValidObjectId from './typeIsValidObjectId'
 
@@ -44,13 +44,13 @@ export type SanitizeFilterOptions = {
  */
 export default function sanitizeFilter<P extends AnyProps = AnyProps>(schema: Schema<P>, filter: AnyFilter<P>, { strict = true }: SanitizeFilterOptions = {}): Filter<Document<P>> {
   if (typeIsValidObjectId(filter)) {
-    return { _id: filter }
+    return { _id: filter } as Filter<Document<P>>
   }
   else if (_.isString(filter)) {
-    return { _id: new ObjectId(filter) }
+    return { _id: new ObjectId(filter) } as Filter<Document<P>>
   }
   else if (strict) {
-    return sanitizeDocument<P>(schema, filter as DocumentFragment<P>, { accountForDotNotation: true }) as Filter<Document<P>>
+    return sanitizeDocument(schema, filter, { accountForDotNotation: true })
   }
   else {
     return filter

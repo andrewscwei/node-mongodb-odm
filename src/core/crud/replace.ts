@@ -21,7 +21,7 @@ export async function findOneAndReplace<P extends AnyProps = AnyProps>(schema: S
 
   if (result.ok !== 1) throw new Error(`[${schema.model}] Unable to find and replace document`)
 
-  const oldDoc = result.value
+  const oldDoc = result.value as Document<P> | null
 
   if (!oldDoc) throw new Error(`[${schema.model}] Unable to return the old document`)
 
