@@ -1,6 +1,6 @@
 {
   "name": "@andrewscwei/mongodb-odm",
-  "version": "0.83.0",
+  "version": "0.84.0",
   "description": "ODM for MongoDB",
   "main": "build/index.js",
   "scripts": {
@@ -9,9 +9,7 @@
     "build": "npm run clean && tsc",
     "build:test": "npm run build -- --project tsconfig.test.json",
     "test": "mocha -b -c --timeout 5000 --extension spec.js --recursive --exit \"build/$npm_config_files\"",
-    "test:ts": "cross-env DEBUG=mongodb-odm* mocha -r ts-node/register -b -c --timeout 5000 --extension spec.ts --recursive --bail --exit \"src/$npm_config_files\"",
-    "db": "docker run --name node-mongodb-odm-db -d --rm -p 27017:27017 mongo:5.0.5",
-    "db:stop": "docker stop node-mongodb-odm-db",
+    "test:ts": "concurrently --kill-others \"docker run --rm -p 27017:27017 mongo:5.0.5\" \"cross-env DEBUG=mongodb-odm* mocha -r ts-node/register -b -c --timeout 5000 --extension spec.ts --recursive --exit \"src/$npm_config_files\"\"",
     "lint": "eslint --ext .ts src",
     "lint:fix": "npm run lint -- --fix"
   },
@@ -40,20 +38,21 @@
     "@types/faker": "^5.5.9",
     "@types/lodash": "^4.14.178",
     "@types/mocha": "^9.1.0",
-    "@typescript-eslint/eslint-plugin": "^5.10.0",
-    "@typescript-eslint/parser": "^5.10.0",
+    "@typescript-eslint/eslint-plugin": "^5.12.1",
+    "@typescript-eslint/parser": "^5.12.1",
+    "concurrently": "^7.0.0",
     "cross-env": "^7.0.3",
-    "eslint": "^8.7.0",
+    "eslint": "^8.9.0",
     "faker": "^5.5.3",
-    "mocha": "^9.1.4",
+    "mocha": "^9.2.1",
     "rimraf": "^3.0.2",
-    "ts-node": "^10.4.0",
+    "ts-node": "^10.5.0",
     "typescript": "4.5.5"
   },
   "dependencies": {
     "bcrypt": "^5.0.1",
     "debug": "^4.3.3",
     "lodash": "^4.17.21",
-    "mongodb": "^4.3.1"
+    "mongodb": "^4.4.0"
   }
 }

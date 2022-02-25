@@ -1,17 +1,17 @@
 name: CD
 on:
   push:
-    tags: ['v*']
+    tags: ["v*"]
   release:
     types: [published]
 jobs:
   build:
     name: Build/Test
     runs-on: ubuntu-latest
-    container: node:16.3.0
+    container: node:17.5.0
     services:
       mongodb:
-        image: mongo:4.0.1
+        image: mongo:5.0.5
         ports:
           - 27017:27017
     steps:
@@ -29,7 +29,7 @@ jobs:
       - name: Install Node modules
         run: npm install
       - name: Build
-        run: BUILD_NUMBER=$GITHUB_SHA npm run build
+        run: npm run build
       - name: Persist build dir
         uses: actions/upload-artifact@v1
         with:
@@ -37,13 +37,13 @@ jobs:
           path: build/
       - name: Test
         env:
-          MONGODB_HOST: 'mongodb:27017'
+          MONGODB_HOST: mongodb:27017
         run: npm run build:test && npm test
   deploy:
     name: Deploy
     needs: [build]
     runs-on: ubuntu-latest
-    container: node:16.3.0
+    container: node:17.5.0
     steps:
       - name: Checkout
         uses: actions/checkout@v1
@@ -51,6 +51,16 @@ jobs:
         uses: actions/download-artifact@v1
         with:
           name: build
+      - name: Create release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          body_path: RELEASE.md
+          draft: false
+          prerelease: false
       - name: Deploy to NPM
         run: .github/workflows/deploy_to_npm.sh
         env:

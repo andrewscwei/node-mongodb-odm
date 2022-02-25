@@ -1,16 +1,16 @@
 name: CI
 on:
   push:
-    branches: ['**']
-    tags-ignore: ['v*']
+    branches: ["**"]
+    tags-ignore: ["v*"]
 jobs:
   build:
     name: Build/Test
     runs-on: ubuntu-latest
-    container: node:16.3.0
+    container: node:17.5.0
     services:
       mongodb:
-        image: mongo:4.0.1
+        image: mongo:5.0.5
         ports:
           - 27017:27017
     steps:
@@ -28,8 +28,8 @@ jobs:
       - name: Install Node modules
         run: npm install
       - name: Build
-        run: BUILD_NUMBER=$GITHUB_SHA npm run build
+        run: npm run build
       - name: Test
         env:
-          MONGODB_HOST: 'mongodb:27017'
+          MONGODB_HOST: mongodb:27017
         run: npm run build:test && npm test
