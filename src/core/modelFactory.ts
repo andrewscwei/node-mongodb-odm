@@ -724,7 +724,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
 
       // Format all fields in the update filter.
       if (updateToApply.$set) {
-        updateToApply.$set = await this.formatDocument(updateToApply.$set as Document<P>)
+        updateToApply.$set = await this.formatDocument(updateToApply.$set as Document<P>) as any
       }
 
       // In the case of an upsert, we need to preprocess the filter as if this was an insertion. We
@@ -742,7 +742,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
         ]) as DocumentFragment<P>
 
         if (!_.isEmpty(setOnInsert)) {
-          updateToApply.$setOnInsert = setOnInsert
+          updateToApply.$setOnInsert = setOnInsert as any
         }
       }
 
