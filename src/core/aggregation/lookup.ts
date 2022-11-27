@@ -19,9 +19,7 @@ export type LookupStage = {
  * that specifies custom parameters for the `$lookup` stage. If the value is simply `true`, the
  * `$lookup` stage will use default parameters.
  */
-export type LookupStageFactorySpecs = {
-  [refField: string]: boolean | LookupStageSingleFieldFactorySpecs
-}
+export type LookupStageFactorySpecs = Record<string, boolean | LookupStageSingleFieldFactorySpecs>
 
 /**
  * Specifies parameters that define how the `$lookup` stage should be generated for a single field.
@@ -108,7 +106,7 @@ export function lookupStageFactory<P extends AnyProps = AnyProps>(
   let out: (LookupStage | UnwindStage)[] = []
 
   for (const field in specs) {
-    if (!specs.hasOwnProperty(field)) continue
+    if (!{}.hasOwnProperty.call(specs, field)) continue
 
     const spec = specs[field]
     if (spec === false) continue

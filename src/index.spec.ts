@@ -91,15 +91,15 @@ const FooSchema: Schema<FooProps> = {
 
 export class Foo extends Model(FooSchema) {
   static randomProps = {
-    aNumber: () => (Math.floor(Math.random() * 1000) + 0),
+    aNumber: () => Math.floor(Math.random() * 1000) + 0,
   }
 
   static formatProps = {
-    aString: (value: string): string => (value.trim()),
+    aString: (value: string): string => value.trim(),
   }
 
   static validateProps = {
-    aNumber: (value: number) => ((value >= 0 && value <= 1000)),
+    aNumber: (value: number) => value >= 0 && value <= 1000,
   }
 
   static defaultProps = {
@@ -151,8 +151,8 @@ const BarSchema: Schema<BarProps> = {
 
 export class Bar extends Model(BarSchema) {
   static randomProps = {
-    aString: () => (Faker.random.alphaNumeric(10)),
-    aNumber: () => (Math.floor(Math.random() * 1000) + 0),
+    aString: () => Faker.random.alphaNumeric(10),
+    aNumber: () => Math.floor(Math.random() * 1000) + 0,
   }
 
   static defaultProps = {
@@ -163,7 +163,7 @@ export class Bar extends Model(BarSchema) {
 
   static validateProps = {
     aString: 100,
-    aNumber: (value: number) => ((value >= 0 && value <= 1000)),
+    aNumber: (value: number) => value >= 0 && value <= 1000,
   }
 
   static formatProps = {
@@ -198,7 +198,6 @@ const BazSchema: Schema<BazProps> = {
 }
 
 export class Baz extends Model(BazSchema) {
-
   static randomProps = {
     aString: () => Faker.random.alphaNumeric(10),
   }

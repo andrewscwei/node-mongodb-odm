@@ -38,10 +38,10 @@ describe('core/crud/delete', () => {
     const collection = db?.collection('bars')
     const insertRes = await collection?.insertMany([{ aString: s }, { aString: s }, { aString: s }])
 
-    assert(insertRes && insertRes.acknowledged && insertRes.insertedCount === 3)
+    assert(insertRes?.acknowledged && insertRes?.insertedCount === 3)
 
     await deleteMany(Bar.schema, { aString: s })
 
-    assert((await collection?.count({ aString: s })) === 0)
+    assert(await collection?.count({ aString: s }) === 0)
   })
 })

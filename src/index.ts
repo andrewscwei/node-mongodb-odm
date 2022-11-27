@@ -9,11 +9,12 @@
  * instance.
  */
 
+import useDebug from 'debug'
 import { Collection } from 'mongodb'
 import { Connection, ConnectionConfiguration, Model } from './core'
 import { AnyDocument } from './types'
 
-const debug = require('debug')('mongodb-odm')
+const debug = useDebug('mongodb-odm')
 
 /**
  * Global MongoDB connection.
@@ -47,6 +48,7 @@ export function configureDb(options: ConnectionConfiguration) {
 export function getDbConnection(): Connection | undefined {
   if (globalConnection) return globalConnection
   debug('No MongoDB connection, did you forget to call `configureDb`?')
+
   return undefined
 }
 
@@ -61,6 +63,7 @@ export function getDbConnection(): Connection | undefined {
  */
 export function getModel(modelOrCollectionName: string): ReturnType<typeof Model> {
   if (!globalConnection) throw new Error('There is no active db connection')
+
   return globalConnection.getModel(modelOrCollectionName)
 }
 
@@ -78,6 +81,7 @@ export function getModel(modelOrCollectionName: string): ReturnType<typeof Model
  */
 export async function getCollection<T extends AnyDocument = AnyDocument>(modelOrCollectionName: string): Promise<Collection<T>> {
   if (!globalConnection) throw new Error('There is no active db connection')
+
   return globalConnection.getCollection(modelOrCollectionName)
 }
 

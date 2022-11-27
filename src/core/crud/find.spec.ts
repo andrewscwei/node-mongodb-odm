@@ -25,7 +25,7 @@ describe('core/crud/find', () => {
     const collection = db?.collection('bars')
     const res = await collection?.insertOne(t)
 
-    assert(res && res.insertedId && res.insertedId)
+    assert(res?.insertedId)
 
     const doc = await findOne(Bar.schema, res.insertedId)
 

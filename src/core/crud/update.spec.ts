@@ -37,7 +37,7 @@ describe('core/crud/update', () => {
     const collection = db?.collection('bars')
     const insertRes = await collection?.insertOne(t)
 
-    assert(insertRes && insertRes.acknowledged && insertRes.insertedId)
+    assert(insertRes?.acknowledged && insertRes?.insertedId)
 
     const [, newDoc] = await findOneAndUpdate(Bar.schema, { _id: insertRes.insertedId }, { $set: { 'anObject.aString': 'foo' } })
 
@@ -77,13 +77,13 @@ describe('core/crud/update', () => {
     const collection = db?.collection('bars')
     const docs = await collection?.insertMany(q)
 
-    assert(docs && docs.acknowledged && docs.insertedIds)
+    assert(docs?.acknowledged && docs?.insertedIds)
     assert(_.values(docs.insertedIds).reduce((out, _id) => out && ObjectId.isValid(_id), true))
 
     const [, newDocs] = await findManyAndUpdate(Bar.schema, { aString: s }, { $set: { aString: t } })
 
     assert(newDocs.length === _.values(docs.insertedIds).length)
-    assert(newDocs.reduce((out, doc) => out && (doc.aString === t), true))
+    assert(newDocs.reduce((out, doc) => out && doc.aString === t, true))
   })
 
   it('can upsert a doc in an `updateMany` op', async () => {

@@ -12,5 +12,6 @@ export default function typeIsAnyDocument(value: any): value is AnyDocument {
   if (_.isNil(value)) return false
   if (!_.isPlainObject(value)) return false
   if (Object.keys(value).some(val => val.startsWith('$'))) return false
+
   return true
 }

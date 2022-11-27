@@ -5,9 +5,7 @@ import fieldPath from '../../utils/fieldPath'
 import prefixed from '../../utils/prefixed'
 import Schema from '../Schema'
 
-export type ProjectStageFactorySpecs = {
-  [field: string]: any
-}
+export type ProjectStageFactorySpecs = Record<string, any>
 
 export type ProjectStage = {
   $project: Record<string, any>
@@ -101,7 +99,7 @@ export function projectStageFactory<P extends AnyProps = AnyProps>(
 
     // Project each field defined in the schema as required by options.
     for (const key in fields) {
-      if (!schema.fields.hasOwnProperty(key)) continue
+      if (!{}.hasOwnProperty.call(schema.fields, key)) continue
       if (exclude.indexOf(key) > -1) continue
 
       // Project reference fields (a.k.a. foreign keys) if applicable.
@@ -109,7 +107,7 @@ export function projectStageFactory<P extends AnyProps = AnyProps>(
       if (populateOpts === false) continue
 
       const targetModel = fields[key].ref
-      const targetSchema = (!_.isNil(populateOpts) && !_.isNil(targetModel)) ? db.getModel(targetModel).schema : undefined
+      const targetSchema = !_.isNil(populateOpts) && !_.isNil(targetModel) ? db.getModel(targetModel).schema : undefined
 
       if (_.isNil(targetSchema)) {
         out[prefixed(key, toPrefix)] = fieldPath(key, fromPrefix)

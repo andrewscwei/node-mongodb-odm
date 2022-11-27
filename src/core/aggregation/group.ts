@@ -10,7 +10,7 @@ export type GroupStage = {
  * Specs that define the `$group` stage. If this is a string, a simple `$group` stage will be
  * generated with `_id` set to the string.
  */
-export type GroupStageFactorySpecs = string | { [key: string]: any }
+export type GroupStageFactorySpecs = string | Record<string, any>
 
 /**
  * Generates a `$group` stage for a collection to be used in an aggregation pipeline.

@@ -21,7 +21,7 @@ describe('core/Model', () => {
   })
 
   it('cannot be instantiated', async () => {
-    assert.throws(() => (new Bar()))
+    assert.throws(() => new Bar())
   })
 
   it('throws an error if the model has no schema defined', async () => {
@@ -225,7 +225,7 @@ describe('core/Model', () => {
 
     assert(!_.isBoolean(res))
     assert(res.length === docs.length)
-    assert(res.reduce((o, v) => o && (v.aString === t), true))
+    assert(res.reduce((o, v) => o && v.aString === t, true))
   })
 
   it('can upsert a doc in an `updateMany` op while `returnDocument` is `after`', async () => {
@@ -254,7 +254,7 @@ describe('core/Model', () => {
 
     await Bar.insertOne({ aString: s })
 
-    assert((await Bar.findOne({ aString: s })) !== undefined)
+    assert(await Bar.findOne({ aString: s }) !== undefined)
 
     const res = await Bar.deleteOne({ aString: s })
 
@@ -266,7 +266,7 @@ describe('core/Model', () => {
     const s = Faker.random.alphaNumeric(10)
     const doc = await Bar.insertOneStrict({ aString: s })
 
-    assert((await Bar.findOne({ aString: s })) !== undefined)
+    assert(await Bar.findOne({ aString: s }) !== undefined)
 
     const objectId = doc._id
 
@@ -283,11 +283,11 @@ describe('core/Model', () => {
 
     await Bar.insertMany([{ aString: s }, { aString: s }, { aString: s }])
 
-    assert((await Bar.count({ aString: s })) === 3)
+    assert(await Bar.count({ aString: s }) === 3)
 
     await Bar.deleteMany({ aString: s })
 
-    assert((await Bar.count({ aString: s })) === 0)
+    assert(await Bar.count({ aString: s }) === 0)
   })
 
   it('can delete multiple docs and return the deleted docs', async () => {
@@ -295,7 +295,7 @@ describe('core/Model', () => {
 
     await Bar.insertMany([{ aString: s }, { aString: s }, { aString: s }])
 
-    assert((await Bar.count({ aString: s })) === 3)
+    assert(await Bar.count({ aString: s }) === 3)
 
     const res = await Bar.deleteMany({ aString: s }, { returnDocument: true })
 

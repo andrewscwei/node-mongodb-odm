@@ -20,7 +20,7 @@ export async function insertOne<P extends AnyProps = AnyProps>(schema: Schema<P>
 }
 
 export async function insertMany<P extends AnyProps = AnyProps>(schema: Schema<P>, docs: InsertableDocument<P>[], options: BulkWriteOptions = {}): Promise<Document<P>[]> {
-  if ((schema.noInserts === true) || (schema.noInsertMany === true)) throw new Error(`[${schema.model}] Multiple insertions are disallowed for this model`)
+  if (schema.noInserts === true || schema.noInsertMany === true) throw new Error(`[${schema.model}] Multiple insertions are disallowed for this model`)
 
   const collection = await db.getCollection(schema.collection)
   const result = await collection.insertMany(docs, options)

@@ -50,7 +50,7 @@ export function matchStageFactory<P extends AnyProps = AnyProps>(
   const filter: Record<string, any> = {}
 
   for (const key in sanitized) {
-    if (!sanitized.hasOwnProperty(key)) continue
+    if (!{}.hasOwnProperty.call(sanitized, key)) continue
     filter[prefixed(key, toPrefix)] = sanitized[key]
   }
 

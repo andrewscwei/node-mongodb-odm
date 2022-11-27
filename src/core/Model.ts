@@ -148,14 +148,6 @@ export default interface Model<T extends AnyProps> {
   validateProps: ModelPropertyValidationProvider<T>
 
   /**
-   * This is meant to be used as a static class so instantiation is strictly prohibited.
-   *
-   * @throws {Error} Attempting to instantiate this model even though it is meant to be a static
-   *                 class.
-   */
-  new(): LocalModel
-
-  /**
    * Gets the MongoDB collection associated with this model.
    *
    * @returns The MongoDB collection.
@@ -164,7 +156,7 @@ export default interface Model<T extends AnyProps> {
    *
    * @throws {Error} Model class has no static property `schema` defined.
    */
-  getCollection(): Promise<Collection>
+  getCollection: () => Promise<Collection>
 
   /**
    * Generates random fields for this model. By default, only fields that are marked as required and
@@ -178,7 +170,7 @@ export default interface Model<T extends AnyProps> {
    *
    * @throws {Error} Invalid function provided for a random field.
    */
-  randomFields(fixedFields?: DocumentFragment<T>, options?: ModelRandomFieldsOptions): Promise<DocumentFragment<T>>
+  randomFields: (fixedFields?: DocumentFragment<T>, options?: ModelRandomFieldsOptions) => Promise<DocumentFragment<T>>
 
   /**
    * Identifies the `ObjectId` of exactly one document matching the given filter. Error is thrown if
@@ -191,7 +183,7 @@ export default interface Model<T extends AnyProps> {
    * @throws {Error} No document is found with the given filter.
    * @throws {Error} ID of the found document is not a valid `ObjectId`.
    */
-  identifyOneStrict(filter: AnyFilter<T>): Promise<ObjectId>
+  identifyOneStrict: (filter: AnyFilter<T>) => Promise<ObjectId>
 
   /**
    * Same as the strict identify one operation but this method drops all errors and returns
@@ -203,7 +195,7 @@ export default interface Model<T extends AnyProps> {
    *
    * @see Model.identifyOneStrict
    */
-  identifyOne(filter: AnyFilter<T>): Promise<ObjectId | undefined>
+  identifyOne: (filter: AnyFilter<T>) => Promise<ObjectId | undefined>
 
   /**
    * Returns an array of document IDs that match the filter.
@@ -212,7 +204,7 @@ export default interface Model<T extends AnyProps> {
    *
    * @returns Array of matching IDs.
    */
-  identifyMany(filter?: AnyFilter<T>): Promise<ObjectId[]>
+  identifyMany: (filter?: AnyFilter<T>) => Promise<ObjectId[]>
 
   /**
    * Finds one document from this collection using the aggregation framework. If no filter is
@@ -228,7 +220,7 @@ export default interface Model<T extends AnyProps> {
    * @throws {Error} More or less than 1 document found.
    * @throws {Error} No document found.
    */
-  findOneStrict<R extends AnyProps = T>(filter?: AnyFilter<T> | Aggregation.Pipeline, options?: ModelFindOneOptions): Promise<Document<R>>
+  findOneStrict: <R extends AnyProps = T>(filter?: AnyFilter<T> | Aggregation.Pipeline, options?: ModelFindOneOptions) => Promise<Document<R>>
 
   /**
    * Same as the strict find one operation but this method drops all errors and returns `undefined`
@@ -242,7 +234,7 @@ export default interface Model<T extends AnyProps> {
    * @see {@link Model.findOneStrict}
    * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#aggregate}
    */
-  findOne<R extends AnyProps = T>(filter?: AnyFilter<T> | Aggregation.Pipeline, options?: ModelFindOneOptions): Promise<Document<R> | undefined>
+  findOne: <R extends AnyProps = T>(filter?: AnyFilter<T> | Aggregation.Pipeline, options?: ModelFindOneOptions) => Promise<Document<R> | undefined>
 
   /**
    * Finds multiple documents of this collection using the aggregation framework. If no query is
@@ -255,7 +247,7 @@ export default interface Model<T extends AnyProps> {
    *
    * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#aggregate}
    */
-  findMany<R extends AnyProps = T>(filter?: AnyFilter<T> | Aggregation.Pipeline, options?: ModelFindManyOptions): Promise<Document<R>[]>
+  findMany: <R extends AnyProps = T>(filter?: AnyFilter<T> | Aggregation.Pipeline, options?: ModelFindManyOptions) => Promise<Document<R>[]>
 
   /**
    * Inserts one document into this model's collection. If `doc` is not specified, random fields
@@ -271,7 +263,7 @@ export default interface Model<T extends AnyProps> {
    * @throws {Error} This method is called even though insertions are disabled in the schema.
    * @throws {MongoError} `Collection#insertOne` failed.
    */
-  insertOneStrict(doc?: DocumentFragment<T>, options?: ModelInsertOneOptions): Promise<Document<T>>
+  insertOneStrict: (doc?: DocumentFragment<T>, options?: ModelInsertOneOptions) => Promise<Document<T>>
 
   /**
    * Same as the strict insert one operation except this method swallows all errors and returns
@@ -285,7 +277,7 @@ export default interface Model<T extends AnyProps> {
    * @see {@link Model.insertOneStrict}
    * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#insertOne}
    */
-  insertOne(doc?: DocumentFragment<T>, options?: ModelInsertOneOptions): Promise<Document<T> | undefined>
+  insertOne: (doc?: DocumentFragment<T>, options?: ModelInsertOneOptions) => Promise<Document<T> | undefined>
 
   /**
    * Inserts multiple documents into this model's collection.
@@ -303,7 +295,7 @@ export default interface Model<T extends AnyProps> {
    * @throws {Error} This method is called even though insertions or multiple insertions are
    *                 disabled in the schema.
    */
-  insertMany(docs: DocumentFragment<T>[], options?: ModelInsertManyOptions): Promise<Document<T>[]>
+  insertMany: (docs: DocumentFragment<T>[], options?: ModelInsertManyOptions) => Promise<Document<T>[]>
 
   /**
    * Updates one document matched by `filter` with `update` object. Note that if upserting, all
@@ -329,7 +321,7 @@ export default interface Model<T extends AnyProps> {
    * @throws {Error} Filter is invalid.
    * @throws {Error} A doc is updated but it cannot be found.
    */
-  updateOneStrict(query: AnyFilter<T>, update: AnyUpdate<T>, options?: ModelUpdateOneOptions): Promise<boolean | Document<T> | undefined>
+  updateOneStrict: (query: AnyFilter<T>, update: AnyUpdate<T>, options?: ModelUpdateOneOptions) => Promise<boolean | Document<T> | undefined>
 
   /**
    * Same as the {@link updateOneStrict} except this method drops all errors and returns `undefined`
@@ -348,7 +340,7 @@ export default interface Model<T extends AnyProps> {
    *
    * @see {@link Model.updateOneStrict}
    */
-  updateOne(filter: AnyFilter<T>, update: AnyUpdate<T>, options?: ModelUpdateOneOptions): Promise<boolean | Document<T> | undefined>
+  updateOne: (filter: AnyFilter<T>, update: AnyUpdate<T>, options?: ModelUpdateOneOptions) => Promise<boolean | Document<T> | undefined>
 
   /**
    * Updates multiple documents matched by `filter` with `update` object.
@@ -370,7 +362,7 @@ export default interface Model<T extends AnyProps> {
    *                 the schema.
    * @throws {Error} One of the updated docs are not returned.
    */
-  updateMany(filter: AnyFilter<T>, update: AnyUpdate<T>, options?: ModelUpdateManyOptions): Promise<boolean | Document<T>[]>
+  updateMany: (filter: AnyFilter<T>, update: AnyUpdate<T>, options?: ModelUpdateManyOptions) => Promise<boolean | Document<T>[]>
 
   /**
    * Deletes one document matched by `filter`.
@@ -388,7 +380,7 @@ export default interface Model<T extends AnyProps> {
    * @throws {Error} Unable to return the deleted document when `returnDocument` is `true`.
    * @throws {Error} Unable to delete document.
    */
-  deleteOneStrict(filter: AnyFilter<T>, options?: ModelDeleteOneOptions): Promise<boolean | Document<T>>
+  deleteOneStrict: (filter: AnyFilter<T>, options?: ModelDeleteOneOptions) => Promise<boolean | Document<T>>
 
   /**
    * Same as the {@link deleteOneStrict} except this method drops all errors.
@@ -401,7 +393,7 @@ export default interface Model<T extends AnyProps> {
    *
    * @see {@link Model.deleteOneStrict}
    */
-  deleteOne(filter: AnyFilter<T>, options?: ModelDeleteOneOptions): Promise<boolean | Document<T> | undefined>
+  deleteOne: (filter: AnyFilter<T>, options?: ModelDeleteOneOptions) => Promise<boolean | Document<T> | undefined>
 
   /**
    * Deletes multiple documents matched by `filter`.
@@ -418,7 +410,7 @@ export default interface Model<T extends AnyProps> {
    * @throws {Error} This method is called even though deletions or multiple deletions are disabled
    *                 in the schema.
    */
-  deleteMany(filter: AnyFilter<T>, options?: ModelDeleteManyOptions): Promise<boolean | Document<T>[]>
+  deleteMany: (filter: AnyFilter<T>, options?: ModelDeleteManyOptions) => Promise<boolean | Document<T>[]>
 
   /**
    * Replaces one document with another. If `replacement` is not specified, one with random info
@@ -437,7 +429,7 @@ export default interface Model<T extends AnyProps> {
    * @throws {Error} The old document cannot be returned.
    * @throws {Error} The doc is replaced but it cannot be fetched.
    */
-  replaceOneStrict(filter: AnyFilter<T>, replacement?: DocumentFragment<T>, options?: ModelReplaceOneOptions): Promise<boolean | Document<T>>
+  replaceOneStrict: (filter: AnyFilter<T>, replacement?: DocumentFragment<T>, options?: ModelReplaceOneOptions) => Promise<boolean | Document<T>>
 
   /**
    * Same as {@link replaceOneStrict} except this method drops all errors.
@@ -452,7 +444,7 @@ export default interface Model<T extends AnyProps> {
    *
    * @see {@link Model.replaceOneStrict}
    */
-  replaceOne(filter: AnyFilter<T>, replacement?: DocumentFragment<T>, options?: ModelReplaceOneOptions): Promise<boolean | Document<T> | undefined>
+  replaceOne: (filter: AnyFilter<T>, replacement?: DocumentFragment<T>, options?: ModelReplaceOneOptions) => Promise<boolean | Document<T> | undefined>
 
   /**
    * Checks if a document exists.
@@ -461,7 +453,7 @@ export default interface Model<T extends AnyProps> {
    *
    * @returns `true` if document exists, `false` otherwise.
    */
-  exists(filter: AnyFilter<T>): Promise<boolean>
+  exists: (filter: AnyFilter<T>) => Promise<boolean>
 
   /**
    * Counts the documents that match the provided `filter`.
@@ -470,7 +462,7 @@ export default interface Model<T extends AnyProps> {
    *
    * @returns The total number of documents found. The minimum is 0.
    */
-  count(filter: AnyFilter<T>): Promise<number>
+  count: (filter: AnyFilter<T>) => Promise<number>
 
   /**
    * Returns a document whose values are formatted according to the format functions defined in the
@@ -482,7 +474,7 @@ export default interface Model<T extends AnyProps> {
    *
    * @throws {Error} A field in the document to format is not defined in the schema.
    */
-  formatDocument(doc: DocumentFragment<T>): Promise<DocumentFragment<T>>
+  formatDocument: (doc: DocumentFragment<T>) => Promise<DocumentFragment<T>>
 
   /**
    * Validates a document of this collection and throws an error if validation fails. This method
@@ -503,5 +495,13 @@ export default interface Model<T extends AnyProps> {
    *                 (only if unique indexes are defined in the schema).
    * @throws {Error} Some required fields in the document are missing.
    */
-  validateDocument(doc: DocumentFragment<T>, options: ModelValidateDocumentOptions): Promise<void>
+  validateDocument: (doc: DocumentFragment<T>, options: ModelValidateDocumentOptions) => Promise<void>
+
+  /**
+   * This is meant to be used as a static class so instantiation is strictly prohibited.
+   *
+   * @throws {Error} Attempting to instantiate this model even though it is meant to be a static
+   *                 class.
+   */
+  new(): LocalModel
 }

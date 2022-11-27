@@ -36,10 +36,10 @@ export default function sanitizeUpdate<P extends AnyProps = AnyProps>(schema: Sc
   // when the operator is sanitized by `sanitizeDocument` in the subsequent step, those keys will
   // be dropped.
   const setOperator: Record<string, any> = out.$set ?? {}
-  const unsetFields = Object.keys(setOperator).filter(key => ((setOperator[key] === null) || (setOperator[key] === undefined)))
+  const unsetFields = Object.keys(setOperator).filter(key => setOperator[key] === null || setOperator[key] === undefined)
 
   // Add updated timestamps if applicable.
-  if ((schema.timestamps === true) && (ignoreTimestamps !== true) && !_.isDate(setOperator.updatedAt)) {
+  if (schema.timestamps === true && ignoreTimestamps !== true && !_.isDate(setOperator.updatedAt)) {
     setOperator.updatedAt = new Date()
   }
 

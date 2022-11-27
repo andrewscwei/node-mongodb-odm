@@ -9,6 +9,7 @@
  */
 
 import bcrypt from 'bcrypt'
+import useDebug from 'debug'
 import _ from 'lodash'
 import { Collection, DeleteOptions, Filter, FindOneAndDeleteOptions, FindOneAndReplaceOptions, FindOneAndUpdateOptions, ObjectId, ReplaceOptions, UpdateFilter, UpdateOptions } from 'mongodb'
 import * as db from '..'
@@ -29,10 +30,9 @@ import Schema, { FieldDescriptor, MultiFieldDescriptor, typeIsFieldDescriptor } 
  * @see {@link Model}
  */
 export default function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): Model<P> {
-  const debug = require('debug')(`mongodb-odm:model:${schema.model}`)
+  const debug = useDebug(`mongodb-odm:model:${schema.model}`)
 
   return class {
-
     /** @see {@link Model.schema} */
     static readonly schema = schema
 
@@ -64,7 +64,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       const fields = this.schema.fields
 
       for (const key in this.randomProps) {
-        if (!fields.hasOwnProperty(key)) continue
+        if (!{}.hasOwnProperty.call(fields, key)) continue
 
         if (!includeOptionals && !fields[key].required) continue
 
@@ -77,7 +77,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       }
 
       for (const key in fixedFields) {
-        if (!fixedFields.hasOwnProperty(key)) continue
+        if (!{}.hasOwnProperty.call(fixedFields, key)) continue
         o[key as keyof P] = fixedFields[key as keyof P]
       }
 
@@ -93,6 +93,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     static async identifyOne(filter: AnyFilter<P>): Promise<ObjectId | undefined> {
       try {
         const res = await this.identifyOneStrict(filter)
+
         return res
       }
       catch (err) {
@@ -119,6 +120,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     static async findOne<R extends AnyProps = P>(filter?: AnyFilter<P> | Aggregation.Pipeline, options: ModelFindOneOptions = {}): Promise<Document<R> | undefined> {
       try {
         const res = await this.findOneStrict<R>(filter, options)
+
         return res
       }
       catch (err) {
@@ -152,6 +154,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     static async insertOne(doc?: DocumentFragment<P>, options: ModelInsertOneOptions = {}): Promise<Document<P> | undefined> {
       try {
         const res = await this.insertOneStrict(doc, options)
+
         return res
       }
       catch (err) {
@@ -161,7 +164,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
 
     /** @see {@link Model.insertMany} */
     static async insertMany(docs: DocumentFragment<P>[], options: ModelInsertManyOptions = {}): Promise<Document<P>[]> {
-      if ((this.schema.noInserts === true) || (this.schema.noInsertMany === true)) throw new Error(`[${this.schema.model}] Multiple insertions are disallowed for this model`)
+      if (this.schema.noInserts === true || this.schema.noInsertMany === true) throw new Error(`[${this.schema.model}] Multiple insertions are disallowed for this model`)
 
       const docsToInsert = await this.beforeInsertMany(docs, { strict: true, ...options })
       const insertedDocs = await CRUD.insertMany(this.schema, docsToInsert, options)
@@ -184,12 +187,14 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
         const [oldDoc, newDoc] = await CRUD.findOneAndUpdate(this.schema, filterToApply, updateToApply, options as Exclude<ModelUpdateOneOptions, UpdateOptions>)
         debug('Updating an existing document...', 'OK', filterToApply, updateToApply, options, oldDoc, newDoc)
         await this.afterUpdateOne(oldDoc, newDoc)
+
         return options.returnDocument === 'after' ? newDoc : oldDoc
       }
       else {
         const result = await CRUD.updateOne(this.schema, filterToApply, updateToApply, options as Exclude<ModelUpdateOneOptions, FindOneAndUpdateOptions>)
         debug('Updating an existing document...', 'OK', filterToApply, updateToApply, options)
         await this.afterUpdateOne()
+
         return result
       }
     }
@@ -198,6 +203,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     static async updateOne(filter: AnyFilter<P>, update: AnyUpdate<P>, options: ModelUpdateOneOptions = {}): Promise<boolean | Document<P> | undefined> {
       try {
         const res = await this.updateOneStrict(filter, update, options)
+
         return res
       }
       catch (err) {
@@ -207,7 +213,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
 
     /** @see {@link Model.updateMany} */
     static async updateMany(filter: AnyFilter<P>, update: AnyUpdate<P>, options: ModelUpdateManyOptions = {}): Promise<boolean | Document<P>[]> {
-      if ((this.schema.noUpdates === true) || (this.schema.noUpdateMany === true)) throw new Error(`[${this.schema.model}] Multiple updates are disallowed for this model`)
+      if (this.schema.noUpdates === true || this.schema.noUpdateMany === true) throw new Error(`[${this.schema.model}] Multiple updates are disallowed for this model`)
 
       const filterToApply = sanitizeFilter(this.schema, filter)
       const updateToApply = await this.beforeUpdateMany(filterToApply, update, options)
@@ -216,12 +222,14 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
         const [, newDocs] = await CRUD.findManyAndUpdate(this.schema, filterToApply, updateToApply, options as Exclude<ModelUpdateManyOptions, UpdateOptions>)
         debug('Updating multiple existing documents...', 'OK', filterToApply, updateToApply, options, newDocs)
         await this.afterUpdateMany(undefined, newDocs)
+
         return options.returnDocument === 'after' ? newDocs : []
       }
       else {
         const result = await CRUD.updateMany(this.schema, filterToApply, updateToApply, options as Exclude<ModelUpdateManyOptions, FindOneAndUpdateOptions>)
         debug('Updating multiple existing documents...', 'OK', filterToApply, updateToApply, options, result)
         await this.afterUpdateMany()
+
         return result
       }
     }
@@ -237,12 +245,14 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
         const deletedDoc = await CRUD.findAndDeleteOne(this.schema, filterToApply, options as Exclude<ModelDeleteOneOptions, DeleteOptions>)
         debug('Deleting an existing document...', 'OK', filter, deletedDoc)
         await this.afterDeleteOne(deletedDoc)
+
         return deletedDoc
       }
       else {
         const result = await CRUD.deleteOne(this.schema, filterToApply, options as Exclude<ModelDeleteOneOptions, FindOneAndDeleteOptions>)
         debug('Deleting an existing document...', 'OK', filter)
         await this.afterDeleteOne()
+
         return result
       }
     }
@@ -251,6 +261,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     static async deleteOne(filter: AnyFilter<P>, options: ModelDeleteOneOptions = {}): Promise<boolean | Document<P> | undefined> {
       try {
         const res = await this.deleteOneStrict(filter, options)
+
         return res
       }
       catch (err) {
@@ -260,7 +271,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
 
     /** @see {@link Model.deleteMany} */
     static async deleteMany(filter: AnyFilter<P>, options: ModelDeleteManyOptions = {}): Promise<boolean | Document<P>[]> {
-      if ((this.schema.noDeletes === true) || (this.schema.noDeleteMany === true)) throw new Error(`[${this.schema.model}] Multiple deletions are disallowed for this model`)
+      if (this.schema.noDeletes === true || this.schema.noDeleteMany === true) throw new Error(`[${this.schema.model}] Multiple deletions are disallowed for this model`)
 
       const filterToApply = sanitizeFilter(this.schema, filter)
       await this.beforeDeleteMany(filterToApply, options)
@@ -269,12 +280,14 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
         const deletedDocs = await CRUD.findManyAndDelete(this.schema, filterToApply, options as Exclude<ModelDeleteManyOptions, DeleteOptions>)
         debug('Deleting multiple existing documents...:', 'OK', filterToApply, deletedDocs)
         await this.afterDeleteMany(deletedDocs)
+
         return deletedDocs
       }
       else {
         await CRUD.deleteMany(this.schema, filterToApply, options as Exclude<ModelDeleteManyOptions, FindOneAndDeleteOptions>)
         debug('Deleting multiple existing documents...:', 'OK', filterToApply)
         await this.afterDeleteMany()
+
         return true
       }
     }
@@ -290,12 +303,14 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
         const [oldDoc, newDoc] = await CRUD.findOneAndReplace(this.schema, filterToApply, replacementToApply, options as Exclude<ModelReplaceOneOptions, ReplaceOptions>)
         debug('Replacing an existing document...', 'OK', filterToApply, replacementToApply, oldDoc, newDoc)
         await this.afterReplaceOne(oldDoc, newDoc)
+
         return options.returnDocument === 'before' ? oldDoc : newDoc
       }
       else {
         const result = await CRUD.replaceOne(this.schema, filterToApply, replacementToApply, options as Exclude<ModelReplaceOneOptions, FindOneAndReplaceOptions>)
         debug('Replacing an existing document...', 'OK', filterToApply, replacementToApply)
         await this.afterReplaceOne()
+
         return result
       }
     }
@@ -304,6 +319,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     static async replaceOne(filter: AnyFilter<P>, replacement?: DocumentFragment<P>, options: ModelReplaceOneOptions = {}): Promise<boolean | Document<P> | undefined> {
       try {
         const res = await this.replaceOneStrict(filter, replacement, options)
+
         return res
       }
       catch (err) {
@@ -314,12 +330,14 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     /** @see {@link Model.exists} */
     static async exists(filter: AnyFilter<P>): Promise<boolean> {
       const id = await this.identifyOne(filter)
+
       return id ? true : false
     }
 
     /** @see {@link Model.count} */
     static async count(filter: AnyFilter<P>): Promise<number> {
       const result = await this.identifyMany(filter)
+
       return result.length
     }
 
@@ -329,7 +347,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       const fields = this.schema.fields
 
       for (const key in this.schema.fields) {
-        if (!formattedDoc.hasOwnProperty(key)) continue
+        if (!{}.hasOwnProperty.call(formattedDoc, key)) continue
 
         const fieldSpec = fields[key]
         const formatter = this.formatProps[key]
@@ -356,13 +374,13 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       if (_.isEmpty(doc)) throw new Error(`[${this.schema.model}] Empty objects are not permitted`)
 
       for (const key in doc) {
-        if (!doc.hasOwnProperty(key)) continue
+        if (!{}.hasOwnProperty.call(doc, key)) continue
 
         // Skip validation for fields `_id`, `updatedAt` and `createdAt` since they are
         // automatically generated, but only if validating top-level fields.
         if (key === '_id') continue
-        if (this.schema.timestamps && (key === 'updatedAt')) continue
-        if (this.schema.timestamps && (key === 'createdAt')) continue
+        if (this.schema.timestamps && key === 'updatedAt') continue
+        if (this.schema.timestamps && key === 'createdAt') continue
 
         // #1 Check if field is defined in the schema.
         const fieldSpec = options.accountForDotNotation ? getFieldSpecByKey(this.schema.fields, key) : schema.fields[key as keyof P]
@@ -383,7 +401,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       }
 
       // #3 Check for unique fields only if `ignoreUniqueIndex` is not `true`.
-      if ((options.ignoreUniqueIndex !== true) && this.schema.indexes) {
+      if (options.ignoreUniqueIndex !== true && this.schema.indexes) {
         const n = this.schema.indexes.length
 
         for (let i = 0; i < n; i++) {
@@ -560,6 +578,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     private static async beforeInsertOne(doc: DocumentFragment<P>, options: ModelInsertOneOptions = {}): Promise<InsertableDocument<P>> {
       const modifiedDoc = await this.willInsertOne(doc)
       const res = await this.processDocumentBeforeInsert(modifiedDoc, options)
+
       return res
     }
 
@@ -586,6 +605,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
 
     private static async beforeUpdateOne(filter: Filter<Document<P>>, update: UpdateFilter<Document<P>>, options: ModelUpdateOneOptions = {}): Promise<UpdateFilter<Document<P>>> {
       const res = await this.processUpdateBeforeUpdate(filter, update, options)
+
       return res
     }
 
@@ -595,6 +615,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
 
     private static async beforeUpdateMany(filter: Filter<Document<P>>, update: UpdateFilter<Document<P>>, options: ModelUpdateManyOptions = {}): Promise<UpdateFilter<Document<P>>> {
       const res = await this.processUpdateBeforeUpdate(filter, update, options)
+
       return res
     }
 
@@ -634,6 +655,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     private static async beforeReplaceOne(filter: Filter<Document<P>>, doc: DocumentFragment<P>, options: ModelReplaceOneOptions = {}): Promise<InsertableDocument<P>> {
       const modifiedDoc = await this.willReplaceOne(filter, doc)
       const res = await this.processDocumentBeforeInsert(modifiedDoc, options)
+
       return res
     }
 
@@ -663,12 +685,12 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
 
       for (const modelName of cascadeModelNames) {
         const ModelClass = db.getModel(modelName)
-        const fields: { [fieldName: string]: FieldDescriptor } = ModelClass.schema.fields
+        const fields: Record<string, FieldDescriptor> = ModelClass.schema.fields
 
         if (!ModelClass) throw new Error(`[${this.schema.model}] Trying to cascade delete from model ${modelName} but model is not found`)
 
         for (const key in ModelClass.schema.fields) {
-          if (!ModelClass.schema.fields.hasOwnProperty(key)) continue
+          if (!{}.hasOwnProperty.call(ModelClass.schema.fields, key)) continue
 
           const field = fields[key]
 
@@ -685,7 +707,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       let docToInsert = sanitizeDocument(this.schema, doc)
 
       // Unless specified, always renew the `createdAt` and `updatedAt` fields.
-      if ((this.schema.timestamps === true) && (ignoreTimestamps !== true)) {
+      if (this.schema.timestamps === true && ignoreTimestamps !== true) {
         if (!_.isDate(docToInsert.createdAt)) docToInsert.createdAt = new Date() as any
         if (!_.isDate(docToInsert.updatedAt)) docToInsert.updatedAt = new Date() as any
       }
@@ -693,15 +715,15 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       // Before inserting this document, go through each field and make sure that it has default
       // values and that they are formatted correctly.
       for (const key in this.schema.fields) {
-        if (!this.schema.fields.hasOwnProperty(key)) continue
-        if (docToInsert.hasOwnProperty(key)) continue
+        if (!{}.hasOwnProperty.call(this.schema.fields, key)) continue
+        if ({}.hasOwnProperty.call(docToInsert, key)) continue
 
         const defaultValue = this.defaultProps[key]
 
         // Check if the field has a default value defined in the schema. If so, apply it.
         if (_.isUndefined(defaultValue)) continue
 
-        docToInsert[key] = (_.isFunction(defaultValue)) ? defaultValue() : defaultValue
+        docToInsert[key] = _.isFunction(defaultValue) ? defaultValue() : defaultValue
       }
 
       // Apply format function defined in the schema if applicable.
@@ -718,7 +740,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
      * @todo Handle remaining update operators.
      */
     private static async processUpdateBeforeUpdate(filter: Filter<Document<P>>, update: UpdateFilter<Document<P>>, options: ModelUpdateOneOptions | ModelUpdateManyOptions = {}): Promise<UpdateFilter<Document<P>>> {
-      if ((options.upsert === true) && (this.schema.allowUpserts !== true)) throw new Error(`[${this.schema.model}] Attempting to upsert a document while upserting is disallowed in the schema`)
+      if (options.upsert === true && this.schema.allowUpserts !== true) throw new Error(`[${this.schema.model}] Attempting to upsert a document while upserting is disallowed in the schema`)
 
       const updateToApply = sanitizeUpdate(this.schema, update, options)
 
@@ -767,7 +789,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
      */
     private static validateDocumentRequiredFields(doc: AnyDocument, fieldDescriptor: MultiFieldDescriptor = this.schema.fields, fieldName?: string) {
       for (const field in fieldDescriptor) {
-        if (!fieldDescriptor.hasOwnProperty(field)) continue
+        if (!{}.hasOwnProperty.call(fieldDescriptor, field)) continue
 
         const fieldSpec = fieldDescriptor[field]
 
@@ -775,11 +797,11 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
         if (!fieldSpec.required) continue
 
         // If model has default props defined for this field, skip.
-        if (this.defaultProps.hasOwnProperty(field)) continue
+        if ({}.hasOwnProperty.call(this.defaultProps, field)) continue
 
         // At this point we are certain that this field needs to be present in the doc, so go ahead
         // and check if it exists.
-        if (!doc.hasOwnProperty(field)) {
+        if (!{}.hasOwnProperty.call(doc, field)) {
           throw new TypeError(`[${this.schema.model}] Missing required field "${fieldName ? `${fieldName}.` : ''}${field}"`)
         }
 

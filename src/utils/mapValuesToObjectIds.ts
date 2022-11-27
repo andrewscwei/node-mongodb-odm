@@ -19,7 +19,7 @@ export default function mapValuesToObjectIds(val: any): any {
     const out: any = {}
 
     for (const k in val) {
-      if (!val.hasOwnProperty(k)) continue
+      if (!{}.hasOwnProperty.call(val, k)) continue
       out[k] = mapValuesToObjectIds(val[k])
     }
 

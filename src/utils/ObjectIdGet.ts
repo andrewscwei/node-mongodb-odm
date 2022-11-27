@@ -14,5 +14,6 @@ import valueIsObjectIdConvertible from './valueIsObjectIdConvertible'
 export default function ObjectIdGet(value: any): ObjectId | undefined {
   if (valueIsObjectIdConvertible(value)) return value
   if (typeIsIdentifiableDocument(value)) return value._id
+
   return undefined
 }

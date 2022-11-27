@@ -1,8 +1,9 @@
+import useDebug from 'debug'
 import { Collection, Db, MongoClient } from 'mongodb'
 import { AnyDocument } from '../types'
 import modelFactory from './modelFactory'
 
-const debug = require('debug')('mongodb-odm:connection')
+const debug = useDebug('mongodb-odm:connection')
 
 export type ConnectionConfiguration = {
   host: string
@@ -10,11 +11,10 @@ export type ConnectionConfiguration = {
   replicaSet?: string
   username?: string
   password?: string
-  models?: { [modelName: string]: any }
+  models?: Record<string, any>
 }
 
 export default class Connection {
-
   /**
    * Local database connection configuration options.
    */
@@ -28,7 +28,7 @@ export default class Connection {
   /**
    * Collection lookup dictionary.
    */
-  collections: { [collectionName: string]: Collection<any> }
+  collections: Record<string, Collection<any>>
 
   /**
    * Creates a new {@link Connection} instance with the provided configuration options.
@@ -62,6 +62,7 @@ export default class Connection {
    */
   isConnected(): boolean {
     if (!this.client) return false
+
     return true
   }
 
@@ -75,7 +76,7 @@ export default class Connection {
     if (this.isConnected()) return
 
     // Resolve the authentication string.
-    const authentication = (this.config.username && this.config.password) ? `${this.config.username}:${this.config.password}` : undefined
+    const authentication = this.config.username && this.config.password ? `${this.config.username}:${this.config.password}` : undefined
 
     // Database client URL.
     const url = `mongodb://${authentication ? `${authentication}@` : ''}${this.config.host}/${this.config.name}${this.config.replicaSet ? `?replicaSet=${this.config.replicaSet}` : ''}`
@@ -121,7 +122,7 @@ export default class Connection {
    * @throws {Error} Unable to find the model associated with the model or collection name.
    */
   async getCollection<T extends AnyDocument = AnyDocument>(modelOrCollectionName: string): Promise<Collection<T>> {
-    if (!!this.collections[modelOrCollectionName]) return this.collections[modelOrCollectionName]
+    if (this.collections[modelOrCollectionName]) return this.collections[modelOrCollectionName]
 
     const ModelClass = this.getModel(modelOrCollectionName)
     const schema = ModelClass.schema
@@ -134,7 +135,7 @@ export default class Connection {
         const spec = index.spec || {}
         const options = index.options || {}
 
-        if (!options.hasOwnProperty('background')) {
+        if (!{}.hasOwnProperty.call(options, 'background')) {
           options.background = true
         }
 
@@ -163,10 +164,10 @@ export default class Connection {
 
     if (!models) throw new Error('There are no models registered in the ODM registry')
 
-    if (models.hasOwnProperty(modelOrCollectionName)) return models[modelOrCollectionName]
+    if ({}.hasOwnProperty.call(models, modelOrCollectionName)) return models[modelOrCollectionName]
 
     for (const key in models) {
-      if (!models.hasOwnProperty(key)) continue
+      if (!{}.hasOwnProperty.call(models, key)) continue
 
       const ModelClass = models[key]
 

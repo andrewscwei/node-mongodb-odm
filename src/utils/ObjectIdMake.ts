@@ -11,5 +11,6 @@ import valueIsObjectIdConvertible from './valueIsObjectIdConvertible'
  */
 export default function ObjectIdMake(value: any): ObjectId | undefined {
   if (!valueIsObjectIdConvertible(value)) return undefined
+
   return new ObjectId(value)
 }

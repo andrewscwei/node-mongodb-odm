@@ -12,6 +12,7 @@ export async function deleteOne<P extends AnyProps = AnyProps>(schema: Schema<P>
 
   if (!result.acknowledged) throw new Error(`[${schema.model}] Unable to delete document`)
   if (result.deletedCount > 0) return true
+
   return false
 }
 
@@ -28,7 +29,7 @@ export async function findAndDeleteOne<P extends AnyProps = AnyProps>(schema: Sc
 }
 
 export async function deleteMany<P extends AnyProps = AnyProps>(schema: Schema<P>, filter: Filter<Document<P>>, options: DeleteOptions = {}): Promise<boolean> {
-  if ((schema.noDeletes === true) || (schema.noDeleteMany === true)) throw new Error(`[${schema.model}] Multiple deletions are disallowed for this model`)
+  if (schema.noDeletes === true || schema.noDeleteMany === true) throw new Error(`[${schema.model}] Multiple deletions are disallowed for this model`)
 
   const collection = await db.getCollection<Document<P>>(schema.collection)
   const result = await collection.deleteMany(filter, options)
@@ -40,7 +41,7 @@ export async function deleteMany<P extends AnyProps = AnyProps>(schema: Schema<P
 }
 
 export async function findManyAndDelete<P extends AnyProps = AnyProps>(schema: Schema<P>, filter: Filter<Document<P>>, options: FindOneAndDeleteOptions = {}): Promise<Document<P>[]> {
-  if ((schema.noDeletes === true) || (schema.noDeleteMany === true)) throw new Error(`[${schema.model}] Multiple deletions are disallowed for this model`)
+  if (schema.noDeletes === true || schema.noDeleteMany === true) throw new Error(`[${schema.model}] Multiple deletions are disallowed for this model`)
 
   const collection = await db.getCollection<Document<P>>(schema.collection)
   const docs = await findMany(schema, filter)
