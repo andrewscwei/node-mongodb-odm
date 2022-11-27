@@ -1,12 +1,14 @@
 import assert from 'assert'
 import bcrypt from 'bcrypt'
-import Faker from 'faker'
+import Chance from 'chance'
 import _ from 'lodash'
 import { describe, it } from 'mocha'
 import { ObjectId } from 'mongodb'
 import { configureDb, getDbConnection, typeIsIdentifiableDocument } from '..'
 import { Bar, BarProps, Foo } from '../index.spec'
 import { DocumentFragment } from '../types'
+
+const chance = new Chance()
 
 describe('core/Model', () => {
   before(async () => {
@@ -29,7 +31,7 @@ describe('core/Model', () => {
   })
 
   it('can find a document', async () => {
-    const t = { aString: Faker.random.alphaNumeric(10) }
+    const t = { aString: chance.string({ length: 10 }) }
     const res = await Bar.insertOneStrict(t)
 
     assert(res)
@@ -40,7 +42,7 @@ describe('core/Model', () => {
   })
 
   it('can find multiple documents', async () => {
-    const s = Faker.random.alphaNumeric(10)
+    const s = chance.string({ length: 10 })
 
     await Bar.insertOne({ aString: s })
     await Bar.insertOne({ aString: s })
@@ -56,7 +58,7 @@ describe('core/Model', () => {
   })
 
   it('can count the total number of documents in the collection', async () => {
-    const s = Faker.random.alphaNumeric(10)
+    const s = chance.string({ length: 10 })
 
     await Bar.insertOne({ aString: s })
     await Bar.insertOne({ aString: s })
@@ -73,13 +75,13 @@ describe('core/Model', () => {
   })
 
   it('can insert a new document', async () => {
-    const t = { aString: Faker.random.alphaNumeric(10) }
+    const t = { aString: chance.string({ length: 10 }) }
     const doc = await Bar.insertOneStrict(t)
     assert(doc.aString === t.aString)
   })
 
   it('can insert multiple documents', async () => {
-    const t = [{ aString: Faker.random.alphaNumeric(10) }, { aString: Faker.random.alphaNumeric(10) }, { aString: Faker.random.alphaNumeric(10) }]
+    const t = [{ aString: chance.string({ length: 10 }) }, { aString: chance.string({ length: 10 }) }, { aString: chance.string({ length: 10 }) }]
     const docs = await Bar.insertMany(t)
     assert(docs.length === t.length)
     assert(docs.reduce((prev, curr) => prev && ObjectId.isValid(curr._id), true))
@@ -113,13 +115,13 @@ describe('core/Model', () => {
   })
 
   it('can format documents according to the schema', async () => {
-    const t = { aFormattedString: Faker.random.alphaNumeric(10) }
+    const t = { aFormattedString: chance.string({ length: 10 }) }
     const res = await Bar.formatDocument(t)
     assert(Bar.formatProps.aFormattedString(t.aFormattedString) === res.aFormattedString)
   })
 
   it('can encrypt document fields according to the schema', async () => {
-    const s = Faker.random.alphaNumeric(10)
+    const s = chance.string({ length: 10 })
     const t = { anEncryptedString: s }
     const res = await Bar.formatDocument(t)
     assert(res.anEncryptedString)
@@ -127,20 +129,20 @@ describe('core/Model', () => {
   })
 
   it('should automatically generate default values on insert', async () => {
-    const t = { aString: Faker.random.alphaNumeric(10) }
+    const t = { aString: chance.string({ length: 10 }) }
     const res = await Bar.insertOneStrict(t)
     assert(res.aBoolean === Bar.defaultProps.aBoolean)
   })
 
   it('should automatically format values on insert according to the schema', async () => {
-    const t = { aString: Faker.random.alphaNumeric(10), aFormattedString: Faker.random.alphaNumeric(10) }
+    const t = { aString: chance.string({ length: 10 }), aFormattedString: chance.string({ length: 10 }) }
     const res = await Bar.insertOneStrict(t)
     assert(Bar.formatProps.aFormattedString(t.aFormattedString) === res.aFormattedString)
   })
 
   it('can update an existing doc', async () => {
-    const s = Faker.random.alphaNumeric(10)
-    const t = { aString: Faker.random.alphaNumeric(10) }
+    const s = chance.string({ length: 10 })
+    const t = { aString: chance.string({ length: 10 }) }
     await Bar.insertOneStrict(t)
     const updated = await Bar.updateOneStrict(t, { aString: s }, { returnDocument: 'after' })
     assert(!_.isBoolean(updated))
@@ -149,7 +151,7 @@ describe('core/Model', () => {
   })
 
   it('can update a field of an embedded doc within a doc', async () => {
-    const s = Faker.random.alphaNumeric(10)
+    const s = chance.string({ length: 10 })
     const t = { aString: s }
     const bar = await Bar.insertOneStrict(t)
     const newBar = await Bar.updateOneStrict(bar._id, { 'anObject.aString': 'foo' }, { returnDocument: 'after' })
@@ -159,19 +161,19 @@ describe('core/Model', () => {
   })
 
   it('can upsert a doc if it does not already exist', async () => {
-    const s = Faker.random.alphaNumeric(10)
+    const s = chance.string({ length: 10 })
     const t = { aString: s }
-    await Bar.updateOneStrict(t, { aFormattedString: Faker.random.alphaNumeric(10) }, { upsert: true })
+    await Bar.updateOneStrict(t, { aFormattedString: chance.string({ length: 10 }) }, { upsert: true })
     await Bar.findOneStrict({ aString: s })
   })
 
   it('cannot upsert a doc if `allowUpserts` is not enabled in the schema', async () => {
-    const s = Faker.random.alphaNumeric(10)
+    const s = chance.string({ length: 10 })
     const t = { aString: s }
     let didThrow = true
 
     try {
-      await Foo.updateOneStrict(t, { aString: Faker.random.alphaNumeric(10) }, { upsert: true })
+      await Foo.updateOneStrict(t, { aString: chance.string({ length: 10 }) }, { upsert: true })
       didThrow = false
     }
     catch (err) {}
@@ -180,18 +182,18 @@ describe('core/Model', () => {
   })
 
   it('should return `false` if update fails and `returnDocument` is unspecified', async () => {
-    const res = await Bar.updateOne(new ObjectId(), { aString: Faker.random.alphaNumeric(10) })
+    const res = await Bar.updateOne(new ObjectId(), { aString: chance.string({ length: 10 }) })
     assert(res === false)
   })
 
   it('should return `undefined` if update fails and `returnDocument` is `after`', async () => {
-    const res = await Bar.updateOne(new ObjectId(), { aString: Faker.random.alphaNumeric(10) }, { returnDocument: 'after' })
+    const res = await Bar.updateOne(new ObjectId(), { aString: chance.string({ length: 10 }) }, { returnDocument: 'after' })
     assert(_.isUndefined(res))
   })
 
   it('should automatically format values on update according to the schema', async () => {
-    const s = Faker.random.alphaNumeric(10)
-    const t = Faker.random.alphaNumeric(10)
+    const s = chance.string({ length: 10 })
+    const t = chance.string({ length: 10 })
 
     await Bar.insertOne({ aString: s })
     const res = await Bar.updateOne({ aString: s }, { aFormattedString: t }, { returnDocument: 'after' })
@@ -203,8 +205,8 @@ describe('core/Model', () => {
   })
 
   it('should automatically format values on upsert according to the schema', async () => {
-    const s = Faker.random.alphaNumeric(10)
-    const res = await Bar.updateOne({ aString: Faker.random.alphaNumeric(10) }, { aFormattedString: s }, { upsert: true, returnDocument: 'after' })
+    const s = chance.string({ length: 10 })
+    const res = await Bar.updateOne({ aString: chance.string({ length: 10 }) }, { aFormattedString: s }, { upsert: true, returnDocument: 'after' })
 
     assert(!_.isNil(res))
     assert(!_.isBoolean(res))
@@ -213,8 +215,8 @@ describe('core/Model', () => {
   })
 
   it('can update multiple existing docs', async () => {
-    const s = Faker.random.alphaNumeric(10)
-    const t = Faker.random.alphaNumeric(10)
+    const s = chance.string({ length: 10 })
+    const t = chance.string({ length: 10 })
     const q: DocumentFragment<BarProps>[] = [{ aString: s }, { aString: s }, { aString: s }]
     const docs = await Bar.insertMany(q)
 
@@ -229,8 +231,8 @@ describe('core/Model', () => {
   })
 
   it('can upsert a doc in an `updateMany` op while `returnDocument` is `after`', async () => {
-    const s = Faker.random.alphaNumeric(10)
-    const t = Faker.random.alphaNumeric(10)
+    const s = chance.string({ length: 10 })
+    const t = chance.string({ length: 10 })
 
     const res = await Bar.updateMany({ aString: s }, { aFormattedString: t }, { returnDocument: 'after', upsert: true })
 
@@ -240,8 +242,8 @@ describe('core/Model', () => {
   })
 
   it('can upsert a doc in an `updateMany` op while `returnDocument` is unspecified', async () => {
-    const s = Faker.random.alphaNumeric(10)
-    const t = Faker.random.alphaNumeric(10)
+    const s = chance.string({ length: 10 })
+    const t = chance.string({ length: 10 })
 
     const res = await Bar.updateMany({ aString: s }, { aFormattedString: t }, { upsert: true })
 
@@ -250,7 +252,7 @@ describe('core/Model', () => {
   })
 
   it('can delete a doc', async () => {
-    const s = Faker.random.alphaNumeric(10)
+    const s = chance.string({ length: 10 })
 
     await Bar.insertOne({ aString: s })
 
@@ -263,7 +265,7 @@ describe('core/Model', () => {
   })
 
   it('can delete a doc and return the deleted doc', async () => {
-    const s = Faker.random.alphaNumeric(10)
+    const s = chance.string({ length: 10 })
     const doc = await Bar.insertOneStrict({ aString: s })
 
     assert(await Bar.findOne({ aString: s }) !== undefined)
@@ -279,7 +281,7 @@ describe('core/Model', () => {
   })
 
   it('can delete multiple docs', async () => {
-    const s = Faker.random.alphaNumeric(10)
+    const s = chance.string({ length: 10 })
 
     await Bar.insertMany([{ aString: s }, { aString: s }, { aString: s }])
 
@@ -291,7 +293,7 @@ describe('core/Model', () => {
   })
 
   it('can delete multiple docs and return the deleted docs', async () => {
-    const s = Faker.random.alphaNumeric(10)
+    const s = chance.string({ length: 10 })
 
     await Bar.insertMany([{ aString: s }, { aString: s }, { aString: s }])
 
@@ -304,8 +306,8 @@ describe('core/Model', () => {
   })
 
   it('can replace an existing doc and return the old doc', async () => {
-    const s = Faker.random.alphaNumeric(10)
-    const t = Faker.random.alphaNumeric(10)
+    const s = chance.string({ length: 10 })
+    const t = chance.string({ length: 10 })
 
     await Bar.insertOne({ aString: s })
 
@@ -317,8 +319,8 @@ describe('core/Model', () => {
   })
 
   it('can replace an existing doc and return the new doc', async () => {
-    const s = Faker.random.alphaNumeric(10)
-    const t = Faker.random.alphaNumeric(10)
+    const s = chance.string({ length: 10 })
+    const t = chance.string({ length: 10 })
 
     await Bar.insertOne({ aString: s })
 
@@ -338,7 +340,7 @@ describe('core/Model', () => {
   })
 
   it('can upsert a document while setting an update field to `undefined`', async () => {
-    const t = Faker.random.alphaNumeric(10)
+    const t = chance.string({ length: 10 })
     const exists = await Bar.exists({ aString: t })
     assert(!exists)
     const baz = await Bar.updateOneStrict({ aString: t }, { aNumber: undefined }, { upsert: true, returnDocument: 'after' })
