@@ -40,7 +40,7 @@ jobs:
           path: build/
       - name: Test
         env:
-          MONGODB_HOST: mongodb:27017
+          MONGODB_HOST: localhost:27017
         run: npm run build:test && npm test
   deploy:
     name: Deploy
