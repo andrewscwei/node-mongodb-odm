@@ -12,8 +12,8 @@ export type ProjectStage = {
 }
 
 /**
- * Options for {@link projectStageFactory}. Note that these options are only used if auto projecting
- * all fields, i.e. `specs` parameter is `undefined`.
+ * Options for {@link projectStageFactory}. Note that these options are only
+ * used if auto projecting all fields, i.e. `specs` parameter is `undefined`.
  */
 export type ProjectStageFactoryOptions = {
   /**
@@ -27,13 +27,15 @@ export type ProjectStageFactoryOptions = {
   toPrefix?: string
 
   /**
-   * An object specifying how reference fields in this collection pointing to other collections are
-   * populated. Each key represents a reference field (i.e. a field with a `ref` property) while
-   * each corresponding value represents the {@link ProjectStageFactoryPopulateOptions} to be used
-   * in the {@link projectStageFactory} method of the target field, or a boolean where: if `true`,
-   * the target field will not be further projected (i.e. `options` param will be omitted when
-   * generating its `$project` stage via {@link projectStageFactory} method), and if `false`, the
-   * reference field will simply be ignored.
+   * An object specifying how reference fields in this collection pointing to
+   * other collections are populated. Each key represents a reference field
+   * (i.e. a field with a `ref` property) while each corresponding value
+   * represents the {@link ProjectStageFactoryPopulateOptions} to be used in the
+   * {@link projectStageFactory} method of the target field, or a boolean where:
+   * if `true`, the target field will not be further projected (i.e. `options`
+   * param will be omitted when generating its `$project` stage via
+   * {@link projectStageFactory} method), and if `false`, the reference field
+   * will simply be ignored.
    */
   populate?: ProjectStageFactoryPopulateOptions
 
@@ -48,14 +50,16 @@ type ProjectStageFactoryPopulateOptions = {
 }
 
 /**
- * Generates a `$project` stage for a collection to be used in an aggregation pipeline.
+ * Generates a `$project` stage for a collection to be used in an aggregation
+ * pipeline.
  *
  * @param schema - The schema of the collection.
- * @param specs - The specifications for the `$project` stage. Set as `undefined` to project all
- *                fields defined in the schema.
+ * @param specs - The specifications for the `$project` stage. Set as
+ *                `undefined` to project all fields defined in the schema.
  * @param options - Additional options, {@link ProjectStageFactoryOptions}.
  *
- * @returns An abstract aggregation pipeline containing the generated `$project` stage.
+ * @returns An abstract aggregation pipeline containing the generated `$project`
+ * stage.
  *
  * @example
  * // Returns [{ "$project": { "_id": "_id", "a": "a", "b": "b", "c": "c", "model": "model" } }]

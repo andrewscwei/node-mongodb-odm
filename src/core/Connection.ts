@@ -31,7 +31,8 @@ export default class Connection {
   collections: Record<string, Collection<any>>
 
   /**
-   * Creates a new {@link Connection} instance with the provided configuration options.
+   * Creates a new {@link Connection} instance with the provided configuration
+   * options.
    *
    * @param config - The configuration options.
    */
@@ -67,8 +68,8 @@ export default class Connection {
   }
 
   /**
-   * Establishes a new connection to the database based on the initialized configuration. If there
-   * already exists one, this method does nothing.
+   * Establishes a new connection to the database based on the initialized
+   * configuration. If there already exists one, this method does nothing.
    *
    * @throws {Error} When unable to establish MongoDB connection.
    */
@@ -109,17 +110,19 @@ export default class Connection {
   }
 
   /**
-   * Gets the MongoDB collection associated with a model or collection name and ensures the indexes
-   * defined in its schema.
+   * Gets the MongoDB collection associated with a model or collection name and
+   * ensures the indexes defined in its schema.
    *
    * @param modelOrCollectionName - The model or collection name.
    *
    * @returns The MongoDB collection.
    *
-   * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html}
+   * @see
+   * {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html}
    *
    * @throws {Error} There are no models registered.
-   * @throws {Error} Unable to find the model associated with the model or collection name.
+   * @throws {Error} Unable to find the model associated with the model or
+   *                 collection name.
    */
   async getCollection<T extends AnyDocument = AnyDocument>(modelOrCollectionName: string): Promise<Collection<T>> {
     if (this.collections[modelOrCollectionName]) return this.collections[modelOrCollectionName]

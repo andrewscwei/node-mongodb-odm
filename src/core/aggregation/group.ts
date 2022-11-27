@@ -7,18 +7,20 @@ export type GroupStage = {
 }
 
 /**
- * Specs that define the `$group` stage. If this is a string, a simple `$group` stage will be
- * generated with `_id` set to the string.
+ * Specs that define the `$group` stage. If this is a string, a simple `$group`
+ * stage will be generated with `_id` set to the string.
  */
 export type GroupStageFactorySpecs = string | Record<string, any>
 
 /**
- * Generates a `$group` stage for a collection to be used in an aggregation pipeline.
+ * Generates a `$group` stage for a collection to be used in an aggregation
+ * pipeline.
  *
  * @param schema - The schema of the database collection.
- * @param spec - Spec that define the `$group` stage.
+ * @param specs - Spec that define the `$group` stage.
  *
- * @returns An abstract aggregation pipeline containing the generated `$group` stage.
+ * @returns An abstract aggregation pipeline containing the generated `$group`
+ * stage.
  *
  * @example
  * // Returns [{ "$group": { "_id": "$foo" } }]

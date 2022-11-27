@@ -7,19 +7,20 @@ import typeIsValidObjectId from './typeIsValidObjectId'
 
 export type SanitizeFilterOptions = {
   /**
-   * If set to `true`, fields that are not specified in the schema will be deleted as part of the
-   * sanitizing process.
+   * If set to `true`, fields that are not specified in the schema will be
+   * deleted as part of the sanitizing process.
    */
   strict?: boolean
 }
 
 /**
- * Magically transforms any supported value into a valid input for filtering db collections. Note
- * that this process does not perform any data validations. The transformation process includes the
- * following:
- *   1. Wraps an `ObjectId` instance or string representing an `ObjectId` into a proper filter.
- *   2. If strict mode is enabled, the provided schema will be used to strip out all extraneous
- *      fields from the input. See {@link sanitizeDocument}.
+ * Magically transforms any supported value into a valid input for filtering db
+ * collections. Note that this process does not perform any data validations.
+ * The transformation process includes the following:
+ *   1. Wraps an `ObjectId` instance or string representing an `ObjectId` into a
+ *      proper filter.
+ *   2. If strict mode is enabled, the provided schema will be used to strip out
+ *      all extraneous fields from the input. See {@link sanitizeDocument}.
  *
  * @param schema - The collection schema.
  * @param filter - The filter to sanitize.

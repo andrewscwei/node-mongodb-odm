@@ -5,14 +5,15 @@ import getFieldSpecByKey from './getFieldSpecByKey'
 
 export type SanitizeDocumentOptions = {
   /**
-   * If set to `true`, fields in the form of a dot delimited string will be treated as nested
-   * fields.
+   * If set to `true`, fields in the form of a dot delimited string will be
+   * treated as nested fields.
    */
   accountForDotNotation?: boolean
 }
 
 /**
- * Removes all extraneous fields from a document fragment according to the provided schema.
+ * Removes all extraneous fields from a document fragment according to the
+ * provided schema.
  *
  * @param schema - The collection schema.
  * @param doc - The partial document to sanitize.

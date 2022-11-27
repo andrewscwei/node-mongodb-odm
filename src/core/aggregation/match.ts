@@ -17,14 +17,17 @@ export type MatchStageFactoryOptions = {
 }
 
 /**
- * Generates a `$match` stage for a collection to be used in an aggregation pipeline.
+ * Generates a `$match` stage for a collection to be used in an aggregation
+ * pipeline.
  *
  * @param schema - The schema of the database collection.
- * @param specs - The specifications (a.k.a. filter in this case) for the `$match` stage. The value
- *                can be any supported value for `sanitizeFilter`.
+ * @param specs - The specifications (a.k.a. filter in this case) for the
+ *                `$match` stage. The value can be any supported value for
+ *                `sanitizeFilter`.
  * @param options - Additional options, see {@link MatchStageFactoryOptions}.
  *
- * @returns An abstract aggregation pipeline containing the generated `$match` stage.
+ * @returns An abstract aggregation pipeline containing the generated `$match`
+ * stage.
  *
  * @example
  * // Returns [{ "$match": { "_id": 5927f337c5178b9665b56b1e } }]

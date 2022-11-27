@@ -1,8 +1,9 @@
 /**
- * @file This is the factory of abstract, static model classes that provide one-to-one
- *       object-relational mapping to MongoDB collections. Each model registered in this ODM library
- *       must inherit the generated model class to leverage its ORM features, such as eventful CRUD
- *       operations, default fields, field validations, etc. All MongoDB documents returned by the
+ * @file This is the factory of abstract, static model classes that provide
+ *       one-to-one object-relational mapping to MongoDB collections. Each model
+ *       registered in this ODM library must inherit the generated model class
+ *       to leverage its ORM features, such as eventful CRUD operations, default
+ *       fields, field validations, etc. All MongoDB documents returned by the
  *       model are native JSON objects.
  *
  * @see {@link Model}
@@ -354,7 +355,8 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
 
         if (!fieldSpec) throw new Error(`[${this.schema.model}] Field ${key} not found in schema`)
 
-        // If the schema has a certain formatting function defined for this field, apply it.
+        // If the schema has a certain formatting function defined for this
+        // field, apply it.
         if (_.isFunction(formatter)) {
           const formattedValue = await formatter(formattedDoc[key] as any)
           formattedDoc[key] = formattedValue as any
@@ -376,8 +378,9 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       for (const key in doc) {
         if (!{}.hasOwnProperty.call(doc, key)) continue
 
-        // Skip validation for fields `_id`, `updatedAt` and `createdAt` since they are
-        // automatically generated, but only if validating top-level fields.
+        // Skip validation for fields `_id`, `updatedAt` and `createdAt` since
+        // they are automatically generated, but only if validating top-level
+        // fields.
         if (key === '_id') continue
         if (this.schema.timestamps && key === 'updatedAt') continue
         if (this.schema.timestamps && key === 'createdAt') continue
@@ -386,8 +389,9 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
         const fieldSpec = options.accountForDotNotation ? getFieldSpecByKey(this.schema.fields, key) : schema.fields[key as keyof P]
         if (!fieldSpec) throw new Error(`[${this.schema.model}] The field '${key}' is not defined in the ${JSON.stringify(this.schema.fields, undefined, 0)}`)
 
-        // #2 Check if field value conforms to its defined spec. Note that the key can be in dot
-        // notation because this method may also be used when applying doc updates.
+        // #2 Check if field value conforms to its defined spec. Note that the
+        // key can be in dot notation because this method may also be used when
+        // applying doc updates.
         const val = _.get(doc, key, undefined)
         const validationStrategy: FieldValidationStrategy<any> | undefined = _.get(this.validateProps, key, undefined)
 
@@ -425,12 +429,11 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     }
 
     /**
-     * Handler invoked at the beginning of {@link insertOne} to apply any custom pre-processing to
-     * the document prior to inserting. Throwing an error within this handler will terminate
-     * {@link insertOne} immediately.
+     * Handler invoked at the beginning of {@link insertOne} to apply any custom
+     * pre-processing to the document prior to inserting. Throwing an error
+     * within this handler will terminate {@link insertOne} immediately.
      *
      * @param doc - The document to be inserted.
-     * @param options - Additional options.
      *
      * @returns The document to be inserted.
      */
@@ -439,17 +442,17 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     }
 
     /**
-     * Hanlder invoked after a successful {@link insertOne} operation. Throwing an error within this
-     * handler can prohib {@link insertOne} from returning.
+     * Hanlder invoked after a successful {@link insertOne} operation. Throwing
+     * an error within this handler can prohib {@link insertOne} from returning.
      *
      * @param doc - The inserted document.
      */
     protected static async didInsertOne(doc: Readonly<Document<P>>): Promise<void> {}
 
     /**
-     * Handler invoked at the beginning of {@link insertMany} to apply any custom pre-processing to
-     * the documents prior to inserting. Throwing an error within this handler will terminate
-     * {@link insertMany} immediately.
+     * Handler invoked at the beginning of {@link insertMany} to apply any
+     * custom pre-processing to the documents prior to inserting. Throwing an
+     * error within this handler will terminate {@link insertMany} immediately.
      *
      * @param docs - The documents to be inserted.
      *
@@ -460,17 +463,18 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     }
 
     /**
-     * Handler invoked after a successful {@link insertMany} operation. Throwing an error within
-     * this hanlder can prohibit {@link insertMany} from returning.
+     * Handler invoked after a successful {@link insertMany} operation. Throwing
+     * an error within this hanlder can prohibit {@link insertMany} from
+     * returning.
      *
      * @param docs - The inserted documents.
      */
     protected static async didInsertMany(docs: Readonly<Document<P>[]>): Promise<void> {}
 
     /**
-     * Handler invoked at the beginning of {@link updateOne} to apply any custom pre-processing to
-     * the update filter prior to updating. Throwing an error within this handler will terminate
-     * {@link updateOne} immediately.
+     * Handler invoked at the beginning of {@link updateOne} to apply any custom
+     * pre-processing to the update filter prior to updating. Throwing an error
+     * within this handler will terminate {@link updateOne} immediately.
      *
      * @param filter - The filter for the document to update.
      * @param update - The update to be applied.
@@ -482,20 +486,21 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     }
 
     /**
-     * Handler invoked after a successful {@link updateOne} operation. Throwing an error within this
-     * handler can prohibit {@link updateOne} from returning.
+     * Handler invoked after a successful {@link updateOne} operation. Throwing
+     * an error within this handler can prohibit {@link updateOne} from
+     * returning.
      *
-     * @param oldDoc - The document before the update. This is only available if `returnDocument`
-     *                 was set during {@link updateOne}.
-     * @param newDoc - The document after the update. This is only available if `returnDocument` was
-     *                 set during {@link updateOne}.
+     * @param oldDoc - The document before the update. This is only available if
+     *                 `returnDocument` was set during {@link updateOne}.
+     * @param newDoc - The document after the update. This is only available if
+     *                 `returnDocument` was set during {@link updateOne}.
      */
     protected static async didUpdateOne(oldDoc?: Readonly<Document<P>>, newDoc?: Readonly<Document<P>>): Promise<void> {}
 
     /**
-     * Handler invoked at the beginning of {@link updateMany} to apply any custom pre-processing to
-     * the update filter prior to updating. Throwing an error within this handler will terminate
-     * {@link updateMany} immediately.
+     * Handler invoked at the beginning of {@link updateMany} to apply any
+     * custom pre-processing to the update filter prior to updating. Throwing an
+     * error within this handler will terminate {@link updateMany} immediately.
      *
      * @param filter - The filter for the documents to update.
      * @param update - The update to be applied.
@@ -507,53 +512,57 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     }
 
     /**
-     * Handler invoked after a successful {@link updateMany} operation. Throwing an error within
-     * this handler can prohibit {@link updateMany} from returning.
+     * Handler invoked after a successful {@link updateMany} operation. Throwing
+     * an error within this handler can prohibit {@link updateMany} from
+     * returning.
      *
-     * @param oldDocs - The documents before the update. They are only available if `returnDocument`
-     *                  was set during {@link updateMany}.
-     * @param newDocs - The documents after the update (array order consistency with `oldDocs` not
-     *                  guaranteed). They are only available if `returnDocument` was set during
-     *                  {@link updateMany}.
+     * @param oldDocs - The documents before the update. They are only available
+     *                  if `returnDocument` was set during {@link updateMany}.
+     * @param newDocs - The documents after the update (array order consistency
+     *                  with `oldDocs` not guaranteed). They are only available
+     *                  if `returnDocument` was set during {@link updateMany}.
      */
     protected static async didUpdateMany(oldDocs?: Readonly<Document<P>[]>, newDocs?: Readonly<Document<P>[]>): Promise<void> {}
 
     /**
-     * Handler invoked at the beginning of {@link deleteOne}. Throwing an error within this handler
-     * will terminate {@link deleteOne} immediately.
+     * Handler invoked at the beginning of {@link deleteOne}. Throwing an error
+     * within this handler will terminate {@link deleteOne} immediately.
      *
      * @param filter - The filter for the document to be deleted.
      */
     protected static async willDeleteOne(filter: Readonly<Filter<Document<P>>>): Promise<void> {}
 
     /**
-     * Handler invoked after a successful {@link deleteOne} operation. Throwing an error within this
-     * handler can prohibit {@link deleteOne} from returning.
+     * Handler invoked after a successful {@link deleteOne} operation. Throwing
+     * an error within this handler can prohibit {@link deleteOne} from
+     * returning.
      *
      * @param doc - The deleted document.
      */
     protected static async didDeleteOne(doc?: Readonly<Document<P>>): Promise<void> {}
 
     /**
-     * Handler invoked at the beginning of {@link deleteMany}. Throwing an error within this handler
-     * will terminate {@link deleteMany} immediately.
+     * Handler invoked at the beginning of {@link deleteMany}. Throwing an error
+     * within this handler will terminate {@link deleteMany} immediately.
      *
      * @param filter - The filter for the documents to be deleted.
      */
     protected static async willDeleteMany(filter: Readonly<Filter<Document<P>>>): Promise<void> {}
 
     /**
-     * Handler invoked after a successful {@link deleteMany} operation. Throwing an error within
-     * this handler can prohibit {@link deleteMany} from returning.
+     * Handler invoked after a successful {@link deleteMany} operation. Throwing
+     * an error within this handler can prohibit {@link deleteMany} from
+     * returning.
      *
      * @param docs - The deleted documents.
      */
     protected static async didDeleteMany(docs?: Readonly<Document<P>[]>): Promise<void> {}
 
     /**
-     * Handler invoked at the beginning of {@link replaceOne} to apply any custom pre-processing to
-     * the new document prior to replacement. Throwing an error within this handler will terminate
-     * {@link replaceOne} immediately.
+     * Handler invoked at the beginning of {@link replaceOne} to apply any
+     * custom pre-processing to the new document prior to replacement. Throwing
+     * an error within this handler will terminate {@link replaceOne}
+     * immediately.
      *
      * @param filter - The filter for the document to be replaced.
      * @param replacement - The replacement document.
@@ -565,13 +574,14 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     }
 
     /**
-     * Handler invoked after a successful {@link replaceOne} operation. Throwing an error within
-     * this handler can prohibit {@link replaceOne} from returning.
+     * Handler invoked after a successful {@link replaceOne} operation. Throwing
+     * an error within this handler can prohibit {@link replaceOne} from
+     * returning.
      *
-     * @param oldDoc - The document that was replaced. This is only available if `returnDocument`
-     *                 was set during {@link replaceOne}.
-     * @param newDoc - The new document. This is only available if `returnDocument` was set during
-     *                 {@link replaceOne}.
+     * @param oldDoc - The document that was replaced. This is only available if
+     *                 `returnDocument` was set during {@link replaceOne}.
+     * @param newDoc - The new document. This is only available if
+     *                 `returnDocument` was set during {@link replaceOne}.
      */
     protected static async didReplaceOne(oldDoc?: Readonly<Document<P>>, newDoc?: Readonly<Document<P>>): Promise<void> {}
 
@@ -668,12 +678,12 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     }
 
     /**
-     * Looks for documents **in all other registered collections** that have a foreign key to this
-     * collection with the field value matching the provided `docId`, then deletes them from the
-     * database.
+     * Looks for documents **in all other registered collections** that have a
+     * foreign key to this collection with the field value matching the provided
+     * `docId`, then deletes them from the database.
      *
-     * @param docId - The ID of the document in this collection in which other collections are
-     *                pointing to.
+     * @param docId - The ID of the document in this collection in which other
+     *                collections are pointing to.
      *
      * @throws {Error} Cascade deletion is incorrectly defined in the schema.
      * @throws {Error} Cascade deletion failed because a model cannot be found.
@@ -712,15 +722,16 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
         if (!_.isDate(docToInsert.updatedAt)) docToInsert.updatedAt = new Date() as any
       }
 
-      // Before inserting this document, go through each field and make sure that it has default
-      // values and that they are formatted correctly.
+      // Before inserting this document, go through each field and make sure
+      // that it has default values and that they are formatted correctly.
       for (const key in this.schema.fields) {
         if (!{}.hasOwnProperty.call(this.schema.fields, key)) continue
         if ({}.hasOwnProperty.call(docToInsert, key)) continue
 
         const defaultValue = this.defaultProps[key]
 
-        // Check if the field has a default value defined in the schema. If so, apply it.
+        // Check if the field has a default value defined in the schema. If so,
+        // apply it.
         if (_.isUndefined(defaultValue)) continue
 
         docToInsert[key] = _.isFunction(defaultValue) ? defaultValue() : defaultValue
@@ -729,8 +740,8 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
       // Apply format function defined in the schema if applicable.
       docToInsert = await this.formatDocument(docToInsert)
 
-      // Finally, validate the document. Ignore unique indexes in this step. Let the db throw an
-      // error if the inserted doc violates those indexes.
+      // Finally, validate the document. Ignore unique indexes in this step. Let
+      // the db throw an error if the inserted doc violates those indexes.
       await this.validateDocument(docToInsert, { ignoreUniqueIndex: true, strict: true, accountForDotNotation: false, ...opts })
 
       return docToInsert as InsertableDocument<P>
@@ -749,9 +760,9 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
         updateToApply.$set = await this.formatDocument(updateToApply.$set as Document<P>) as any
       }
 
-      // In the case of an upsert, we need to preprocess the filter as if this was an insertion. We
-      // also need to tell the database to save all fields in the filter as well, unless they are
-      // already in the update query.
+      // In the case of an upsert, we need to preprocess the filter as if this
+      // was an insertion. We also need to tell the database to save all fields
+      // in the filter as well, unless they are already in the update query.
       if (options.upsert === true && typeIsAnyDocument(filter)) {
         // Make a copy of the filter in case it is manipulated by the hooks.
         const docIfUpsert = await this.processDocumentBeforeInsert(filter as DocumentFragment<P>, { ...options, strict: false })
@@ -768,8 +779,8 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
         }
       }
 
-      // Validate all fields in the update. Account for dot notations to facilitate updating fields
-      // in nested fields.
+      // Validate all fields in the update. Account for dot notations to
+      // facilitate updating fields in nested fields.
       if (updateToApply.$set && !_.isEmpty(updateToApply.$set)) {
         await this.validateDocument(updateToApply.$set as DocumentFragment<P>, { ...options, ignoreUniqueIndex: true, accountForDotNotation: true })
       }
@@ -778,8 +789,8 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     }
 
     /**
-     * Validates a document of this model to see if the required fields (including nested fields)
-     * are in place.
+     * Validates a document of this model to see if the required fields
+     * (including nested fields) are in place.
      *
      * @param doc - The doc to validate.
      * @param fieldDescriptor - The field descriptor to validate against.
@@ -799,8 +810,8 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
         // If model has default props defined for this field, skip.
         if ({}.hasOwnProperty.call(this.defaultProps, field)) continue
 
-        // At this point we are certain that this field needs to be present in the doc, so go ahead
-        // and check if it exists.
+        // At this point we are certain that this field needs to be present in
+        // the doc, so go ahead and check if it exists.
         if (!{}.hasOwnProperty.call(doc, field)) {
           throw new TypeError(`[${this.schema.model}] Missing required field "${fieldName ? `${fieldName}.` : ''}${field}"`)
         }

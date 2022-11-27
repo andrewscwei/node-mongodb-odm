@@ -3,9 +3,9 @@ import typeIsIdentifiableDocument from './typeIsIdentifiableDocument'
 import valueIsObjectIdConvertible from './valueIsObjectIdConvertible'
 
 /**
- * Checks to see if a value is a valid `ObjectId` and returns it if it is. If not, this method will
- * check if the value is an identifiable document, and if it is it will return the `_id` of the
- * document.
+ * Checks to see if a value is a valid `ObjectId` and returns it if it is. If
+ * not, this method will check if the value is an identifiable document, and if
+ * it is it will return the `_id` of the document.
  *
  * @param value - Value to check.
  *

@@ -1,12 +1,12 @@
 /** @license node-mongodb-odm
  * © Andrew Wei
- * This source code is licensed under the MIT license found in the LICENSE file in the root
- * directory of this source tree.
+ * This source code is licensed under the MIT license found in the LICENSE file
+ * in the root directory of this source tree.
  */
 
 /**
- * @file Database configuration file. This file exports methods to interact with the MongoClient
- * instance.
+ * @file Database configuration file. This file exports methods to interact with
+ *       the MongoClient instance.
  */
 
 import useDebug from 'debug'
@@ -68,14 +68,15 @@ export function getModel(modelOrCollectionName: string): ReturnType<typeof Model
 }
 
 /**
- * Gets the MongoDB collection associated with a model or collection name and ensures the indexes
- * defined in its schema.
+ * Gets the MongoDB collection associated with a model or collection name and
+ * ensures the indexes defined in its schema.
  *
  * @param modelOrCollectionName - The model or collection name.
  *
  * @returns The MongoDB collection.
  *
- * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html}
+ * @see
+ * {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html}
  *
  * @throws {Error} There is no active db connection.
  */

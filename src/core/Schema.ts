@@ -3,12 +3,14 @@ import { CreateIndexesOptions, IndexSpecification, ObjectId } from 'mongodb'
 import { AnyProps } from '../types'
 
 /**
- * Data type for describing multiple (can be nested) fields in the {@link Schema}.
+ * Data type for describing multiple (can be nested) fields in the
+ * {@link Schema}.
  */
 export type MultiFieldDescriptor<P extends AnyProps = AnyProps> = { [K in keyof P]: FieldDescriptor }
 
 /**
- * Data type for describing a single (can be nested) field in the {@link Schema}.
+ * Data type for describing a single (can be nested) field in the
+ * {@link Schema}.
  */
 export type FieldDescriptor = {
 
@@ -18,13 +20,15 @@ export type FieldDescriptor = {
   type: FieldType | MultiFieldDescriptor
 
   /**
-   * When the `type` is an `ObjectId`, that means this field is a foreign key to another collection.
-   * This `ref` value indicates the name of model in which the foreign key belongs to.
+   * When the `type` is an `ObjectId`, that means this field is a foreign key to
+   * another collection. This `ref` value indicates the name of model in which
+   * the foreign key belongs to.
    */
   ref?: string
 
   /**
-   * Specifies if this field is required (will be checked during validation process).
+   * Specifies if this field is required (will be checked during validation
+   * process).
    */
   required?: boolean
 
@@ -35,8 +39,8 @@ export type FieldDescriptor = {
 }
 
 /**
- * Data type representing primitive field types only, that are acceptable values of
- * {@link FieldDescriptor.type}.
+ * Data type representing primitive field types only, that are acceptable values
+ * of {@link FieldDescriptor.type}.
  */
 export type FieldPrimitiveType = typeof String | typeof Number | typeof Boolean | typeof Date | typeof ObjectId | typeof Array
 
@@ -83,15 +87,15 @@ export default interface Schema<P extends AnyProps = AnyProps> {
   model: string
 
   /**
-   * Name of the collection in the MongoDB. Should be in lower camel-case and pluralized, i.e.
-   * "fooBars".
+   * Name of the collection in the MongoDB. Should be in lower camel-case and
+   * pluralized, i.e. "fooBars".
    */
   collection: string
 
   /**
-   * Specifies whether timestamp fields will be automatically generated and tracked per CRUD
-   * operation. The genrated fields are `updatedAt` and `createdAt`, which are both {@link Date}
-   * values.
+   * Specifies whether timestamp fields will be automatically generated and
+   * tracked per CRUD operation. The genrated fields are `updatedAt` and
+   * `createdAt`, which are both {@link Date} values.
    */
   timestamps?: boolean
 
@@ -131,11 +135,12 @@ export default interface Schema<P extends AnyProps = AnyProps> {
   noDeleteMany?: boolean
 
   /**
-   * Indicates whether cascade deletion should occur if a document of this collection is deleted.
-   * This array should contain a list of model names indicating that once a document in this
-   * collection is deleted, other documents of the models listed in this array should also be
-   * deleted if they have a foreign key to the deleted document. Cascade deletion occurs **after**
-   * all event hooks.
+   * Indicates whether cascade deletion should occur if a document of this
+   * collection is deleted. This array should contain a list of model names
+   * indicating that once a document in this collection is deleted, other
+   * documents of the models listed in this array should also be deleted if they
+   * have a foreign key to the deleted document. Cascade deletion occurs
+   * **after** all event hooks.
    */
   cascade?: string[]
 

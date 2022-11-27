@@ -15,7 +15,8 @@ export type SortStageFactorySpecs<P extends AnyProps = AnyProps> = {
 }
 
 /**
- * Generates a `$sort` stage for a collection to be used in an aggregation pipeline.
+ * Generates a `$sort` stage for a collection to be used in an aggregation
+ * pipeline.
  *
  * @param schema - The schema of the database collection.
  * @param specs - The specifications for the `$sort` stage.
