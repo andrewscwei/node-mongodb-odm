@@ -124,16 +124,17 @@ export function lookupStageFactory<P extends AnyProps = AnyProps>(
 }
 
 /**
- * Generates a `$lookup` stage and (if any) `$unwind` stage for a field defined in the schema of a
- * collection.
+ * Generates a `$lookup` stage and (if any) `$unwind` stage for a field defined
+ * in the schema of a collection.
  *
  * @param schema - The schema of the target collection.
  * @param field - The field in the schema to look up.
- * @param specs - Specs for look up this field, see {@link LookupStageSingleFieldFactorySpecs}.
+ * @param specs - Specs for look up this field, see
+ *                {@link LookupStageSingleFieldFactorySpecs}.
  * @param options - Additional options, see {@link LookupStageFactoryOptions}.
  *
- * @returns An arbitrary pipeline containing the generated `$lookup` stage and `$unwind` stage (if
- *          applicable).
+ * @returns An arbitrary pipeline containing the generated `$lookup` stage and
+ *          `$unwind` stage (if applicable).
  *
  * @throws {Error} - When there is an error generating the `$lookup` stage.
  */
