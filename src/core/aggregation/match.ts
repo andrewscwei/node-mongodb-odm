@@ -7,7 +7,7 @@ export type MatchStage = {
   $match: Record<string, any>
 }
 
-export type MatchStageFactorySpecs<P> = AnyFilter<P>
+export type MatchStageFactorySpecs<P extends AnyProps> = AnyFilter<P>
 
 export type MatchStageFactoryOptions = {
   /**

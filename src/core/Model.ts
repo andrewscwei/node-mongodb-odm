@@ -120,7 +120,7 @@ export type ModelValidateDocumentOptions = {
 /**
  * Generic interface of a model.
  */
-export default interface Model<T> {
+export default interface Model<T extends AnyProps> {
 
   /**
    * Schema of this model.
@@ -228,7 +228,7 @@ export default interface Model<T> {
    * @throws {Error} More or less than 1 document found.
    * @throws {Error} No document found.
    */
-  findOneStrict<R = T>(filter?: AnyFilter<T> | Aggregation.Pipeline, options?: ModelFindOneOptions): Promise<Document<R>>
+  findOneStrict<R extends AnyProps = T>(filter?: AnyFilter<T> | Aggregation.Pipeline, options?: ModelFindOneOptions): Promise<Document<R>>
 
   /**
    * Same as the strict find one operation but this method drops all errors and returns `undefined`
@@ -242,7 +242,7 @@ export default interface Model<T> {
    * @see {@link Model.findOneStrict}
    * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#aggregate}
    */
-  findOne<R = T>(filter?: AnyFilter<T> | Aggregation.Pipeline, options?: ModelFindOneOptions): Promise<Document<R> | undefined>
+  findOne<R extends AnyProps = T>(filter?: AnyFilter<T> | Aggregation.Pipeline, options?: ModelFindOneOptions): Promise<Document<R> | undefined>
 
   /**
    * Finds multiple documents of this collection using the aggregation framework. If no query is
@@ -255,7 +255,7 @@ export default interface Model<T> {
    *
    * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#aggregate}
    */
-  findMany<R = T>(filter?: AnyFilter<T> | Aggregation.Pipeline, options?: ModelFindManyOptions): Promise<Document<R>[]>
+  findMany<R extends AnyProps = T>(filter?: AnyFilter<T> | Aggregation.Pipeline, options?: ModelFindManyOptions): Promise<Document<R>[]>
 
   /**
    * Inserts one document into this model's collection. If `doc` is not specified, random fields

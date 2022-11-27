@@ -27,7 +27,7 @@ export type AnyDocument = { [key: string]: any }
 /**
  * Structure that represents parts of a document.
  */
-export type DocumentFragment<P> = Partial<Document<P>>
+export type DocumentFragment<P extends AnyProps> = Partial<Document<P>>
 
 /**
  * A generic {@link DocumentFragment}.

@@ -106,7 +106,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     }
 
     /** @see {@link Model.findOneStrict} */
-    static async findOneStrict<R = P>(filter?: AnyFilter<P> | Aggregation.Pipeline, options: ModelFindOneOptions = {}): Promise<Document<R>> {
+    static async findOneStrict<R extends AnyProps = P>(filter?: AnyFilter<P> | Aggregation.Pipeline, options: ModelFindOneOptions = {}): Promise<Document<R>> {
       if (filter) {
         return CRUD.findOne(this.schema, filter, options)
       }
@@ -116,7 +116,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     }
 
     /** @see {@link Model.findOne} */
-    static async findOne<R = P>(filter?: AnyFilter<P> | Aggregation.Pipeline, options: ModelFindOneOptions = {}): Promise<Document<R> | undefined> {
+    static async findOne<R extends AnyProps = P>(filter?: AnyFilter<P> | Aggregation.Pipeline, options: ModelFindOneOptions = {}): Promise<Document<R> | undefined> {
       try {
         const res = await this.findOneStrict<R>(filter, options)
         return res
@@ -127,7 +127,7 @@ export default function modelFactory<P extends AnyProps = AnyProps>(schema: Sche
     }
 
     /** @see {@link Model.findMany} */
-    static async findMany<R = P>(filter?: AnyFilter<P> | Aggregation.Pipeline, options: ModelFindManyOptions = {}): Promise<Document<R>[]> {
+    static async findMany<R extends AnyProps = P>(filter?: AnyFilter<P> | Aggregation.Pipeline, options: ModelFindManyOptions = {}): Promise<Document<R>[]> {
       if (filter) {
         return CRUD.findMany(this.schema, filter, options)
       }
