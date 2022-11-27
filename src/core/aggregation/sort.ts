@@ -15,18 +15,21 @@ export type SortStageFactorySpecs<P extends AnyProps = AnyProps> = {
 }
 
 /**
- * Generates a `$sort` stage for a collection to be used in an aggregation pipeline.
+ * Generates a `$sort` stage for a collection to be used in an aggregation
+ * pipeline.
  *
  * @param schema - The schema of the database collection.
  * @param specs - The specifications for the `$sort` stage.
  *
- * @returns An abstract aggregation pipeline containing the generated `$sort` stage.
+ * @returns An abstract aggregation pipeline containing the generated `$sort`
+ *          stage.
  *
  * @example
  * // Returns [{ "$sort": { "a": 1, "b": -1 } }]
  * sort(schema, { a: 1, b: -1 })
  *
- * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/sort/}
+ * @see
+ * {@link https://docs.mongodb.com/manual/reference/operator/aggregation/sort/}
  */
 export function sortStageFactory<P extends AnyProps = AnyProps>(
   schema: Schema<P>,

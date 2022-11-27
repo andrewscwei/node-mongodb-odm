@@ -49,7 +49,7 @@ export async function findOneAndUpdate<P extends AnyProps = AnyProps>(schema: Sc
 }
 
 export async function updateMany<P extends AnyProps = AnyProps>(schema: Schema<P>, filter: Filter<Document<P>>, update: UpdateFilter<Document<P>>, options: UpdateOptions = {}): Promise<Document<P>[] | boolean> {
-  if ((schema.noUpdates === true) || (schema.noUpdateMany === true)) throw new Error(`[${schema.model}] Multiple updates are disallowed for this model`)
+  if (schema.noUpdates === true || schema.noUpdateMany === true) throw new Error(`[${schema.model}] Multiple updates are disallowed for this model`)
   if (options.upsert === true && schema.allowUpserts !== true) throw new Error(`[${schema.model}] Attempting to upsert a document while upserting is disallowed in the schema`)
 
   const collection = await db.getCollection<Document<P>>(schema.collection)
@@ -64,7 +64,7 @@ export async function updateMany<P extends AnyProps = AnyProps>(schema: Schema<P
 }
 
 export async function findManyAndUpdate<P extends AnyProps = AnyProps>(schema: Schema<P>, filter: Filter<Document<P>>, update: UpdateFilter<Document<P>>, options: FindOneAndUpdateOptions = {}): Promise<[undefined, Document<P>[]]> {
-  if ((schema.noUpdates === true) || (schema.noUpdateMany === true)) throw new Error(`[${schema.model}] Multiple updates are disallowed for this model`)
+  if (schema.noUpdates === true || schema.noUpdateMany === true) throw new Error(`[${schema.model}] Multiple updates are disallowed for this model`)
   if (options.upsert === true && schema.allowUpserts !== true) throw new Error(`[${schema.model}] Attempting to upsert a document while upserting is disallowed in the schema`)
 
   const collection = await db.getCollection<Document<P>>(schema.collection)
@@ -73,7 +73,7 @@ export async function findManyAndUpdate<P extends AnyProps = AnyProps>(schema: S
   const n = docs.length
   const newDocs: Document<P>[] = []
 
-  if ((n <= 0) && (options.upsert === true)) {
+  if (n <= 0 && options.upsert === true) {
     const [, newDoc] = await findOneAndUpdate(schema, filter, update, options)
     newDocs.push(newDoc)
   }

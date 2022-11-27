@@ -12,8 +12,8 @@ describe('utils/sanitizeDocument', () => {
 
     const o = sanitizeDocument(Baz.schema, t)
 
-    assert(o.hasOwnProperty('aString'))
-    assert(!o.hasOwnProperty('extraneous'))
+    assert({}.hasOwnProperty.call(o, 'aString'))
+    assert(!{}.hasOwnProperty.call(o, 'extraneous'))
   })
 
   it('can remove `undefined` and `null` fields in a document fragment', () => {
@@ -24,8 +24,8 @@ describe('utils/sanitizeDocument', () => {
 
     const o = sanitizeDocument(Baz.schema, t)
 
-    assert(!o.hasOwnProperty('aNumber'))
-    assert(!o.hasOwnProperty('aBoolean'))
+    assert(!{}.hasOwnProperty.call(o, 'aNumber'))
+    assert(!{}.hasOwnProperty.call(o, 'aBoolean'))
   })
 
   it('can account for fields in dot notation format', () => {
@@ -35,6 +35,6 @@ describe('utils/sanitizeDocument', () => {
 
     const o = sanitizeDocument(Baz.schema, t, { accountForDotNotation: true })
 
-    assert(o.hasOwnProperty('anObject.a'))
+    assert({}.hasOwnProperty.call(o, 'anObject.a'))
   })
 })

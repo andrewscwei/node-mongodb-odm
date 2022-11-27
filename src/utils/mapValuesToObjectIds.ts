@@ -3,9 +3,9 @@ import { ObjectId } from 'mongodb'
 import valueIsObjectIdConvertible from './valueIsObjectIdConvertible'
 
 /**
- * Maps a single value or a collection of values to Object IDs. If a value cannot be converted to an
- * Object ID, it will be skipped (but remains in the collection or returned if a single value is
- * passed).
+ * Maps a single value or a collection of values to Object IDs. If a value
+ * cannot be converted to an Object ID, it will be skipped (but remains in the
+ * collection or returned if a single value is passed).
  *
  * @param val - A single value or a collection of values to map.
  *
@@ -19,7 +19,7 @@ export default function mapValuesToObjectIds(val: any): any {
     const out: any = {}
 
     for (const k in val) {
-      if (!val.hasOwnProperty(k)) continue
+      if (!{}.hasOwnProperty.call(val, k)) continue
       out[k] = mapValuesToObjectIds(val[k])
     }
 

@@ -1,10 +1,12 @@
 import assert from 'assert'
-import Faker from 'faker'
+import Chance from 'chance'
 import { describe, it } from 'mocha'
 import { Db } from 'mongodb'
 import { configureDb, getDbConnection } from '../..'
 import { Bar } from '../../index.spec'
 import { findAll, findMany, findOne, findOneRandom } from './find'
+
+const chance = new Chance()
 
 describe('core/crud/find', () => {
   let db: Db | undefined
@@ -21,11 +23,11 @@ describe('core/crud/find', () => {
   })
 
   it('can find a document', async () => {
-    const t = { aString: Faker.random.alphaNumeric(10) }
+    const t = { aString: chance.string({ length: 10 }) }
     const collection = db?.collection('bars')
     const res = await collection?.insertOne(t)
 
-    assert(res && res.insertedId && res.insertedId)
+    assert(res?.insertedId)
 
     const doc = await findOne(Bar.schema, res.insertedId)
 
@@ -33,7 +35,7 @@ describe('core/crud/find', () => {
   })
 
   it('can find multiple documents', async () => {
-    const s = Faker.random.alphaNumeric(10)
+    const s = chance.string({ length: 10 })
     const collection = db?.collection('bars')
 
     await collection?.insertOne({ aString: s })

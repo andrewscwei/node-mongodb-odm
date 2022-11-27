@@ -11,5 +11,6 @@ import { AnyProps, Document } from '../types'
  */
 export default function typeIsUpdateFilter<P extends AnyProps = AnyProps>(value: any): value is UpdateFilter<Document<P>> {
   if (!_.isPlainObject(value)) return false
+
   return Object.keys(value).some(val => val.startsWith('$'))
 }

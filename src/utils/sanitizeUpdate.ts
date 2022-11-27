@@ -10,13 +10,13 @@ export type SanitizeUpdateOptions = {
 }
 
 /**
- * Transforms the generic update descriptor specific to this library to an {@link UpdateFilter}
- * object that is readable by the MongoDB driver.
+ * Transforms the generic update descriptor specific to this library to an
+ * {@link UpdateFilter} object that is readable by the MongoDB driver.
  *
  * @param update The update object to sanitize.
  *
- * @returns The {@link UpdateFilter} object that can be passed to the MongoDB driver to perform
- *          updates.
+ * @returns The {@link UpdateFilter} object that can be passed to the MongoDB
+ *          driver to perform updates.
  *
  * @throws
  */
@@ -32,21 +32,22 @@ export default function sanitizeUpdate<P extends AnyProps = AnyProps>(schema: Sc
     }
   }
 
-  // Sanitize the `$set` operator, but first remember which keys are `null` or `undefined` because
-  // when the operator is sanitized by `sanitizeDocument` in the subsequent step, those keys will
-  // be dropped.
+  // Sanitize the `$set` operator, but first remember which keys are `null` or
+  // `undefined` because when the operator is sanitized by `sanitizeDocument` in
+  // the subsequent step, those keys will be dropped.
   const setOperator: Record<string, any> = out.$set ?? {}
-  const unsetFields = Object.keys(setOperator).filter(key => ((setOperator[key] === null) || (setOperator[key] === undefined)))
+  const unsetFields = Object.keys(setOperator).filter(key => setOperator[key] === null || setOperator[key] === undefined)
 
   // Add updated timestamps if applicable.
-  if ((schema.timestamps === true) && (ignoreTimestamps !== true) && !_.isDate(setOperator.updatedAt)) {
+  if (schema.timestamps === true && ignoreTimestamps !== true && !_.isDate(setOperator.updatedAt)) {
     setOperator.updatedAt = new Date()
   }
 
   // Now sanitize the `$set` operator.
   out.$set = sanitizeDocument<P>(schema, setOperator, { accountForDotNotation: true }) as typeof out.$set
 
-  // Relocate the previously remembered `null` or `undefined` values to the `$unset` operator.
+  // Relocate the previously remembered `null` or `undefined` values to the
+  // `$unset` operator.
   const unsetOperator: Record<string, any> = out.$unset ?? {}
 
   for (const key of unsetFields) {
@@ -60,14 +61,14 @@ export default function sanitizeUpdate<P extends AnyProps = AnyProps>(schema: Sc
     out.$setOnInsert = sanitizeDocument<P>(schema, out.$setOnInsert, { accountForDotNotation: true }) as typeof out.$setOnInsert
   }
 
-  // Sanitize all fields in the `$addToSet` operator, if any. The `$addToSet` operator automatically
-  // ignores duplicates.
+  // Sanitize all fields in the `$addToSet` operator, if any. The `$addToSet`
+  // operator automatically ignores duplicates.
   if (out.$addToSet) {
     out.$addToSet = sanitizeDocument<P>(schema, out.$addToSet, { accountForDotNotation: true }) as typeof out.$addToSet
   }
 
-  // Sanitize all fields in the `$push` operator, if any. The `$push` operator does not mind
-  // duplicates.
+  // Sanitize all fields in the `$push` operator, if any. The `$push` operator
+  // does not mind duplicates.
   if (out.$push) {
     out.$push = sanitizeDocument<P>(schema, out.$push, { accountForDotNotation: true }) as typeof out.$push
   }

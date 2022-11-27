@@ -1,10 +1,12 @@
 import assert from 'assert'
-import Faker from 'faker'
+import Chance from 'chance'
 import { describe, it } from 'mocha'
 import { Db, ObjectId } from 'mongodb'
 import { configureDb, getDbConnection } from '../..'
 import { Bar, Foo } from '../../index.spec'
 import { insertMany, insertOne } from './insert'
+
+const chance = new Chance()
 
 describe('core/crud/insert', () => {
   let db: Db | undefined
@@ -12,9 +14,9 @@ describe('core/crud/insert', () => {
   function randomBarProps() {
     return {
       aBar: new ObjectId(),
-      aString: Faker.random.alphaNumeric(10),
-      aDate: Faker.date.recent(),
-      aNumber: Faker.datatype.number(),
+      aString: chance.string({ length: 10 }),
+      aDate: chance.date(),
+      aNumber: chance.integer(),
     }
   }
 

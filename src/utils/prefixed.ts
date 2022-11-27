@@ -10,5 +10,6 @@ import _ from 'lodash'
  */
 export default function prefixed(field: string, prefix = ''): string {
   const parts = _.compact(`${prefix}.${field}`.split('.'))
+
   return parts.join('.')
 }

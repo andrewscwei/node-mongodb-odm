@@ -14,5 +14,6 @@ export default function typeIsIdentifiableDocument(value: any): value is { _id: 
   if (_.isNil(value)) return false
   if (!_.isPlainObject(value)) return false
   if (!typeIsValidObjectId(value._id)) return false
+
   return true
 }

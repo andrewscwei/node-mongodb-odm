@@ -1,19 +1,20 @@
 /** @license node-mongodb-odm
  * © Andrew Wei
- * This source code is licensed under the MIT license found in the LICENSE file in the root
- * directory of this source tree.
+ * This source code is licensed under the MIT license found in the LICENSE file
+ * in the root directory of this source tree.
  */
 
 /**
- * @file Database configuration file. This file exports methods to interact with the MongoClient
- * instance.
+ * @file Database configuration file. This file exports methods to interact with
+ *       the MongoClient instance.
  */
 
+import useDebug from 'debug'
 import { Collection } from 'mongodb'
 import { Connection, ConnectionConfiguration, Model } from './core'
 import { AnyDocument } from './types'
 
-const debug = require('debug')('mongodb-odm')
+const debug = useDebug('mongodb-odm')
 
 /**
  * Global MongoDB connection.
@@ -47,6 +48,7 @@ export function configureDb(options: ConnectionConfiguration) {
 export function getDbConnection(): Connection | undefined {
   if (globalConnection) return globalConnection
   debug('No MongoDB connection, did you forget to call `configureDb`?')
+
   return undefined
 }
 
@@ -61,23 +63,26 @@ export function getDbConnection(): Connection | undefined {
  */
 export function getModel(modelOrCollectionName: string): ReturnType<typeof Model> {
   if (!globalConnection) throw new Error('There is no active db connection')
+
   return globalConnection.getModel(modelOrCollectionName)
 }
 
 /**
- * Gets the MongoDB collection associated with a model or collection name and ensures the indexes
- * defined in its schema.
+ * Gets the MongoDB collection associated with a model or collection name and
+ * ensures the indexes defined in its schema.
  *
  * @param modelOrCollectionName - The model or collection name.
  *
  * @returns The MongoDB collection.
  *
- * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html}
+ * @see
+ * {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html}
  *
  * @throws {Error} There is no active db connection.
  */
 export async function getCollection<T extends AnyDocument = AnyDocument>(modelOrCollectionName: string): Promise<Collection<T>> {
   if (!globalConnection) throw new Error('There is no active db connection')
+
   return globalConnection.getCollection(modelOrCollectionName)
 }
 

@@ -6,10 +6,11 @@ import valueIsObjectIdConvertible from './valueIsObjectIdConvertible'
  *
  * @param value - Value to make the `ObjectId` from.
  *
- * @returns If successful, a new `ObjectId` instance will be returned. If not, `undefined` will be
- *          returned.
+ * @returns If successful, a new `ObjectId` instance will be returned. If not,
+ *          `undefined` will be returned.
  */
 export default function ObjectIdMake(value: any): ObjectId | undefined {
   if (!valueIsObjectIdConvertible(value)) return undefined
+
   return new ObjectId(value)
 }

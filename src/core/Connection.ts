@@ -1,8 +1,9 @@
+import useDebug from 'debug'
 import { Collection, Db, MongoClient } from 'mongodb'
 import { AnyDocument } from '../types'
 import modelFactory from './modelFactory'
 
-const debug = require('debug')('mongodb-odm:connection')
+const debug = useDebug('mongodb-odm:connection')
 
 export type ConnectionConfiguration = {
   host: string
@@ -10,11 +11,10 @@ export type ConnectionConfiguration = {
   replicaSet?: string
   username?: string
   password?: string
-  models?: { [modelName: string]: any }
+  models?: Record<string, any>
 }
 
 export default class Connection {
-
   /**
    * Local database connection configuration options.
    */
@@ -28,10 +28,11 @@ export default class Connection {
   /**
    * Collection lookup dictionary.
    */
-  collections: { [collectionName: string]: Collection<any> }
+  collections: Record<string, Collection<any>>
 
   /**
-   * Creates a new {@link Connection} instance with the provided configuration options.
+   * Creates a new {@link Connection} instance with the provided configuration
+   * options.
    *
    * @param config - The configuration options.
    */
@@ -62,12 +63,13 @@ export default class Connection {
    */
   isConnected(): boolean {
     if (!this.client) return false
+
     return true
   }
 
   /**
-   * Establishes a new connection to the database based on the initialized configuration. If there
-   * already exists one, this method does nothing.
+   * Establishes a new connection to the database based on the initialized
+   * configuration. If there already exists one, this method does nothing.
    *
    * @throws {Error} When unable to establish MongoDB connection.
    */
@@ -75,7 +77,7 @@ export default class Connection {
     if (this.isConnected()) return
 
     // Resolve the authentication string.
-    const authentication = (this.config.username && this.config.password) ? `${this.config.username}:${this.config.password}` : undefined
+    const authentication = this.config.username && this.config.password ? `${this.config.username}:${this.config.password}` : undefined
 
     // Database client URL.
     const url = `mongodb://${authentication ? `${authentication}@` : ''}${this.config.host}/${this.config.name}${this.config.replicaSet ? `?replicaSet=${this.config.replicaSet}` : ''}`
@@ -108,20 +110,22 @@ export default class Connection {
   }
 
   /**
-   * Gets the MongoDB collection associated with a model or collection name and ensures the indexes
-   * defined in its schema.
+   * Gets the MongoDB collection associated with a model or collection name and
+   * ensures the indexes defined in its schema.
    *
    * @param modelOrCollectionName - The model or collection name.
    *
    * @returns The MongoDB collection.
    *
-   * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html}
+   * @see
+   * {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html}
    *
    * @throws {Error} There are no models registered.
-   * @throws {Error} Unable to find the model associated with the model or collection name.
+   * @throws {Error} Unable to find the model associated with the model or
+   *                 collection name.
    */
   async getCollection<T extends AnyDocument = AnyDocument>(modelOrCollectionName: string): Promise<Collection<T>> {
-    if (!!this.collections[modelOrCollectionName]) return this.collections[modelOrCollectionName]
+    if (this.collections[modelOrCollectionName]) return this.collections[modelOrCollectionName]
 
     const ModelClass = this.getModel(modelOrCollectionName)
     const schema = ModelClass.schema
@@ -134,7 +138,7 @@ export default class Connection {
         const spec = index.spec || {}
         const options = index.options || {}
 
-        if (!options.hasOwnProperty('background')) {
+        if (!{}.hasOwnProperty.call(options, 'background')) {
           options.background = true
         }
 
@@ -163,10 +167,10 @@ export default class Connection {
 
     if (!models) throw new Error('There are no models registered in the ODM registry')
 
-    if (models.hasOwnProperty(modelOrCollectionName)) return models[modelOrCollectionName]
+    if ({}.hasOwnProperty.call(models, modelOrCollectionName)) return models[modelOrCollectionName]
 
     for (const key in models) {
-      if (!models.hasOwnProperty(key)) continue
+      if (!{}.hasOwnProperty.call(models, key)) continue
 
       const ModelClass = models[key]
 

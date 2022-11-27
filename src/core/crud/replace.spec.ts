@@ -1,5 +1,5 @@
 import assert from 'assert'
-import Faker from 'faker'
+import Chance from 'chance'
 import _ from 'lodash'
 import { describe, it } from 'mocha'
 import { Db, ObjectId } from 'mongodb'
@@ -7,15 +7,17 @@ import { configureDb, getDbConnection } from '../..'
 import { Bar } from '../../index.spec'
 import { findOneAndReplace } from './replace'
 
+const chance = new Chance()
+
 describe('core/crud/replace', () => {
   let db: Db | undefined
 
   function randomBarProps() {
     return {
       aBar: new ObjectId(),
-      aString: Faker.random.alphaNumeric(10),
-      aDate: Faker.date.recent(),
-      aNumber: Faker.datatype.number(),
+      aString: chance.string({ length: 10 }),
+      aDate: chance.date(),
+      aNumber: chance.integer(),
     }
   }
 
@@ -31,7 +33,7 @@ describe('core/crud/replace', () => {
   })
 
   it('can replace an existing doc and return the old doc', async () => {
-    const s = Faker.random.alphaNumeric(10)
+    const s = chance.string({ length: 10 })
     const collection = db?.collection('bars')
 
     await collection?.insertOne({ aString: s })
@@ -43,8 +45,8 @@ describe('core/crud/replace', () => {
   })
 
   it('can replace an existing doc and return the new doc', async () => {
-    const s = Faker.random.alphaNumeric(10)
-    const t = Faker.random.alphaNumeric(10)
+    const s = chance.string({ length: 10 })
+    const t = chance.string({ length: 10 })
     const collection = db?.collection('bars')
 
     await collection?.insertOne({ aString: s })

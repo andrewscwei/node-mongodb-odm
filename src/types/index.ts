@@ -3,7 +3,7 @@ import { Filter, ObjectId, UpdateFilter } from 'mongodb'
 /**
  * A type representing a generic set of properties of a model.
  */
-export type AnyProps = { [key: string]: any }
+export type AnyProps = Record<string, any>
 
 /**
  * Full structure of a document.
@@ -22,12 +22,12 @@ export type InsertableDocument<P extends AnyProps = AnyProps> = Pick<Partial<Doc
 /**
  * A generic {@link Document}.
  */
-export type AnyDocument = { [key: string]: any }
+export type AnyDocument = Record<string, any>
 
 /**
  * Structure that represents parts of a document.
  */
-export type DocumentFragment<P> = Partial<Document<P>>
+export type DocumentFragment<P extends AnyProps> = Partial<Document<P>>
 
 /**
  * A generic {@link DocumentFragment}.

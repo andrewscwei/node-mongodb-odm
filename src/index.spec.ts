@@ -1,13 +1,15 @@
 /* eslint-disable max-classes-per-file */
 
 import assert from 'assert'
-import Faker from 'faker'
+import Chance from 'chance'
 import _ from 'lodash'
 import { before, describe, it } from 'mocha'
 import { ObjectId } from 'mongodb'
 import { configureDb, getDbConnection } from '.'
 import Model from './core/modelFactory'
 import Schema from './core/Schema'
+
+const chance = new Chance()
 
 describe('can connect to a database', () => {
   before(async () => {
@@ -91,15 +93,15 @@ const FooSchema: Schema<FooProps> = {
 
 export class Foo extends Model(FooSchema) {
   static randomProps = {
-    aNumber: () => (Math.floor(Math.random() * 1000) + 0),
+    aNumber: () => Math.floor(Math.random() * 1000) + 0,
   }
 
   static formatProps = {
-    aString: (value: string): string => (value.trim()),
+    aString: (value: string): string => value.trim(),
   }
 
   static validateProps = {
-    aNumber: (value: number) => ((value >= 0 && value <= 1000)),
+    aNumber: (value: number) => value >= 0 && value <= 1000,
   }
 
   static defaultProps = {
@@ -151,8 +153,8 @@ const BarSchema: Schema<BarProps> = {
 
 export class Bar extends Model(BarSchema) {
   static randomProps = {
-    aString: () => (Faker.random.alphaNumeric(10)),
-    aNumber: () => (Math.floor(Math.random() * 1000) + 0),
+    aString: () => chance.string({ length: 10 }),
+    aNumber: () => Math.floor(Math.random() * 1000) + 0,
   }
 
   static defaultProps = {
@@ -163,7 +165,7 @@ export class Bar extends Model(BarSchema) {
 
   static validateProps = {
     aString: 100,
-    aNumber: (value: number) => ((value >= 0 && value <= 1000)),
+    aNumber: (value: number) => value >= 0 && value <= 1000,
   }
 
   static formatProps = {
@@ -198,13 +200,12 @@ const BazSchema: Schema<BazProps> = {
 }
 
 export class Baz extends Model(BazSchema) {
-
   static randomProps = {
-    aString: () => Faker.random.alphaNumeric(10),
+    aString: () => chance.string({ length: 10 }),
   }
 
   static defaultProps = {
-    aNumber: () => Faker.datatype.number(),
+    aNumber: () => chance.integer(),
     aBoolean: true,
   }
 
