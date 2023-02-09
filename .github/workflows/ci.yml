@@ -33,9 +33,13 @@ jobs:
       - name: Build
         run: npm run build
       - name: Test
-        env:
-          MONGODB_HOST: localhost:27017
-        run: npm run build:test && npm test
+        run: npm test
+      - name: Generate test report
+        uses: dorny/test-reporter@v1
+        with:
+          name: Test Report
+          path: .tmp/test-results.json
+          reporter: mocha-json
   notify:
     name: Notify
     needs: [build]

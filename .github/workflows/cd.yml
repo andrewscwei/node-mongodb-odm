@@ -1,9 +1,9 @@
 name: CD
 on:
   push:
-    tags: ["v*"]
-  release:
-    types: [published]
+  #   tags: ["v*"]
+  # release:
+  #   types: [published]
 jobs:
   build:
     name: Build
@@ -36,12 +36,16 @@ jobs:
       - name: Persist build dir
         uses: actions/upload-artifact@v3
         with:
-          name: build
+          name: build/
           path: build/
       - name: Test
-        env:
-          MONGODB_HOST: localhost:27017
-        run: npm run build:test && npm test
+        run: npm test
+      - name: Generate test report
+        uses: dorny/test-reporter@v1
+        with:
+          name: Test Report
+          path: .tmp/test-results.json
+          reporter: mocha-json
   deploy:
     name: Deploy
     needs: [build]
@@ -53,15 +57,16 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version-file: .nvmrc
+          registry-url: https://registry.npmjs.org
       - name: Restore build dir
         uses: actions/download-artifact@v3
         with:
-          name: build
+          name: build/
       - name: Create release
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.github_token }}
-          script: |
+          script: |-
             const tag = process.env.GITHUB_REF.split('/').slice(-1)[0]
             try {
               await github.rest.repos.createRelease({
@@ -77,10 +82,18 @@ jobs:
             catch (error) {
               core.setFailed(error.message)
             }
-      - name: Deploy to NPM
-        run: .github/workflows/deploy_to_npm.sh
-        env:
-          NPM_AUTH: ${{ secrets.NPM_AUTH }}
+      - name: List dir
+        run: ls -la
+      # - name: Deploy to NPM
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{ secrets.npm-auth-token }}
+      #   run: |-
+      #     if npm publish; then
+      #       echo "Successfully published to NPM"
+      #     else
+      #       echo "Failed to publish to NPM"
+      #       exit 1
+      #     fi
   notify:
     name: Notify
     needs: [build, deploy]
