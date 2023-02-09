@@ -36,7 +36,7 @@ jobs:
       - name: Persist build dir
         uses: actions/upload-artifact@v3
         with:
-          name: build/
+          name: build
           path: build/
       - name: Test
         run: npm test
@@ -61,7 +61,7 @@ jobs:
       - name: Restore build dir
         uses: actions/download-artifact@v3
         with:
-          name: build/
+          name: build
       - name: Create release
         uses: actions/github-script@v6
         with:
