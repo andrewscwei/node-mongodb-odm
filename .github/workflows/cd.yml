@@ -1,99 +1,37 @@
 name: CD
 on:
   push:
-  #   tags: ["v*"]
-  # release:
-  #   types: [published]
+    tags: ["v*"]
+  release:
+    types: [published]
+concurrency:
+  group: deploy
+  cancel-in-progress: true
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-latest
-    services:
-      mongodb:
-        image: mongo:5.0.5
-        ports:
-          - 27017:27017
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          node-version-file: .nvmrc
-      - name: Cache Node modules
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-build-npm-cache-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-build-npm-cache-
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
-      - name: Install Node modules
-        run: npm install
-      - name: Build
-        run: npm run build
-      - name: Persist build dir
-        uses: actions/upload-artifact@v3
-        with:
-          name: build
-          path: build/
-      - name: Test
-        run: npm test
-      - name: Generate test report
-        uses: dorny/test-reporter@v1
-        with:
-          name: Test Report
-          path: .tmp/test-results.json
-          reporter: mocha-json
+    uses: andrewscwei/workflows/.github/workflows/node-build.yml@master
+    with:
+      test-reporter: mocha-json
+      test-report-path: .tmp/test-results.json
+      artifacts-path: /build
+      use-mongo-version: 5.0.5
+    secrets:
+      gh-access-token: ${{ secrets.GH_ACCESS_TOKEN }}
   deploy:
     name: Deploy
     needs: [build]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          node-version-file: .nvmrc
-          registry-url: https://registry.npmjs.org
-      - name: Restore build dir
-        uses: actions/download-artifact@v3
-        with:
-          name: build
-      - name: Create release
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.github_token }}
-          script: |-
-            const tag = process.env.GITHUB_REF.split('/').slice(-1)[0]
-            try {
-              await github.rest.repos.createRelease({
-                draft: false,
-                generate_release_notes: true,
-                name: tag,
-                owner: context.repo.owner,
-                prerelease: false,
-                repo: context.repo.repo,
-                tag_name: tag,
-              })
-            }
-            catch (error) {
-              core.setFailed(error.message)
-            }
-      - name: List dir
-        run: ls -la
-      # - name: Deploy to NPM
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{ secrets.npm-auth-token }}
-      #   run: |-
-      #     if npm publish; then
-      #       echo "Successfully published to NPM"
-      #     else
-      #       echo "Failed to publish to NPM"
-      #       exit 1
-      #     fi
+    uses: andrewscwei/workflows/.github/workflows/npm-deploy.yml@master
+    with:
+      test-reporter: mocha-json
+      test-report-path: .tmp/test-results.json
+      artifacts-name: ${{ needs.build.outputs.artifacts-name }}
+      artifacts-path: ${{ needs.build.outputs.artifacts-path }}
+      create-release: true
+      use-mongo-version: 5.0.5
+    secrets:
+      gh-access-token: ${{ secrets.GH_ACCESS_TOKEN }}
+      npm-auth-token: ${{ secrets.NPM_AUTH }}
   notify:
     name: Notify
     needs: [build, deploy]
