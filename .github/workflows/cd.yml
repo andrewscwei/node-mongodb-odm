@@ -12,21 +12,16 @@ jobs:
     name: Build
     uses: andrewscwei/workflows/.github/workflows/node-build.yml@master
     with:
-      test-reporter: mocha-json
-      test-report-path: .tmp/test-results.json
-      artifacts-path: /build
+      artifacts-path: build/
       use-mongo-version: 5.0.5
   deploy:
     name: Deploy
     needs: [build]
     uses: andrewscwei/workflows/.github/workflows/npm-deploy.yml@master
     with:
-      test-reporter: mocha-json
-      test-report-path: .tmp/test-results.json
       artifacts-name: ${{ needs.build.outputs.artifacts-name }}
       artifacts-path: ${{ needs.build.outputs.artifacts-path }}
       create-release: true
-      use-mongo-version: 5.0.5
     secrets:
       npm-auth-token: ${{ secrets.NPM_AUTH }}
   notify:
