@@ -7,8 +7,7 @@
     "clean": "rimraf build",
     "prebuild": "npm run lint",
     "build": "npm run clean && tsc",
-    "build:test": "npm run build -- --project tsconfig.test.json",
-    "test": "mocha -b -c --timeout 5000 --reporter json --reporter-option output=.tmp/test-results.json --extension spec.js --recursive --exit \"build/$npm_config_files\"",
+    "test": "npm run build -- --project tsconfig.test.json && mocha -b -c --timeout 5000 --reporter json --reporter-option output=.tmp/test-results.json --extension spec.js --recursive --exit \"build/$npm_config_files\"",
     "test:ts": "concurrently --kill-others \"docker run --rm -p 27017:27017 mongo:5.0.5\" \"cross-env DEBUG=mongodb-odm* mocha -r ts-node/register -b -c --timeout 5000 --extension spec.ts --recursive --exit \"src/$npm_config_files\"\"",
     "lint": "eslint --ext .ts src",
     "lint:fix": "npm run lint -- --fix"
