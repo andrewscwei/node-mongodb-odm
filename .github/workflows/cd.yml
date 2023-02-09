@@ -16,8 +16,6 @@ jobs:
       test-report-path: .tmp/test-results.json
       artifacts-path: /build
       use-mongo-version: 5.0.5
-    secrets:
-      gh-access-token: ${{ secrets.GH_ACCESS_TOKEN }}
   deploy:
     name: Deploy
     needs: [build]
@@ -30,7 +28,6 @@ jobs:
       create-release: true
       use-mongo-version: 5.0.5
     secrets:
-      gh-access-token: ${{ secrets.GH_ACCESS_TOKEN }}
       npm-auth-token: ${{ secrets.NPM_AUTH }}
   notify:
     name: Notify

@@ -11,8 +11,6 @@ jobs:
       test-reporter: mocha-json
       test-report-path: .tmp/test-results.json
       use-mongo-version: 5.0.5
-    secrets:
-      gh-access-token: ${{ secrets.GH_ACCESS_TOKEN }}
   notify:
     name: Notify
     needs: [build]
