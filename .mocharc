@@ -1,0 +1,14 @@
+{
+  "bail": true,
+  "color": true,
+  "diff": true,
+  "exit": true,
+  "node-option": [
+    "no-warnings",
+    "experimental-specifier-resolution=node"
+  ],
+  "full-trace": true,
+  "recursive": true,
+  "reporter": "spec",
+  "timeout": 5000
+}
