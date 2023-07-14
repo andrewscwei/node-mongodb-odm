@@ -28,7 +28,7 @@ export default function sanitizeUpdate<P extends AnyProps = AnyProps>(schema: Sc
   }
   else {
     out = {
-      $set: _.cloneDeep(update),
+      $set: _.cloneDeep(update as any),
     }
   }
 
