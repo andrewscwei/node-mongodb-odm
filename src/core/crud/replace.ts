@@ -17,7 +17,7 @@ export async function replaceOne<P extends AnyProps = AnyProps>(schema: Schema<P
 
 export async function findOneAndReplace<P extends AnyProps = AnyProps>(schema: Schema<P>, filter: Filter<Document<P>>, replacement: InsertableDocument<P>, options: FindOneAndReplaceOptions = {}): Promise<[Document<P>, Document<P>]> {
   const collection = await db.getCollection<Document<P>>(schema.collection)
-  const result = await collection.findOneAndReplace(filter, replacement, { ...options, returnDocument: 'before' })
+  const result = await collection.findOneAndReplace(filter, replacement, { ...options, returnDocument: 'before', includeResultMetadata: true })
 
   if (result.ok !== 1) throw new Error(`[${schema.model}] Unable to find and replace document`)
 

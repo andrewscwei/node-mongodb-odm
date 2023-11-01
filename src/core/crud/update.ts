@@ -24,7 +24,7 @@ export async function findOneAndUpdate<P extends AnyProps = AnyProps>(schema: Sc
   if (options.upsert === true && schema.allowUpserts !== true) throw new Error(`[${schema.model}] Attempting to upsert a document while upserting is disallowed in the schema`)
 
   const collection = await db.getCollection<Document<P>>(schema.collection)
-  const result = await collection.findOneAndUpdate(filter, update, { ...options, returnDocument: 'before' })
+  const result = await collection.findOneAndUpdate(filter, update, { ...options, returnDocument: 'before', includeResultMetadata: true })
 
   if (result.ok !== 1) throw new Error(`[${schema.model}] Update failed`)
 
@@ -80,7 +80,7 @@ export async function findManyAndUpdate<P extends AnyProps = AnyProps>(schema: S
   else {
     for (let i = 0; i < n; i++) {
       const doc = docs[i]
-      const result = await collection.findOneAndUpdate({ _id: doc._id } as Filter<Document<P>>, update, { ...options, returnDocument: 'after' })
+      const result = await collection.findOneAndUpdate({ _id: doc._id } as Filter<Document<P>>, update, { ...options, returnDocument: 'after', includeResultMetadata: true })
 
       if (result.ok !== 1) throw new Error(`[${schema.model}] Unable to update many documents`)
       if (!result.value) throw new Error(`[${schema.model}] Unable to update many documents`)

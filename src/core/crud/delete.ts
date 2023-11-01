@@ -20,7 +20,7 @@ export async function findAndDeleteOne<P extends AnyProps = AnyProps>(schema: Sc
   if (schema.noDeletes === true) throw new Error(`[${schema.model}] Deletions are disallowed for this model`)
 
   const collection = await db.getCollection<Document<P>>(schema.collection)
-  const result = await collection.findOneAndDelete(filter)
+  const result = await collection.findOneAndDelete(filter, { includeResultMetadata: true })
 
   if (result.ok !== 1) throw new Error(`[${schema.model}] Unable to delete document`)
   if (!result.value) throw new Error(`[${schema.model}] Unable to return deleted document`)
@@ -50,7 +50,7 @@ export async function findManyAndDelete<P extends AnyProps = AnyProps>(schema: S
 
   for (let i = 0; i < n; i++) {
     const doc = docs[i]
-    const result = await collection.findOneAndDelete({ _id: doc._id } as Filter<Document<P>>)
+    const result = await collection.findOneAndDelete({ _id: doc._id } as Filter<Document<P>>, { includeResultMetadata: true })
 
     if (result.ok !== 1) throw new Error(`[${schema.model}] Unable to delete documents`)
 
