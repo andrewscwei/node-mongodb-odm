@@ -9,7 +9,7 @@
     "prebuild": "npm run lint",
     "build": "npm run clean && tsc",
     "test": "npm run build && mocha --config .mocharc \"tests/$npm_config_files\"",
-    "test:unit": "concurrently -k --hide=0 \"npm run svc:db\" \"cross-env DEBUG=mongodb-odm* mocha --config .mocharc \"src/$npm_config_files\"\"",
+    "test:unit": "cross-env DEBUG=mongodb-odm* mocha --config .mocharc \"src/$npm_config_files\"",
     "svc:db": "docker run --rm -p 27017:27017 mongo:5.0.5",
     "lint": "eslint --ext .ts src",
     "lint:fix": "npm run lint -- --fix"
