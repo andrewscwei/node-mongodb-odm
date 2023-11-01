@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { describe, it } from 'mocha'
-import { Db } from 'mongodb'
+import { type Db } from 'mongodb'
 import { configureDb, getDbConnection } from '../..'
 import { Bar } from '../../index.spec'
 import { identifyMany, identifyOne } from './identify'

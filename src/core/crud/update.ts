@@ -1,7 +1,7 @@
-import { Filter, FindOneAndUpdateOptions, UpdateFilter, UpdateOptions } from 'mongodb'
+import { type Filter, type FindOneAndUpdateOptions, type UpdateFilter, type UpdateOptions } from 'mongodb'
 import * as db from '../..'
-import { AnyProps, Document } from '../../types'
-import Schema from '../Schema'
+import { type AnyProps, type Document } from '../../types'
+import type Schema from '../Schema'
 import { findMany, findOne } from './find'
 
 export async function updateOne<P extends AnyProps = AnyProps>(schema: Schema<P>, filter: Filter<Document<P>>, update: UpdateFilter<Document<P>>, options: UpdateOptions = {}): Promise<boolean> {

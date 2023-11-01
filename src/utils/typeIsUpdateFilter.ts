@@ -1,6 +1,6 @@
 import _ from 'lodash'
-import { UpdateFilter } from 'mongodb'
-import { AnyProps, Document } from '../types'
+import { type UpdateFilter } from 'mongodb'
+import { type AnyProps, type Document } from '../types'
 
 /**
  * Checks if a value is an {@link UpdateFilter}.

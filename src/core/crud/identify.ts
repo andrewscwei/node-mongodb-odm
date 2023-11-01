@@ -1,9 +1,9 @@
 import _ from 'lodash'
 import { ObjectId } from 'mongodb'
 import * as db from '../..'
-import { AnyFilter, AnyProps } from '../../types'
+import { type AnyFilter, type AnyProps } from '../../types'
+import type Schema from '../Schema'
 import * as Aggregation from '../aggregation'
-import Schema from '../Schema'
 import { findOne } from './find'
 
 export async function identifyOne<P extends AnyProps = AnyProps>(schema: Schema<P>, filter: AnyFilter<P>): Promise<ObjectId> {

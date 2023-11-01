@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { AnyDocument } from '../types'
+import { type AnyDocument } from '../types'
 
 /**
  * Checks if a value is a document of any kind.

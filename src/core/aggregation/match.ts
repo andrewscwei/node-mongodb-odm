@@ -1,7 +1,7 @@
-import { AnyFilter, AnyProps } from '../../types'
+import { type AnyFilter, type AnyProps } from '../../types'
 import { sanitizeFilter } from '../../utils'
 import prefixed from '../../utils/prefixed'
-import Schema from '../Schema'
+import type Schema from '../Schema'
 
 export type MatchStage = {
   $match: Record<string, any>

@@ -1,7 +1,7 @@
 import _ from 'lodash'
-import { Filter, ObjectId } from 'mongodb'
-import Schema from '../core/Schema'
-import { AnyFilter, AnyProps, Document } from '../types'
+import { ObjectId, type Filter } from 'mongodb'
+import type Schema from '../core/Schema'
+import { type AnyFilter, type AnyProps, type Document } from '../types'
 import sanitizeDocument from './sanitizeDocument'
 import typeIsValidObjectId from './typeIsValidObjectId'
 

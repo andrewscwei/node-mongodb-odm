@@ -1,6 +1,6 @@
 import _ from 'lodash'
-import { ObjectId } from 'mongodb'
-import { AnyProps } from '../types'
+import { type ObjectId } from 'mongodb'
+import { type AnyProps } from '../types'
 import typeIsValidObjectId from './typeIsValidObjectId'
 
 /**

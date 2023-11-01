@@ -1,8 +1,8 @@
-import { BulkWriteOptions, InsertOneOptions } from 'mongodb'
+import { type BulkWriteOptions, type InsertOneOptions } from 'mongodb'
 import * as db from '../..'
-import { AnyProps, Document, InsertableDocument } from '../../types'
+import { type AnyProps, type Document, type InsertableDocument } from '../../types'
+import type Schema from '../Schema'
 import { matchStageFactory } from '../aggregation'
-import Schema from '../Schema'
 import { findMany, findOne } from './find'
 
 export async function insertOne<P extends AnyProps = AnyProps>(schema: Schema<P>, doc: InsertableDocument<P>, options: InsertOneOptions = {}): Promise<Document<P>> {

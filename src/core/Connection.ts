@@ -1,7 +1,7 @@
 import useDebug from 'debug'
-import { Collection, Db, MongoClient } from 'mongodb'
-import { AnyDocument } from '../types'
-import modelFactory from './modelFactory'
+import { MongoClient, type Collection, type Db } from 'mongodb'
+import { type AnyDocument } from '../types'
+import type modelFactory from './modelFactory'
 
 const debug = useDebug('mongodb-odm:connection')
 

@@ -1,4 +1,4 @@
-import { Filter, ObjectId, UpdateFilter } from 'mongodb'
+import { type Filter, type ObjectId, type UpdateFilter } from 'mongodb'
 
 /**
  * A type representing a generic set of properties of a model.

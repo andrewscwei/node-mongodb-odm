@@ -12,14 +12,16 @@
 import bcrypt from 'bcrypt'
 import useDebug from 'debug'
 import _ from 'lodash'
-import { Collection, DeleteOptions, Filter, FindOneAndDeleteOptions, FindOneAndReplaceOptions, FindOneAndUpdateOptions, ObjectId, ReplaceOptions, UpdateFilter, UpdateOptions } from 'mongodb'
+import { type Collection, type DeleteOptions, type Filter, type FindOneAndDeleteOptions, type FindOneAndReplaceOptions, type FindOneAndUpdateOptions, type ObjectId, type ReplaceOptions, type UpdateFilter, type UpdateOptions } from 'mongodb'
 import * as db from '..'
-import { AnyDocument, AnyFilter, AnyProps, AnyUpdate, Document, DocumentFragment, InsertableDocument } from '../types'
+import { type AnyDocument, type AnyFilter, type AnyProps, type AnyUpdate, type Document, type DocumentFragment, type InsertableDocument } from '../types'
 import { getFieldSpecByKey, sanitizeDocument, sanitizeFilter, sanitizeUpdate, typeIsAnyDocument, typeIsValidObjectId, validateFieldValue } from '../utils'
-import * as Aggregation from './aggregation'
+import type Model from './Model'
+import { type FieldValidationStrategy, type ModelDefaultPropertyProvider, type ModelDeleteManyOptions, type ModelDeleteOneOptions, type ModelFindManyOptions, type ModelFindOneOptions, type ModelInsertManyOptions, type ModelInsertOneOptions, type ModelPropertyFormattingProvider, type ModelPropertyValidationProvider, type ModelRandomFieldsOptions, type ModelRandomPropertyProvider, type ModelReplaceOneOptions, type ModelUpdateManyOptions, type ModelUpdateOneOptions, type ModelValidateDocumentOptions } from './Model'
+import type Schema from './Schema'
+import { typeIsFieldDescriptor, type FieldDescriptor, type MultiFieldDescriptor } from './Schema'
+import type * as Aggregation from './aggregation'
 import * as CRUD from './crud'
-import Model, { FieldValidationStrategy, ModelDefaultPropertyProvider, ModelDeleteManyOptions, ModelDeleteOneOptions, ModelFindManyOptions, ModelFindOneOptions, ModelInsertManyOptions, ModelInsertOneOptions, ModelPropertyFormattingProvider, ModelPropertyValidationProvider, ModelRandomFieldsOptions, ModelRandomPropertyProvider, ModelReplaceOneOptions, ModelUpdateManyOptions, ModelUpdateOneOptions, ModelValidateDocumentOptions } from './Model'
-import Schema, { FieldDescriptor, MultiFieldDescriptor, typeIsFieldDescriptor } from './Schema'
 
 /**
  * Generates an abstract, static model class with the provided schema.

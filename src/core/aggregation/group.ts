@@ -1,6 +1,6 @@
 import _ from 'lodash'
-import { AnyProps } from '../../types'
-import Schema from '../Schema'
+import { type AnyProps } from '../../types'
+import type Schema from '../Schema'
 
 export type GroupStage = {
   $group: Record<string, any>

@@ -10,9 +10,9 @@
  */
 
 import useDebug from 'debug'
-import { Collection } from 'mongodb'
-import { Connection, ConnectionConfiguration, Model } from './core'
-import { AnyDocument } from './types'
+import { type Collection } from 'mongodb'
+import { Connection, type ConnectionConfiguration, type Model } from './core'
+import { type AnyDocument } from './types'
 
 const debug = useDebug('mongodb-odm')
 

@@ -1,7 +1,7 @@
 import _ from 'lodash'
-import { UpdateFilter } from 'mongodb'
-import Schema from '../core/Schema'
-import { AnyProps, AnyUpdate, Document } from '../types'
+import { type UpdateFilter } from 'mongodb'
+import type Schema from '../core/Schema'
+import { type AnyProps, type AnyUpdate, type Document } from '../types'
 import sanitizeDocument from './sanitizeDocument'
 import typeIsUpdateFilter from './typeIsUpdateFilter'
 

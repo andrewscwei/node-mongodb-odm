@@ -1,7 +1,7 @@
-import { DeleteOptions, Filter, FindOneAndDeleteOptions } from 'mongodb'
+import { type DeleteOptions, type Filter, type FindOneAndDeleteOptions } from 'mongodb'
 import * as db from '../..'
-import { AnyProps, Document } from '../../types'
-import Schema from '../Schema'
+import { type AnyProps, type Document } from '../../types'
+import type Schema from '../Schema'
 import { findMany } from './find'
 
 export async function deleteOne<P extends AnyProps = AnyProps>(schema: Schema<P>, filter: Filter<Document<P>>, options: DeleteOptions = {}): Promise<boolean> {

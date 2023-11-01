@@ -1,6 +1,6 @@
-import { SortDirection } from 'mongodb'
-import { AnyProps } from '../../types'
-import Schema from '../Schema'
+import { type SortDirection } from 'mongodb'
+import { type AnyProps } from '../../types'
+import type Schema from '../Schema'
 
 export type SortStage = {
   $sort: Record<string, any>

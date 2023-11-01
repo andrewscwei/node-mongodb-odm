@@ -1,6 +1,6 @@
 import _ from 'lodash'
-import { CreateIndexesOptions, IndexSpecification, ObjectId } from 'mongodb'
-import { AnyProps } from '../types'
+import { type CreateIndexesOptions, type IndexSpecification, type ObjectId } from 'mongodb'
+import { type AnyProps } from '../types'
 
 /**
  * Data type for describing multiple (can be nested) fields in the

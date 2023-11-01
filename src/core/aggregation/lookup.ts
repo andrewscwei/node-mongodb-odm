@@ -1,8 +1,8 @@
 import * as db from '../..'
-import { AnyProps } from '../../types'
+import { type AnyProps } from '../../types'
 import fieldPath from '../../utils/fieldPath'
 import prefixed from '../../utils/prefixed'
-import Schema from '../Schema'
+import type Schema from '../Schema'
 
 export type UnwindStage = {
   $unwind: Record<string, any>

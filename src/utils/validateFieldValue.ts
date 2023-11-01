@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import { ObjectId } from 'mongodb'
-import { FieldValidationStrategy } from '../core/Model'
-import { FieldDescriptor, FieldType, FieldValue } from '../core/Schema'
+import { type FieldValidationStrategy } from '../core/Model'
+import { type FieldDescriptor, type FieldType, type FieldValue } from '../core/Schema'
 import typeIsValidObjectId from './typeIsValidObjectId'
 
 /**

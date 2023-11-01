@@ -1,7 +1,7 @@
 import assert from 'assert'
 import Chance from 'chance'
 import { describe, it } from 'mocha'
-import { Db, ObjectId } from 'mongodb'
+import { ObjectId, type Db } from 'mongodb'
 import { configureDb, getDbConnection } from '../..'
 import { Bar, Foo } from '../../index.spec'
 import { insertMany, insertOne } from './insert'

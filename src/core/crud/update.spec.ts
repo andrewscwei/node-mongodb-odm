@@ -2,10 +2,10 @@ import assert from 'assert'
 import Chance from 'chance'
 import _ from 'lodash'
 import { describe, it } from 'mocha'
-import { Db, ObjectId } from 'mongodb'
+import { ObjectId, type Db } from 'mongodb'
 import { configureDb, getDbConnection } from '../..'
-import { Bar, BarProps, Foo } from '../../index.spec'
-import { DocumentFragment } from '../../types'
+import { Bar, Foo, type BarProps } from '../../index.spec'
+import { type DocumentFragment } from '../../types'
 import { findManyAndUpdate, findOneAndUpdate, updateMany, updateOne } from './update'
 
 const chance = new Chance()

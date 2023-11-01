@@ -1,8 +1,9 @@
-import { AggregateOptions, BulkWriteOptions, Collection, DeleteOptions, FindOneAndDeleteOptions, FindOneAndReplaceOptions, FindOneAndUpdateOptions, InsertOneOptions, ObjectId, ReplaceOptions, UpdateOptions } from 'mongodb'
-import { AnyFilter, AnyProps, AnyUpdate, Document, DocumentFragment } from '../types'
-import { SanitizeUpdateOptions } from '../utils'
-import * as Aggregation from './aggregation'
-import Schema, { FieldValue } from './Schema'
+import { type AggregateOptions, type BulkWriteOptions, type Collection, type DeleteOptions, type FindOneAndDeleteOptions, type FindOneAndReplaceOptions, type FindOneAndUpdateOptions, type InsertOneOptions, type ObjectId, type ReplaceOptions, type UpdateOptions } from 'mongodb'
+import { type AnyFilter, type AnyProps, type AnyUpdate, type Document, type DocumentFragment } from '../types'
+import { type SanitizeUpdateOptions } from '../utils'
+import type Schema from './Schema'
+import { type FieldValue } from './Schema'
+import type * as Aggregation from './aggregation'
 
 type LocalModel = any
 
