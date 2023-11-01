@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import { ObjectId } from 'mongodb'
-import valueIsObjectIdConvertible from './valueIsObjectIdConvertible'
+import { valueIsObjectIdConvertible } from './valueIsObjectIdConvertible'
 
 /**
  * Maps a single value or a collection of values to Object IDs. If a value
@@ -11,7 +11,7 @@ import valueIsObjectIdConvertible from './valueIsObjectIdConvertible'
  *
  * @returns The mapped value(s).
  */
-export default function mapValuesToObjectIds(val: any): any {
+export function mapValuesToObjectIds(val: any): any {
   if (_.isArray(val)) {
     return val.map(v => mapValuesToObjectIds(v))
   }

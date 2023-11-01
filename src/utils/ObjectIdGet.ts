@@ -1,6 +1,6 @@
 import { type ObjectId } from 'mongodb'
-import typeIsIdentifiableDocument from './typeIsIdentifiableDocument'
-import valueIsObjectIdConvertible from './valueIsObjectIdConvertible'
+import { typeIsIdentifiableDocument } from './typeIsIdentifiableDocument'
+import { valueIsObjectIdConvertible } from './valueIsObjectIdConvertible'
 
 /**
  * Checks to see if a value is a valid `ObjectId` and returns it if it is. If
@@ -11,7 +11,7 @@ import valueIsObjectIdConvertible from './valueIsObjectIdConvertible'
  *
  * @returns `ObjectId` or `undefined` if none are found.
  */
-export default function ObjectIdGet(value: any): ObjectId | undefined {
+export function ObjectIdGet(value: any): ObjectId | undefined {
   if (valueIsObjectIdConvertible(value)) return value
   if (typeIsIdentifiableDocument(value)) return value._id
 

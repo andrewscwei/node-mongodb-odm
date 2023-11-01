@@ -8,7 +8,7 @@ import { ObjectId } from 'mongodb'
  *
  * @returns `true` or `false`.
  */
-export default function valueIsObjectIdConvertible(value: any): boolean {
+export function valueIsObjectIdConvertible(value: any): boolean {
   if (_.isNil(value)) return false
   if (!ObjectId.isValid(value)) return false
   if (value instanceof ObjectId) return true

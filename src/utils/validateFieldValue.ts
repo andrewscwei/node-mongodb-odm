@@ -2,7 +2,7 @@ import _ from 'lodash'
 import { ObjectId } from 'mongodb'
 import { type FieldValidationStrategy } from '../core/Model'
 import { type FieldDescriptor, type FieldType, type FieldValue } from '../core/Schema'
-import typeIsValidObjectId from './typeIsValidObjectId'
+import { typeIsValidObjectId } from './typeIsValidObjectId'
 
 /**
  * Checks a value against field properties definied in a schema.
@@ -71,7 +71,7 @@ import typeIsValidObjectId from './typeIsValidObjectId'
  * @throws {TypeError} Value fails custom validation function (only if validator
  *                     is a function).
  */
-export default function validateFieldValue<V = FieldValue>(value: V, spec: FieldDescriptor, strategy?: FieldValidationStrategy<V>) {
+export function validateFieldValue<V = FieldValue>(value: V, spec: FieldDescriptor, strategy?: FieldValidationStrategy<V>) {
   // Check if value is `undefined` or `null`, then respond accordingly depending
   // on whether or not it is a required value.
   if (_.isNil(value)) {

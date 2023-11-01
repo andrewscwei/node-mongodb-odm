@@ -1,7 +1,7 @@
 import _ from 'lodash'
-import type Schema from '../core/Schema'
+import { type Schema } from '../core'
 import { type AnyDocumentFragment, type AnyProps, type DocumentFragment } from '../types'
-import getFieldSpecByKey from './getFieldSpecByKey'
+import { getFieldSpecByKey } from './getFieldSpecByKey'
 
 export type SanitizeDocumentOptions = {
   /**
@@ -25,7 +25,7 @@ export type SanitizeDocumentOptions = {
  * // Returns { a: 'b', b: 'c' }
  * sanitizeDocument(schema, { a: 'b', b: 'c', garbage: 'garbage' })
  */
-export default function sanitizeDocument<P extends AnyProps = AnyProps>(schema: Schema<P>, doc: AnyDocumentFragment, { accountForDotNotation = false }: SanitizeDocumentOptions = {}): DocumentFragment<P> {
+export function sanitizeDocument<P extends AnyProps = AnyProps>(schema: Schema<P>, doc: AnyDocumentFragment, { accountForDotNotation = false }: SanitizeDocumentOptions = {}): DocumentFragment<P> {
   const o: DocumentFragment<P> = {}
 
   for (const key in doc) {

@@ -2,7 +2,7 @@ import _ from 'lodash'
 import { ObjectId } from 'mongodb'
 import * as db from '../..'
 import { type AnyFilter, type AnyProps } from '../../types'
-import type Schema from '../Schema'
+import { type Schema } from '../Schema'
 import * as Aggregation from '../aggregation'
 import { findOne } from './find'
 

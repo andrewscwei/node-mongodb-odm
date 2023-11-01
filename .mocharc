@@ -4,7 +4,8 @@
   "diff": true,
   "exit": true,
   "extension": [
-    "ts"
+    "spec.ts",
+    "test.ts"
   ],
   "node-option": [
     "experimental-specifier-resolution=node",

@@ -79,7 +79,7 @@ export type SchemaIndex = {
   options?: CreateIndexesOptions
 }
 
-export default interface Schema<P extends AnyProps = AnyProps> {
+export interface Schema<P extends AnyProps = AnyProps> {
 
   /**
    * Name of the model. Should be in upper cammel-case, i.e. "FooBar".

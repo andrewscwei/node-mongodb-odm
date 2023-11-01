@@ -1,9 +1,8 @@
 import * as Aggregation from './aggregation'
 import * as CRUD from './crud'
 
-export { ConnectionConfiguration, default as Connection } from './Connection'
+export * from './Connection'
 export * from './Model'
-export { default as Model } from './modelFactory'
 export * from './Schema'
-export { default as Schema } from './Schema'
+export { modelFactory as Model } from './modelFactory'
 export { Aggregation, CRUD }

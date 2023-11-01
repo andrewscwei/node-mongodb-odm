@@ -6,7 +6,7 @@ import { typeIsFieldDescriptor, type FieldDescriptor } from '../core/Schema'
  *
  * @returns The field spec.
  */
-export default function getFieldSpecByKey(fieldDescriptor: Record<string, FieldDescriptor>, key: string): FieldDescriptor | undefined {
+export function getFieldSpecByKey(fieldDescriptor: Record<string, FieldDescriptor>, key: string): FieldDescriptor | undefined {
   const keys = key.split('.')
   const k = keys.shift()
 

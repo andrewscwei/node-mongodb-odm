@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import prefixed from './prefixed'
+import { prefixed } from './prefixed'
 
 /**
  * Returns the field path of a schema field with an option to prepend a prefix.
@@ -9,7 +9,7 @@ import prefixed from './prefixed'
  *
  * @returns Dot notated field path with the prepended prefix.
  */
-export default function fieldPath(field: string, prefix = '') {
+export function fieldPath(field: string, prefix = '') {
   let out = prefixed(field, prefix)
 
   while (_.startsWith(out, '$')) {

@@ -1,7 +1,7 @@
 import useDebug from 'debug'
 import { MongoClient, type Collection, type Db } from 'mongodb'
 import { type AnyDocument } from '../types'
-import type modelFactory from './modelFactory'
+import { type modelFactory } from './modelFactory'
 
 const debug = useDebug('mongodb-odm:connection')
 
@@ -14,7 +14,7 @@ export type ConnectionConfiguration = {
   models?: Record<string, any>
 }
 
-export default class Connection {
+export class Connection {
   /**
    * Local database connection configuration options.
    */

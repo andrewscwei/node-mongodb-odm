@@ -5,9 +5,7 @@ import Chance from 'chance'
 import _ from 'lodash'
 import { before, describe, it } from 'mocha'
 import { ObjectId } from 'mongodb'
-import { configureDb, getDbConnection } from '.'
-import type Schema from './core/Schema'
-import Model from './core/modelFactory'
+import { Model, configureDb, getDbConnection, type Schema } from '.'
 
 const chance = new Chance()
 

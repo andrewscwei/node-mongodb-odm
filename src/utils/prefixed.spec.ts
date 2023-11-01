@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { describe, it } from 'mocha'
-import prefixed from './prefixed'
+import { prefixed } from './prefixed'
 
 describe('utils/prefixed', () => {
   it('can properly append prefixes with a starting dot', () => {

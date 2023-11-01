@@ -5,7 +5,7 @@ import _ from 'lodash'
 import { describe, it } from 'mocha'
 import { ObjectId } from 'mongodb'
 import { Baz } from '../index.spec'
-import sanitizeFilter from './sanitizeFilter'
+import { sanitizeFilter } from './sanitizeFilter'
 
 describe('utils/sanitizeFilter', () => {
   it('can generate valid queries based on an Object ID string', () => {

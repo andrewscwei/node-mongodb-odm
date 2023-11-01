@@ -1,8 +1,7 @@
 import { type AggregateOptions, type BulkWriteOptions, type Collection, type DeleteOptions, type FindOneAndDeleteOptions, type FindOneAndReplaceOptions, type FindOneAndUpdateOptions, type InsertOneOptions, type ObjectId, type ReplaceOptions, type UpdateOptions } from 'mongodb'
 import { type AnyFilter, type AnyProps, type AnyUpdate, type Document, type DocumentFragment } from '../types'
 import { type SanitizeUpdateOptions } from '../utils'
-import type Schema from './Schema'
-import { type FieldValue } from './Schema'
+import { type FieldValue, type Schema } from './Schema'
 import type * as Aggregation from './aggregation'
 
 type LocalModel = any
@@ -126,7 +125,7 @@ export type ModelValidateDocumentOptions = {
 /**
  * Generic interface of a model.
  */
-export default interface Model<T extends AnyProps> {
+export interface Model<T extends AnyProps> {
 
   /**
    * Schema of this model.

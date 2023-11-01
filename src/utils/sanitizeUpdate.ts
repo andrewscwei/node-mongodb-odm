@@ -1,9 +1,9 @@
 import _ from 'lodash'
 import { type UpdateFilter } from 'mongodb'
-import type Schema from '../core/Schema'
+import { type Schema } from '../core'
 import { type AnyProps, type AnyUpdate, type Document } from '../types'
-import sanitizeDocument from './sanitizeDocument'
-import typeIsUpdateFilter from './typeIsUpdateFilter'
+import { sanitizeDocument } from './sanitizeDocument'
+import { typeIsUpdateFilter } from './typeIsUpdateFilter'
 
 export type SanitizeUpdateOptions = {
   ignoreTimestamps?: boolean
@@ -20,7 +20,7 @@ export type SanitizeUpdateOptions = {
  *
  * @throws
  */
-export default function sanitizeUpdate<P extends AnyProps = AnyProps>(schema: Schema<P>, update: Readonly<AnyUpdate<P>>, { ignoreTimestamps = false }: SanitizeUpdateOptions = {}): UpdateFilter<Document<P>> {
+export function sanitizeUpdate<P extends AnyProps = AnyProps>(schema: Schema<P>, update: Readonly<AnyUpdate<P>>, { ignoreTimestamps = false }: SanitizeUpdateOptions = {}): UpdateFilter<Document<P>> {
   let out: UpdateFilter<Document<P>>
 
   if (typeIsUpdateFilter<P>(update)) {

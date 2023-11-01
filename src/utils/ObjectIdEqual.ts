@@ -1,4 +1,4 @@
-import ObjectIdGet from './ObjectIdGet'
+import { ObjectIdGet } from './ObjectIdGet'
 
 /**
  * Checks to see if 2 values are equal `ObjectId`s.
@@ -8,7 +8,7 @@ import ObjectIdGet from './ObjectIdGet'
  *
  * @returns `true` if they are equal `ObjectId`s, `false` otherwise.
  */
-export default function ObjectIdEqual(value1: any, value2: any): boolean {
+export function ObjectIdEqual(value1: any, value2: any): boolean {
   const objectId1 = ObjectIdGet(value1)
   const objectId2 = ObjectIdGet(value2)
 

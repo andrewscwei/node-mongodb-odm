@@ -16,10 +16,8 @@ import { type Collection, type DeleteOptions, type Filter, type FindOneAndDelete
 import * as db from '..'
 import { type AnyDocument, type AnyFilter, type AnyProps, type AnyUpdate, type Document, type DocumentFragment, type InsertableDocument } from '../types'
 import { getFieldSpecByKey, sanitizeDocument, sanitizeFilter, sanitizeUpdate, typeIsAnyDocument, typeIsValidObjectId, validateFieldValue } from '../utils'
-import type Model from './Model'
-import { type FieldValidationStrategy, type ModelDefaultPropertyProvider, type ModelDeleteManyOptions, type ModelDeleteOneOptions, type ModelFindManyOptions, type ModelFindOneOptions, type ModelInsertManyOptions, type ModelInsertOneOptions, type ModelPropertyFormattingProvider, type ModelPropertyValidationProvider, type ModelRandomFieldsOptions, type ModelRandomPropertyProvider, type ModelReplaceOneOptions, type ModelUpdateManyOptions, type ModelUpdateOneOptions, type ModelValidateDocumentOptions } from './Model'
-import type Schema from './Schema'
-import { typeIsFieldDescriptor, type FieldDescriptor, type MultiFieldDescriptor } from './Schema'
+import { type FieldValidationStrategy, type Model, type ModelDefaultPropertyProvider, type ModelDeleteManyOptions, type ModelDeleteOneOptions, type ModelFindManyOptions, type ModelFindOneOptions, type ModelInsertManyOptions, type ModelInsertOneOptions, type ModelPropertyFormattingProvider, type ModelPropertyValidationProvider, type ModelRandomFieldsOptions, type ModelRandomPropertyProvider, type ModelReplaceOneOptions, type ModelUpdateManyOptions, type ModelUpdateOneOptions, type ModelValidateDocumentOptions } from './Model'
+import { typeIsFieldDescriptor, type FieldDescriptor, type MultiFieldDescriptor, type Schema } from './Schema'
 import type * as Aggregation from './aggregation'
 import * as CRUD from './crud'
 
@@ -32,7 +30,7 @@ import * as CRUD from './crud'
  *
  * @see {@link Model}
  */
-export default function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): Model<P> {
+export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): Model<P> {
   const debug = useDebug(`mongodb-odm:model:${schema.model}`)
 
   return class {

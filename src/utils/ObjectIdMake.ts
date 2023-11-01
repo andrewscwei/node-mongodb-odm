@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb'
-import valueIsObjectIdConvertible from './valueIsObjectIdConvertible'
+import { valueIsObjectIdConvertible } from './valueIsObjectIdConvertible'
 
 /**
  * Makes an `ObjectId` from a value.
@@ -9,7 +9,7 @@ import valueIsObjectIdConvertible from './valueIsObjectIdConvertible'
  * @returns If successful, a new `ObjectId` instance will be returned. If not,
  *          `undefined` will be returned.
  */
-export default function ObjectIdMake(value: any): ObjectId | undefined {
+export function ObjectIdMake(value: any): ObjectId | undefined {
   if (!valueIsObjectIdConvertible(value)) return undefined
 
   return new ObjectId(value)

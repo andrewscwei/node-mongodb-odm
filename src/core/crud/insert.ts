@@ -1,7 +1,7 @@
 import { type BulkWriteOptions, type InsertOneOptions } from 'mongodb'
 import * as db from '../..'
 import { type AnyProps, type Document, type InsertableDocument } from '../../types'
-import type Schema from '../Schema'
+import { type Schema } from '../Schema'
 import { matchStageFactory } from '../aggregation'
 import { findMany, findOne } from './find'
 

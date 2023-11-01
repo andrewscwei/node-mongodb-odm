@@ -2,7 +2,7 @@ import _ from 'lodash'
 import { type AggregateOptions } from 'mongodb'
 import * as db from '../..'
 import { type AnyFilter, type AnyProps, type Document } from '../../types'
-import type Schema from '../Schema'
+import { type Schema } from '../Schema'
 import * as Aggregation from '../aggregation'
 
 export async function findOne<P extends AnyProps = AnyProps, R extends AnyProps = P>(schema: Schema<P>, filter: AnyFilter<P> | Aggregation.Pipeline, options: AggregateOptions = {}): Promise<Document<R>> {
