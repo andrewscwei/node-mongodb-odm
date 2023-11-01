@@ -8,7 +8,7 @@ jobs:
     name: Build
     uses: andrewscwei/workflows/.github/workflows/node-build.yml@master
     with:
-      service-image: mongo:5.0.5
+      service-image: mongo:7.0
       service-port: 27017:27017
       test-command: npm run test:unit && npm test
   notify:
