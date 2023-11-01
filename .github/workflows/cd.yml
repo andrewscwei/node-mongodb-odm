@@ -21,6 +21,7 @@ jobs:
     needs: [build]
     uses: andrewscwei/workflows/.github/workflows/npm-deploy.yml@master
     with:
+      create-release: true
       artifacts-name: ${{ needs.build.outputs.artifacts-name }}
       artifacts-path: ${{ needs.build.outputs.artifacts-path }}
     secrets:
