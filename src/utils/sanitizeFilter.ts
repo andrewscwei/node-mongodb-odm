@@ -21,9 +21,9 @@ export type SanitizeFilterOptions = {
  *   2. If strict mode is enabled, the provided schema will be used to strip out
  *      all extraneous fields from the input. See {@link sanitizeDocument}.
  *
- * @param schema - The collection schema.
- * @param filter - The filter to sanitize.
- * @param options - See {@link SanitizeFilterOptions}
+ * @param schema The collection schema.
+ * @param filter The filter to sanitize.
+ * @param options See {@link SanitizeFilterOptions}
  *
  * @returns The sanitized {@link Filter}.
  *

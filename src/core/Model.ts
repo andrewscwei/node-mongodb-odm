@@ -169,9 +169,9 @@ export interface Model<T extends AnyProps> {
    * values generated. Specify `includeOptionals` to generate unrequired fields
    * as well.
    *
-   * @param fixedFields - A collection of fields that must be present in the
-   *                      output.
-   * @param options - See {@link ModelRandomFieldsOptions}.
+   * @param fixedFields A collection of fields that must be present in the
+   *                    output.
+   * @param options See {@link ModelRandomFieldsOptions}.
    *
    * @returns A collection of fields whose values are randomly generated.
    *
@@ -183,8 +183,8 @@ export interface Model<T extends AnyProps> {
    * Identifies the `ObjectId` of exactly one document matching the given
    * filter. Error is thrown if the document cannot be identified.
    *
-   * @param filter - Filter used for the `$match` stage of the aggregation
-   * pipeline.
+   * @param filter Filter used for the `$match` stage of the aggregation
+   *               pipeline.
    *
    * @returns The matching `ObjectId`.
    *
@@ -194,10 +194,11 @@ export interface Model<T extends AnyProps> {
   identifyOneStrict: (filter: AnyFilter<T>) => Promise<ObjectId>
 
   /**
-   * Same as the strict identify one operation but this method drops all errors and returns
-   * `undefined` if the document canot be identified.
+   * Same as the strict identify one operation but this method drops all errors
+   * and returns `undefined` if the document canot be identified.
    *
-   * @param filter - Filter used for the `$match` stage of the aggregation pipeline.
+   * @param filter Filter used for the `$match` stage of the aggregation
+   *               pipeline.
    *
    * @returns The matching `ObjectId`.
    *
@@ -208,22 +209,24 @@ export interface Model<T extends AnyProps> {
   /**
    * Returns an array of document IDs that match the filter.
    *
-   * @param filter - {@link AnyFilter} for this model.
+   * @param filter {@link AnyFilter} for this model.
    *
    * @returns Array of matching IDs.
    */
   identifyMany: (filter?: AnyFilter<T>) => Promise<ObjectId[]>
 
   /**
-   * Finds one document from this collection using the aggregation framework. If no filter is
-   * specified, a random document will be fetched.
+   * Finds one document from this collection using the aggregation framework. If
+   * no filter is specified, a random document will be fetched.
    *
-   * @param filter - Filter used for the `$match` stage of the aggregation pipeline.
-   * @param options - Options passed to MongoDB driver's `Collection#aggregate`.
+   * @param filter Filter used for the `$match` stage of the aggregation
+   *               pipeline.
+   * @param options Options passed to MongoDB driver's `Collection#aggregate`.
    *
    * @returns The matching document as the fulfillment value.
    *
-   * @see {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#aggregate}
+   * @see
+   * {@link https://mongodb.github.io/node-mongodb-native/4.2/classes/Collection.html#aggregate}
    *
    * @throws {Error} More or less than 1 document found.
    * @throws {Error} No document found.
@@ -234,9 +237,9 @@ export interface Model<T extends AnyProps> {
    * Same as the strict find one operation but this method drops all errors and
    * returns `undefined` when no document is found.
    *
-   * @param filter - Filter used for the `$match` stage of the aggregation
-   *                 pipeline.
-   * @param options - Options passed to MongoDB driver's `Collection#aggregate`.
+   * @param filter Filter used for the `$match` stage of the aggregation
+   *               pipeline.
+   * @param options Options passed to MongoDB driver's `Collection#aggregate`.
    *
    * @returns The matching document as the fulfillment value.
    *
@@ -249,9 +252,9 @@ export interface Model<T extends AnyProps> {
    * Finds multiple documents of this collection using the aggregation
    * framework. If no query is specified, all documents are fetched.
    *
-   * @param filter - Filter used for the `$match` stage of the aggregation
-   *                 pipeline.
-   * @param options - Options passed to MongoDB driver's `Collection#aggregate`.
+   * @param filter Filter used for the `$match` stage of the aggregation
+   *               pipeline.
+   * @param options Options passed to MongoDB driver's `Collection#aggregate`.
    *
    * @returns The matching documents as the fulfillment value.
    *
@@ -263,9 +266,9 @@ export interface Model<T extends AnyProps> {
    * Inserts one document into this model's collection. If `doc` is not
    * specified, random fields will be generated.
    *
-   * @param doc - Document to be inserted. See MongoDB driver's
-   *              `Collection#insertOne`.
-   * @param options - See {@link ModelInsertOneOptions}.
+   * @param doc Document to be inserted. See MongoDB driver's
+   *            `Collection#insertOne`.
+   * @param options See {@link ModelInsertOneOptions}.
    *
    * @returns The inserted document.
    *
@@ -281,9 +284,9 @@ export interface Model<T extends AnyProps> {
    * Same as the strict insert one operation except this method swallows all
    * errors and returns `undefined` if the document cannot be inserted.
    *
-   * @param doc - Document to be inserted. See MongoDB driver's
-   *              `Collection#insertOne`.
-   * @param options - See {@link ModelInsertOneOptions}.
+   * @param doc Document to be inserted. See MongoDB driver's
+   *            `Collection#insertOne`.
+   * @param options See {@link ModelInsertOneOptions}.
    *
    * @returns The inserted document.
    *
@@ -295,9 +298,9 @@ export interface Model<T extends AnyProps> {
   /**
    * Inserts multiple documents into this model's collection.
    *
-   * @param docs - Array of documents to insert. See MongoDB driver's
-   *              `Collection#insertMany`.
-   * @param options - See {@link ModelInsertManyOptions}.
+   * @param docs Array of documents to insert. See MongoDB driver's
+   *             `Collection#insertMany`.
+   * @param options See {@link ModelInsertManyOptions}.
    *
    * @returns The inserted documents.
    *
@@ -316,10 +319,10 @@ export interface Model<T extends AnyProps> {
    * upserting, all *required* fields must be in the `filter` param instead of
    * the `update` param.
    *
-   * @param filter - Filter for the document to update.
-   * @param update - Either an object whose key/value pair represent the fields
-   *                 belonging to this model to update to, or an update query.
-   * @param options - See {@link ModelUpdateOneOptions}.
+   * @param filter Filter for the document to update.
+   * @param update Either an object whose key/value pair represent the fields
+   *               belonging to this model to update to, or an update query.
+   * @param options See {@link ModelUpdateOneOptions}.
    *
    * @returns A boolean indicating whether a document was updated or upserted if
    *          `returnDocument` was unspecified, or the updated document if
@@ -343,10 +346,10 @@ export interface Model<T extends AnyProps> {
    * returns `undefined` if no document was updated (if `returnDocument` is set)
    * or `true`/`false` (if `returnDocument` is unspecified).
    *
-   * @param filter - Filter for the document to update.
-   * @param update - Either an object whose key/value pair represent the fields
-   *                 belonging to this model to update to, or an update query.
-   * @param options - See {@link ModelUpdateOneOptions}.
+   * @param filter Filter for the document to update.
+   * @param update Either an object whose key/value pair represent the fields
+   *               belonging to this model to update to, or an update query.
+   * @param options See {@link ModelUpdateOneOptions}.
    *
    * @returns A boolean indicating whether document was updated or upserted if
    *          `returnDocument` was unspecified, or the updated document if
@@ -361,10 +364,10 @@ export interface Model<T extends AnyProps> {
   /**
    * Updates multiple documents matched by `filter` with `update` object.
    *
-   * @param filter - Filter for document to update.
-   * @param update - Either an object whose key/value pair represent the fields
-   *                 belonging to this model to update to, or an update query.
-   * @param options - See {@link ModelUpdateManyOptions}.
+   * @param filter Filter for document to update.
+   * @param update Either an object whose key/value pair represent the fields
+   *               belonging to this model to update to, or an update query.
+   * @param options See {@link ModelUpdateManyOptions}.
    *
    * @returns A boolean indicating whether documents were updated or upserted if
    *          `returnDocument` was unspecified, or the updated documents if
@@ -384,8 +387,8 @@ export interface Model<T extends AnyProps> {
   /**
    * Deletes one document matched by `filter`.
    *
-   * @param filter - Filter for document to delete.
-   * @param options - See {@link ModelDeleteOneOptions}.
+   * @param filter Filter for document to delete.
+   * @param options See {@link ModelDeleteOneOptions}.
    *
    * @returns A boolean indicating whether a document was deleted if
    *          `returnDocument` was unspecified, or the deleted document if
@@ -405,8 +408,8 @@ export interface Model<T extends AnyProps> {
   /**
    * Same as the {@link deleteOneStrict} except this method drops all errors.
    *
-   * @param filter - Filter for document to delete.
-   * @param options - See {@link ModelDeleteOneOptions}.
+   * @param filter Filter for document to delete.
+   * @param options See {@link ModelDeleteOneOptions}.
    *
    * @returns A boolean indicating whether a document was deleted if
    *          `returnDocument` was unspecified, or the deleted document if
@@ -419,8 +422,8 @@ export interface Model<T extends AnyProps> {
   /**
    * Deletes multiple documents matched by `filter`.
    *
-   * @param filter - AnyFilter to match documents for deletion.
-   * @param options - See {@link ModelDeleteManyOptions}.
+   * @param filter AnyFilter to match documents for deletion.
+   * @param options See {@link ModelDeleteManyOptions}.
    *
    * @returns A boolean indicating whether a document was deleted if
    *          `returnDocument` was unspecified, or the deleted documents if
@@ -438,9 +441,9 @@ export interface Model<T extends AnyProps> {
    * Replaces one document with another. If `replacement` is not specified, one
    * with random info will be generated.
    *
-   * @param filter - Filter for document to replace.
-   * @param replacement - The replacement document.
-   * @param options - See {@link ModelReplaceOneOptions}.
+   * @param filter Filter for document to replace.
+   * @param replacement The replacement document.
+   * @param options See {@link ModelReplaceOneOptions}.
    *
    * @returns A boolean indicating whether document was replaced if
    *          `returnDocument` was unspecified, or the new document if
@@ -457,9 +460,9 @@ export interface Model<T extends AnyProps> {
   /**
    * Same as {@link replaceOneStrict} except this method drops all errors.
    *
-   * @param filter - Filter for document to replace.
-   * @param replacement - The replacement document.
-   * @param options - See {@link ModelReplaceOneOptions}.
+   * @param filter Filter for document to replace.
+   * @param replacement The replacement document.
+   * @param options See {@link ModelReplaceOneOptions}.
    *
    * @returns A boolean indicating whether document was replaced if
    *          `returnDocument` was unspecified, or the new document if
@@ -473,7 +476,7 @@ export interface Model<T extends AnyProps> {
   /**
    * Checks if a document exists.
    *
-   * @param filter - Filter for document to check.
+   * @param filter Filter for document to check.
    *
    * @returns `true` if document exists, `false` otherwise.
    */
@@ -482,7 +485,7 @@ export interface Model<T extends AnyProps> {
   /**
    * Counts the documents that match the provided `filter`.
    *
-   * @param filter - Filter for documents to count.
+   * @param filter Filter for documents to count.
    *
    * @returns The total number of documents found. The minimum is 0.
    */
@@ -493,7 +496,7 @@ export interface Model<T extends AnyProps> {
    * functions defined in the schema. If the field is marked as encrypted in the
    * schema, this process takes care of that too.
    *
-   * @param doc - Document to format.
+   * @param doc Document to format.
    *
    * @returns The formatted document as the fulfillment value.
    *
@@ -511,8 +514,8 @@ export interface Model<T extends AnyProps> {
    *   3. Unique indexes are enforced (only if `ignoreUniqueIndex` is disabled).
    *   4. No required fields are missing (only if `strict` is enabled).
    *
-   * @param doc - The doc to validate.
-   * @param options - See {@link ModelValidateDocumentOptions}.
+   * @param doc The doc to validate.
+   * @param options See {@link ModelValidateDocumentOptions}.
    *
    * @throws {Error} Document is not an object.
    * @throws {Error} Document is empty.

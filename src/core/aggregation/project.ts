@@ -51,10 +51,10 @@ type ProjectStageFactoryPopulateOptions = {
  * Generates a `$project` stage for a collection to be used in an aggregation
  * pipeline.
  *
- * @param schema - The schema of the collection.
- * @param specs - The specifications for the `$project` stage. Set as
- *                `undefined` to project all fields defined in the schema.
- * @param options - Additional options, {@link ProjectStageFactoryOptions}.
+ * @param schema The schema of the collection.
+ * @param specs The specifications for the `$project` stage. Set as
+ *              `undefined` to project all fields defined in the schema.
+ * @param options Additional options, {@link ProjectStageFactoryOptions}.
  *
  * @returns An abstract aggregation pipeline containing the generated `$project`
  * stage.

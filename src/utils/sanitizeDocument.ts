@@ -14,9 +14,9 @@ export type SanitizeDocumentOptions = {
  * Removes all extraneous fields from a document fragment according to the
  * provided schema.
  *
- * @param schema - The collection schema.
- * @param doc - The partial document to sanitize.
- * @param options - @see {@link SanitizeDocumentOptions}
+ * @param schema The collection schema.
+ * @param doc The partial document to sanitize.
+ * @param options @see {@link SanitizeDocumentOptions}
  *
  * @returns The sanitized partial document.
  *

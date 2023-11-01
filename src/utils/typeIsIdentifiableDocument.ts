@@ -6,7 +6,7 @@ import { typeIsValidObjectId } from './typeIsValidObjectId'
 /**
  * Checks if a value is an identifiable document.
  *
- * @param value - Value to check.
+ * @param value Value to check.
  *
  * @returns `true` if value is an identifiable document, `false` otherwise.
  */

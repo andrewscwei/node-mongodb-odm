@@ -4,7 +4,7 @@ import { type AnyDocument } from '../types'
 /**
  * Checks if a value is a document of any kind.
  *
- * @param value - Value to check.
+ * @param value Value to check.
  *
  * @returns `true` if value is a document of any kind, `false` otherwise.
  */

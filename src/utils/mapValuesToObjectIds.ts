@@ -7,7 +7,7 @@ import { valueIsObjectIdConvertible } from './valueIsObjectIdConvertible'
  * cannot be converted to an Object ID, it will be skipped (but remains in the
  * collection or returned if a single value is passed).
  *
- * @param val - A single value or a collection of values to map.
+ * @param val A single value or a collection of values to map.
  *
  * @returns The mapped value(s).
  */

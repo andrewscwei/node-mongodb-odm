@@ -33,7 +33,7 @@ process.on('SIGINT', async () => {
 /**
  * Configures the ODM.
  *
- * @param options - Configuration options.
+ * @param options Configuration options.
  */
 export function configureDb(options: ConnectionConfiguration) {
   debug('Configuring ODM... OK', options)
@@ -55,7 +55,7 @@ export function getDbConnection(): Connection | undefined {
 /**
  * Gets a model class by its name or collection name.
  *
- * @param modelOrCollectionName - Model or collection name.
+ * @param modelOrCollectionName Model or collection name.
  *
  * @returns The model class.
  *
@@ -71,7 +71,7 @@ export function getModel(modelOrCollectionName: string): ReturnType<typeof Model
  * Gets the MongoDB collection associated with a model or collection name and
  * ensures the indexes defined in its schema.
  *
- * @param modelOrCollectionName - The model or collection name.
+ * @param modelOrCollectionName The model or collection name.
  *
  * @returns The MongoDB collection.
  *

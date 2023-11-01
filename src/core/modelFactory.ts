@@ -24,7 +24,7 @@ import * as CRUD from './crud'
 /**
  * Generates an abstract, static model class with the provided schema.
  *
- * @param schema - The schema of the model to be generated.
+ * @param schema The schema of the model to be generated.
  *
  * @returns The generated model class.
  *
@@ -433,7 +433,7 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
      * pre-processing to the document prior to inserting. Throwing an error
      * within this handler will terminate {@link insertOne} immediately.
      *
-     * @param doc - The document to be inserted.
+     * @param doc The document to be inserted.
      *
      * @returns The document to be inserted.
      */
@@ -445,7 +445,7 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
      * Hanlder invoked after a successful {@link insertOne} operation. Throwing
      * an error within this handler can prohib {@link insertOne} from returning.
      *
-     * @param doc - The inserted document.
+     * @param doc The inserted document.
      */
     protected static async didInsertOne(doc: Readonly<Document<P>>): Promise<void> {}
 
@@ -454,7 +454,7 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
      * custom pre-processing to the documents prior to inserting. Throwing an
      * error within this handler will terminate {@link insertMany} immediately.
      *
-     * @param docs - The documents to be inserted.
+     * @param docs The documents to be inserted.
      *
      * @returns The modified documents to be inserted.
      */
@@ -467,7 +467,7 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
      * an error within this hanlder can prohibit {@link insertMany} from
      * returning.
      *
-     * @param docs - The inserted documents.
+     * @param docs The inserted documents.
      */
     protected static async didInsertMany(docs: Readonly<Document<P>[]>): Promise<void> {}
 
@@ -476,8 +476,8 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
      * pre-processing to the update filter prior to updating. Throwing an error
      * within this handler will terminate {@link updateOne} immediately.
      *
-     * @param filter - The filter for the document to update.
-     * @param update - The update to be applied.
+     * @param filter The filter for the document to update.
+     * @param update The update to be applied.
      *
      * @returns The modified update to be applied.
      */
@@ -490,9 +490,9 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
      * an error within this handler can prohibit {@link updateOne} from
      * returning.
      *
-     * @param oldDoc - The document before the update. This is only available if
+     * @param oldDoc The document before the update. This is only available if
      *                 `returnDocument` was set during {@link updateOne}.
-     * @param newDoc - The document after the update. This is only available if
+     * @param newDoc The document after the update. This is only available if
      *                 `returnDocument` was set during {@link updateOne}.
      */
     protected static async didUpdateOne(oldDoc?: Readonly<Document<P>>, newDoc?: Readonly<Document<P>>): Promise<void> {}
@@ -502,8 +502,8 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
      * custom pre-processing to the update filter prior to updating. Throwing an
      * error within this handler will terminate {@link updateMany} immediately.
      *
-     * @param filter - The filter for the documents to update.
-     * @param update - The update to be applied.
+     * @param filter The filter for the documents to update.
+     * @param update The update to be applied.
      *
      * @returns The modified update to be applied.
      */
@@ -516,11 +516,11 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
      * an error within this handler can prohibit {@link updateMany} from
      * returning.
      *
-     * @param oldDocs - The documents before the update. They are only available
-     *                  if `returnDocument` was set during {@link updateMany}.
-     * @param newDocs - The documents after the update (array order consistency
-     *                  with `oldDocs` not guaranteed). They are only available
-     *                  if `returnDocument` was set during {@link updateMany}.
+     * @param oldDocs The documents before the update. They are only available
+     *                if `returnDocument` was set during {@link updateMany}.
+     * @param newDocs The documents after the update (array order consistency
+     *                with `oldDocs` not guaranteed). They are only available if
+     *                `returnDocument` was set during {@link updateMany}.
      */
     protected static async didUpdateMany(oldDocs?: Readonly<Document<P>[]>, newDocs?: Readonly<Document<P>[]>): Promise<void> {}
 
@@ -528,7 +528,7 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
      * Handler invoked at the beginning of {@link deleteOne}. Throwing an error
      * within this handler will terminate {@link deleteOne} immediately.
      *
-     * @param filter - The filter for the document to be deleted.
+     * @param filter The filter for the document to be deleted.
      */
     protected static async willDeleteOne(filter: Readonly<Filter<Document<P>>>): Promise<void> {}
 
@@ -537,7 +537,7 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
      * an error within this handler can prohibit {@link deleteOne} from
      * returning.
      *
-     * @param doc - The deleted document.
+     * @param doc The deleted document.
      */
     protected static async didDeleteOne(doc?: Readonly<Document<P>>): Promise<void> {}
 
@@ -545,7 +545,7 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
      * Handler invoked at the beginning of {@link deleteMany}. Throwing an error
      * within this handler will terminate {@link deleteMany} immediately.
      *
-     * @param filter - The filter for the documents to be deleted.
+     * @param filter The filter for the documents to be deleted.
      */
     protected static async willDeleteMany(filter: Readonly<Filter<Document<P>>>): Promise<void> {}
 
@@ -554,7 +554,7 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
      * an error within this handler can prohibit {@link deleteMany} from
      * returning.
      *
-     * @param docs - The deleted documents.
+     * @param docs The deleted documents.
      */
     protected static async didDeleteMany(docs?: Readonly<Document<P>[]>): Promise<void> {}
 
@@ -564,8 +564,8 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
      * an error within this handler will terminate {@link replaceOne}
      * immediately.
      *
-     * @param filter - The filter for the document to be replaced.
-     * @param replacement - The replacement document.
+     * @param filter The filter for the document to be replaced.
+     * @param replacement The replacement document.
      *
      * @returns The modified replacement document.
      */
@@ -578,10 +578,10 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
      * an error within this handler can prohibit {@link replaceOne} from
      * returning.
      *
-     * @param oldDoc - The document that was replaced. This is only available if
-     *                 `returnDocument` was set during {@link replaceOne}.
-     * @param newDoc - The new document. This is only available if
-     *                 `returnDocument` was set during {@link replaceOne}.
+     * @param oldDoc The document that was replaced. This is only available if
+     *               `returnDocument` was set during {@link replaceOne}.
+     * @param newDoc The new document. This is only available if
+     *               `returnDocument` was set during {@link replaceOne}.
      */
     protected static async didReplaceOne(oldDoc?: Readonly<Document<P>>, newDoc?: Readonly<Document<P>>): Promise<void> {}
 
@@ -682,8 +682,8 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
      * foreign key to this collection with the field value matching the provided
      * `docId`, then deletes them from the database.
      *
-     * @param docId - The ID of the document in this collection in which other
-     *                collections are pointing to.
+     * @param docId The ID of the document in this collection in which other
+     *              collections are pointing to.
      *
      * @throws {Error} Cascade deletion is incorrectly defined in the schema.
      * @throws {Error} Cascade deletion failed because a model cannot be found.
@@ -792,9 +792,9 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
      * Validates a document of this model to see if the required fields
      * (including nested fields) are in place.
      *
-     * @param doc - The doc to validate.
-     * @param fieldDescriptor - The field descriptor to validate against.
-     * @param fieldName - The parent field name, for references only.
+     * @param doc The doc to validate.
+     * @param fieldDescriptor The field descriptor to validate against.
+     * @param fieldName The parent field name, for references only.
      *
      * @throws {TypeError} Missing field.
      */

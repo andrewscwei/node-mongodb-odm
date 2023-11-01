@@ -15,8 +15,8 @@ export type GroupStageFactorySpecs = string | Record<string, any>
  * Generates a `$group` stage for a collection to be used in an aggregation
  * pipeline.
  *
- * @param schema - The schema of the database collection.
- * @param specs - Spec that define the `$group` stage.
+ * @param schema The schema of the database collection.
+ * @param specs Spec that define the `$group` stage.
  *
  * @returns An abstract aggregation pipeline containing the generated `$group`
  * stage.

@@ -7,7 +7,7 @@ import { valueIsObjectIdConvertible } from './valueIsObjectIdConvertible'
  * not, this method will check if the value is an identifiable document, and if
  * it is it will return the `_id` of the document.
  *
- * @param value - Value to check.
+ * @param value Value to check.
  *
  * @returns `ObjectId` or `undefined` if none are found.
  */

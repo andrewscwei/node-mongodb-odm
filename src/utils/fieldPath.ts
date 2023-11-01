@@ -3,8 +3,8 @@ import { prefixed } from './prefixed'
 /**
  * Returns the field path of a schema field with an option to prepend a prefix.
  *
- * @param field - The schema field.
- * @param prefix - The prefix to prepend.
+ * @param field The schema field.
+ * @param prefix The prefix to prepend.
  *
  * @returns Dot notated field path with the prepended prefix.
  */

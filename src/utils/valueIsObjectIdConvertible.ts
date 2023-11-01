@@ -3,7 +3,7 @@ import { ObjectId } from 'mongodb'
 /**
  * Checks if a value can be converted to a valid `ObjectId`.
  *
- * @param value - The value to check.
+ * @param value The value to check.
  *
  * @returns `true` or `false`.
  */

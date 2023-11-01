@@ -34,7 +34,7 @@ export class Connection {
    * Creates a new {@link Connection} instance with the provided configuration
    * options.
    *
-   * @param config - The configuration options.
+   * @param config The configuration options.
    */
   constructor(config: ConnectionConfiguration) {
     this.config = config
@@ -113,7 +113,7 @@ export class Connection {
    * Gets the MongoDB collection associated with a model or collection name and
    * ensures the indexes defined in its schema.
    *
-   * @param modelOrCollectionName - The model or collection name.
+   * @param modelOrCollectionName The model or collection name.
    *
    * @returns The MongoDB collection.
    *
@@ -155,7 +155,7 @@ export class Connection {
   /**
    * Gets a model class by its name or collection name.
    *
-   * @param modelOrCollectionName - Model or collection name.
+   * @param modelOrCollectionName Model or collection name.
    *
    * @returns The model class.
    *

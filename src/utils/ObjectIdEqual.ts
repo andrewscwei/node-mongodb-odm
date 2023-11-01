@@ -3,8 +3,8 @@ import { ObjectIdGet } from './ObjectIdGet'
 /**
  * Checks to see if 2 values are equal `ObjectId`s.
  *
- * @param value1 - First value to compare.
- * @param value2 - Second value to compare.
+ * @param value1 First value to compare.
+ * @param value2 Second value to compare.
  *
  * @returns `true` if they are equal `ObjectId`s, `false` otherwise.
  */

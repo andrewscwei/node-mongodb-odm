@@ -19,11 +19,11 @@ export type MatchStageFactoryOptions = {
  * Generates a `$match` stage for a collection to be used in an aggregation
  * pipeline.
  *
- * @param schema - The schema of the database collection.
- * @param specs - The specifications (a.k.a. filter in this case) for the
- *                `$match` stage. The value can be any supported value for
- *                `sanitizeFilter`.
- * @param options - Additional options, see {@link MatchStageFactoryOptions}.
+ * @param schema The schema of the database collection.
+ * @param specs The specifications (a.k.a. filter in this case) for the
+ *              `$match` stage. The value can be any supported value for
+ *              `sanitizeFilter`.
+ * @param options Additional options, see {@link MatchStageFactoryOptions}.
  *
  * @returns An abstract aggregation pipeline containing the generated `$match`
  * stage.

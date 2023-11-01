@@ -70,10 +70,10 @@ export type LookupStageFactoryOptions = {
  * fields to look up. Each field will be unwinded accordingly so the result of
  * the new field is the looked up document(s) itself.
  *
- * @param schema - The schema of the database collection.
- * @param specs - Look up specs for each field to look up, see
- *                {@link LookupStageFactorySpecs}.
- * @param options - Additional options, see {@link LookupStageFactoryOptions}.
+ * @param schema The schema of the database collection.
+ * @param specs Look up specs for each field to look up, see
+ *              {@link LookupStageFactorySpecs}.
+ * @param options Additional options, see {@link LookupStageFactoryOptions}.
  *
  * @returns An abstract aggregation pipeline containing the generated series of
  *          `$lookup` and (if needed) `$unwind` stages.
@@ -97,8 +97,10 @@ export type LookupStageFactoryOptions = {
  *             { "$unwind": { "path": "$bar.subModel.subSubModel", "preserveNullAndEmptyArrays": true } }]
  * lookupStageFactory(schema, { subModel: { subSubModel: true } }, { fromPrefix: 'foo.', toPrefix: 'bar.' })
  *
- * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/lookup/}
- * @see {@link https://docs.mongodb.com/manual/reference/operator/aggregation/unwind/}
+ * @see
+ * {@link https://docs.mongodb.com/manual/reference/operator/aggregation/lookup/}
+ * @see
+ * {@link https://docs.mongodb.com/manual/reference/operator/aggregation/unwind/}
  *
  * @throws {Error} When there is an error generating the `$lookup` stage for a
  *                 field.
@@ -126,11 +128,11 @@ export function lookupStageFactory<P extends AnyProps = AnyProps>(
  * Generates a `$lookup` stage and (if any) `$unwind` stage for a field defined
  * in the schema of a collection.
  *
- * @param schema - The schema of the target collection.
- * @param field - The field in the schema to look up.
- * @param specs - Specs for look up this field, see
- *                {@link LookupStageSingleFieldFactorySpecs}.
- * @param options - Additional options, see {@link LookupStageFactoryOptions}.
+ * @param schema The schema of the target collection.
+ * @param field The field in the schema to look up.
+ * @param specs Specs for look up this field, see
+ *              {@link LookupStageSingleFieldFactorySpecs}.
+ * @param options Additional options, see {@link LookupStageFactoryOptions}.
  *
  * @returns An arbitrary pipeline containing the generated `$lookup` stage and
  *          `$unwind` stage (if applicable).
