@@ -1,5 +1,5 @@
-import _ from 'lodash'
 import { type ObjectId } from 'mongodb'
+import { isPlainObject } from '../helpers'
 import { type AnyProps } from '../types'
 import { typeIsValidObjectId } from './typeIsValidObjectId'
 
@@ -11,8 +11,8 @@ import { typeIsValidObjectId } from './typeIsValidObjectId'
  * @returns `true` if value is an identifiable document, `false` otherwise.
  */
 export function typeIsIdentifiableDocument(value: any): value is { _id: ObjectId } & AnyProps {
-  if (_.isNil(value)) return false
-  if (!_.isPlainObject(value)) return false
+  if (value === undefined || value === null) return false
+  if (!isPlainObject(value)) return false
   if (!typeIsValidObjectId(value._id)) return false
 
   return true

@@ -4,7 +4,7 @@ import _ from 'lodash'
 import { describe, it } from 'mocha'
 import { type Db } from 'mongodb'
 import { configureDb, getDbConnection } from '../..'
-import { Bar } from '../../index.spec'
+import { Bar } from '../../__mocks__/models'
 import { deleteMany, deleteOne } from './delete'
 
 const chance = new Chance()

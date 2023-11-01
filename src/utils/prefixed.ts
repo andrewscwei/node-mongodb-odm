@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import { compact } from '../helpers'
 
 /**
  * Prepends a prefix to a schema field.
@@ -9,7 +9,7 @@ import _ from 'lodash'
  * @returns Dot notated field with the prepended prefix.
  */
 export function prefixed(field: string, prefix = ''): string {
-  const parts = _.compact(`${prefix}.${field}`.split('.'))
+  const parts = compact(`${prefix}.${field}`.split('.'))
 
   return parts.join('.')
 }

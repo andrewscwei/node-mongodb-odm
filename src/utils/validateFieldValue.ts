@@ -1,7 +1,6 @@
-import _ from 'lodash'
 import { ObjectId } from 'mongodb'
-import { type FieldValidationStrategy } from '../core/Model'
-import { type FieldDescriptor, type FieldType, type FieldValue } from '../core/Schema'
+import { type FieldDescriptor, type FieldType, type FieldValidationStrategy, type FieldValue } from '../core'
+import { isPlainObject } from '../helpers'
 import { typeIsValidObjectId } from './typeIsValidObjectId'
 
 /**
@@ -74,7 +73,7 @@ import { typeIsValidObjectId } from './typeIsValidObjectId'
 export function validateFieldValue<V = FieldValue>(value: V, spec: FieldDescriptor, strategy?: FieldValidationStrategy<V>) {
   // Check if value is `undefined` or `null`, then respond accordingly depending
   // on whether or not it is a required value.
-  if (_.isNil(value)) {
+  if (value === undefined || value === null) {
     if (spec.required) {
       throw new TypeError('The value is marked as required but it is null or undefined')
     }
@@ -85,71 +84,71 @@ export function validateFieldValue<V = FieldValue>(value: V, spec: FieldDescript
 
   switch (spec.type) {
     case String:
-      if (!_.isString(value)) throw new TypeError(`The value "${value}" is expected to be a string but instead it is a(n) ${typeof value}`)
+      if (typeof value !== 'string') throw new TypeError(`The value "${value}" is expected to be a string but instead it is a(n) ${typeof value}`)
 
-      if (_.isRegExp(strategy)) {
+      if (strategy instanceof RegExp) {
         if (!strategy.test(value)) throw new TypeError(`The string value does not conform to the RegEx validator: ${strategy}`)
       }
-      else if (_.isNumber(strategy)) {
+      else if (typeof strategy === 'number') {
         if (value.length > strategy) throw new TypeError(`The length of the string value "${value}" must be less than or equal to ${strategy}`)
       }
-      else if (_.isArray(strategy)) {
+      else if (strategy instanceof Array) {
         if (strategy.indexOf(value) <= -1) throw new TypeError(`The string value "${value}" is not an element of ${strategy}`)
       }
 
       break
     case Number:
-      if (!_.isNumber(value)) throw new TypeError(`The value "${value}" is expected to be a number but instead it is a(n) ${typeof value}`)
+      if (typeof value !== 'number') throw new TypeError(`The value "${value}" is expected to be a number but instead it is a(n) ${typeof value}`)
 
-      if (_.isRegExp(strategy)) {
+      if (strategy instanceof RegExp) {
         throw new TypeError('The RegExp validation method is not supported for number values')
       }
-      else if (_.isNumber(strategy)) {
+      else if (typeof strategy === 'number') {
         if (value > strategy) throw new TypeError(`The number value "${value}" must be less than or equal to ${strategy}`)
       }
-      else if (_.isArray(strategy)) {
+      else if (strategy instanceof Array) {
         if (strategy.indexOf(value) <= -1) throw new TypeError(`The number value "${value}" is not an element of ${strategy}`)
       }
 
       break
     case Boolean:
-      if (!_.isBoolean(value)) throw new TypeError(`The value "${value}" is expected to be a boolean but instead it is a(n) ${typeof value}`)
+      if (typeof value !== 'boolean') throw new TypeError(`The value "${value}" is expected to be a boolean but instead it is a(n) ${typeof value}`)
 
-      if (_.isRegExp(strategy)) {
+      if (strategy instanceof RegExp) {
         throw new TypeError('The RegExp validation method is not supported for boolean values')
       }
-      else if (_.isNumber(strategy)) {
+      else if (typeof strategy === 'number') {
         throw new TypeError('The number validation method is not supported for boolean vlaues')
       }
-      else if (_.isArray(strategy)) {
+      else if (strategy instanceof Array) {
         if (strategy.indexOf(value) <= -1) throw new TypeError(`The boolean value "${value}" is not an element of ${strategy}`)
       }
 
       break
     case Date:
-      if (!_.isDate(value)) throw new TypeError(`The value "${value}" is expected to be a date but instead it is a(n) ${typeof value}`)
+      if (!(value instanceof Date)) throw new TypeError(`The value "${value}" is expected to be a date but instead it is a(n) ${typeof value}`)
 
-      if (_.isRegExp(strategy)) {
+      if (strategy instanceof RegExp) {
         throw new TypeError('The RegExp validation method is not supported for date values')
       }
-      else if (_.isNumber(strategy)) {
+      else if (typeof strategy === 'number') {
         throw new TypeError('The number validation method is not supported for date values')
       }
-      else if (_.isArray(strategy)) {
+      else if (strategy instanceof Array) {
         throw new TypeError('The array validation method is not supported for date values')
       }
 
       break
     case Array:
-      if (!_.isArray(value)) throw new TypeError(`The value "${value}" is expected to be an array but instead it is a(n) ${typeof value}`)
+      if (!(value instanceof Array)) throw new TypeError(`The value "${value}" is expected to be an array but instead it is a(n) ${typeof value}`)
 
-      if (_.isRegExp(strategy)) {
+      if (strategy instanceof RegExp) {
         throw new TypeError('The RegExp validation method is not supported for array values')
       }
-      else if (_.isNumber(strategy)) {
+      else if (typeof strategy === 'number') {
         throw new TypeError('The number validation method is not supported for array values')
       }
-      else if (_.isArray(strategy)) {
+      else if (strategy instanceof Array) {
         throw new TypeError('The array validation method is not supported for array values')
       }
 
@@ -157,22 +156,22 @@ export function validateFieldValue<V = FieldValue>(value: V, spec: FieldDescript
     case ObjectId:
       if (!typeIsValidObjectId(value)) throw new TypeError(`The value "${value}" is expected to be an ObjectId but instead it is a(n) ${typeof value}`)
 
-      if (_.isRegExp(strategy)) {
+      if (strategy instanceof RegExp) {
         throw new TypeError('The RegExp validation method is not supported for ObjectId values')
       }
-      else if (_.isNumber(strategy)) {
+      else if (typeof strategy === 'number') {
         throw new TypeError('The number validation method is not supported for ObjectId values')
       }
-      else if (_.isArray(strategy)) {
+      else if (strategy instanceof Array) {
         throw new TypeError('The array validation method is not supported for ObjectId values')
       }
 
       break
     default:
     // If type is an array of a type, i.e. [Number].
-      if (_.isArray(spec.type)) {
+      if (spec.type instanceof Array) {
         if (spec.type.length !== 1) throw new TypeError(`Incorrect definition of a typed array type ${spec.type}: when specifying a type as an array of another type, wrap the type with [], hence a one-element array`)
-        if (!_.isArray(value)) throw new TypeError(`The value "${value}" is expected to be a typed array but instead it is a(n) ${typeof value}`)
+        if (!(value instanceof Array)) throw new TypeError(`The value "${value}" is expected to be a typed array but instead it is a(n) ${typeof value}`)
 
         // Ensure that every element within the array conforms to the specified
         // type and passes the validation test.
@@ -184,16 +183,16 @@ export function validateFieldValue<V = FieldValue>(value: V, spec: FieldDescript
         }
       }
       // If type is an object.
-      else if (_.isPlainObject(spec.type)) {
-        if (!_.isPlainObject(value)) throw new TypeError(`The value "${value}" is expected to be an object but instead it is a(n) ${typeof value}`)
+      else if (isPlainObject(spec.type)) {
+        if (!isPlainObject(value)) throw new TypeError(`The value "${value}" is expected to be an object but instead it is a(n) ${typeof value}`)
 
-        if (_.isRegExp(strategy)) {
+        if (strategy instanceof RegExp) {
           throw new TypeError('The RegExp validation method is not supported for object values')
         }
-        else if (_.isNumber(strategy)) {
+        else if (typeof strategy === 'number') {
           throw new TypeError('The number validation method is not supported for object values')
         }
-        else if (_.isArray(strategy)) {
+        else if (strategy instanceof Array) {
           throw new TypeError('The array validation method is not supported for object values')
         }
 
@@ -205,7 +204,7 @@ export function validateFieldValue<V = FieldValue>(value: V, spec: FieldDescript
       }
   }
 
-  if (_.isFunction(strategy)) {
+  if (typeof strategy === 'function') {
     if (!strategy(value)) throw new TypeError(`The value "${value}" failed to pass custom validation function`)
   }
 }

@@ -1,4 +1,3 @@
-import _ from 'lodash'
 import { prefixed } from './prefixed'
 
 /**
@@ -12,7 +11,7 @@ import { prefixed } from './prefixed'
 export function fieldPath(field: string, prefix = '') {
   let out = prefixed(field, prefix)
 
-  while (_.startsWith(out, '$')) {
+  while (out.startsWith('$')) {
     out = out.substring(1)
   }
 

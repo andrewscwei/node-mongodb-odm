@@ -11,9 +11,9 @@
 
 import bcrypt from 'bcrypt'
 import useDebug from 'debug'
-import _ from 'lodash'
 import { type Collection, type DeleteOptions, type Filter, type FindOneAndDeleteOptions, type FindOneAndReplaceOptions, type FindOneAndUpdateOptions, type ObjectId, type ReplaceOptions, type UpdateFilter, type UpdateOptions } from 'mongodb'
 import * as db from '..'
+import { cloneDeep, get, isEmpty, omit, pick } from '../helpers'
 import { type AnyDocument, type AnyFilter, type AnyProps, type AnyUpdate, type Document, type DocumentFragment, type InsertableDocument } from '../types'
 import { getFieldSpecByKey, sanitizeDocument, sanitizeFilter, sanitizeUpdate, typeIsAnyDocument, typeIsValidObjectId, validateFieldValue } from '../utils'
 import { type FieldValidationStrategy, type Model, type ModelDefaultPropertyProvider, type ModelDeleteManyOptions, type ModelDeleteOneOptions, type ModelFindManyOptions, type ModelFindOneOptions, type ModelInsertManyOptions, type ModelInsertOneOptions, type ModelPropertyFormattingProvider, type ModelPropertyValidationProvider, type ModelRandomFieldsOptions, type ModelRandomPropertyProvider, type ModelReplaceOneOptions, type ModelUpdateManyOptions, type ModelUpdateOneOptions, type ModelValidateDocumentOptions } from './Model'
@@ -71,7 +71,7 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
 
         const fn = this.randomProps[key]
 
-        if (!_.isFunction(fn)) throw new Error(`[${this.schema.model}] Property "${key}" in randomProps must be a function`)
+        if (typeof fn !== 'function') throw new Error(`[${this.schema.model}] Property "${key}" in randomProps must be a function`)
 
         // Use provided random function if provided in the schema.
         o[key] = fn() as any
@@ -344,7 +344,7 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
 
     /** @see {@link Model.formatDocument} */
     static async formatDocument(doc: DocumentFragment<P>): Promise<DocumentFragment<P>> {
-      const formattedDoc = _.cloneDeep(doc)
+      const formattedDoc = cloneDeep(doc)
       const fields = this.schema.fields
 
       for (const key in this.schema.fields) {
@@ -357,7 +357,7 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
 
         // If the schema has a certain formatting function defined for this
         // field, apply it.
-        if (_.isFunction(formatter)) {
+        if (typeof formatter === 'function') {
           const formattedValue = await formatter(formattedDoc[key] as any)
           formattedDoc[key] = formattedValue as any
         }
@@ -373,7 +373,7 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
 
     /** @see {@link Model.validateDocument} */
     static async validateDocument(doc: DocumentFragment<P>, options: ModelValidateDocumentOptions = {}) {
-      if (_.isEmpty(doc)) throw new Error(`[${this.schema.model}] Empty objects are not permitted`)
+      if (isEmpty(doc)) throw new Error(`[${this.schema.model}] Empty objects are not permitted`)
 
       for (const key in doc) {
         if (!{}.hasOwnProperty.call(doc, key)) continue
@@ -392,8 +392,8 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
         // #2 Check if field value conforms to its defined spec. Note that the
         // key can be in dot notation because this method may also be used when
         // applying doc updates.
-        const val = _.get(doc, key, undefined)
-        const validationStrategy: FieldValidationStrategy<any> | undefined = _.get(this.validateProps, key, undefined)
+        const val = get(doc, key, undefined)
+        const validationStrategy: FieldValidationStrategy<any> | undefined = get(this.validateProps, key, undefined)
 
         try {
           validateFieldValue(val, fieldSpec, validationStrategy)
@@ -416,7 +416,7 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
           if (!index.spec) continue
           if (!Object.keys(index.spec).every(v => Object.keys(doc).indexOf(v) > -1)) continue
 
-          const filter = _.pick(doc, Object.keys(index.spec)) as Filter<Document<P>>
+          const filter = pick(doc, Object.keys(index.spec)) as Filter<Document<P>>
 
           if (await this.findOne(filter)) throw new Error(`[${this.schema.model}] Another document already exists with ${JSON.stringify(filter, undefined, 0)}`)
         }
@@ -718,8 +718,8 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
 
       // Unless specified, always renew the `createdAt` and `updatedAt` fields.
       if (this.schema.timestamps === true && ignoreTimestamps !== true) {
-        if (!_.isDate(docToInsert.createdAt)) docToInsert.createdAt = new Date() as any
-        if (!_.isDate(docToInsert.updatedAt)) docToInsert.updatedAt = new Date() as any
+        if (!(docToInsert.createdAt as any instanceof Date)) docToInsert.createdAt = new Date() as any
+        if (!(docToInsert.updatedAt as any instanceof Date)) docToInsert.updatedAt = new Date() as any
       }
 
       // Before inserting this document, go through each field and make sure
@@ -732,9 +732,9 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
 
         // Check if the field has a default value defined in the schema. If so,
         // apply it.
-        if (_.isUndefined(defaultValue)) continue
+        if (defaultValue === undefined || defaultValue === null) continue
 
-        docToInsert[key] = _.isFunction(defaultValue) ? defaultValue() : defaultValue
+        docToInsert[key] = typeof defaultValue === 'function' ? defaultValue() : defaultValue
       }
 
       // Apply format function defined in the schema if applicable.
@@ -766,7 +766,7 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
       if (options.upsert === true && typeIsAnyDocument(filter)) {
         // Make a copy of the filter in case it is manipulated by the hooks.
         const docIfUpsert = await this.processDocumentBeforeInsert(filter as DocumentFragment<P>, { ...options, strict: false })
-        const setOnInsert = _.omit({
+        const setOnInsert = omit({
           ...updateToApply.$setOnInsert ?? {},
           ...docIfUpsert,
         }, [
@@ -774,14 +774,14 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
           ...Object.keys(updateToApply.$unset ?? {}),
         ]) as DocumentFragment<P>
 
-        if (!_.isEmpty(setOnInsert)) {
+        if (!isEmpty(setOnInsert)) {
           updateToApply.$setOnInsert = setOnInsert as any
         }
       }
 
       // Validate all fields in the update. Account for dot notations to
       // facilitate updating fields in nested fields.
-      if (updateToApply.$set && !_.isEmpty(updateToApply.$set)) {
+      if (updateToApply.$set && !isEmpty(updateToApply.$set)) {
         await this.validateDocument(updateToApply.$set as DocumentFragment<P>, { ...options, ignoreUniqueIndex: true, accountForDotNotation: true })
       }
 

@@ -1,5 +1,5 @@
-import _ from 'lodash'
 import { type CreateIndexesOptions, type IndexSpecification, type ObjectId } from 'mongodb'
+import { isPlainObject } from '../helpers'
 import { type AnyProps } from '../types'
 
 /**
@@ -167,7 +167,7 @@ export interface Schema<P extends AnyProps = AnyProps> {
  * @returns `true` or `false`.
  */
 export function typeIsFieldDescriptor(value: any): value is MultiFieldDescriptor {
-  if (!_.isPlainObject(value)) return false
+  if (!isPlainObject(value)) return false
 
   return true
 }

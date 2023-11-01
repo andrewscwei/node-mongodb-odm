@@ -1,4 +1,3 @@
-import _ from 'lodash'
 import * as db from '../..'
 import { type AnyProps } from '../../types'
 import { fieldPath, prefixed } from '../../utils'
@@ -110,9 +109,9 @@ export function projectStageFactory<P extends AnyProps = AnyProps>(
       if (populateOpts === false) continue
 
       const targetModel = fields[key].ref
-      const targetSchema = !_.isNil(populateOpts) && !_.isNil(targetModel) ? db.getModel(targetModel).schema : undefined
+      const targetSchema = (populateOpts !== undefined && populateOpts !== null) && (targetModel !== undefined && targetModel !== null) ? db.getModel(targetModel).schema : undefined
 
-      if (_.isNil(targetSchema)) {
+      if (targetSchema === undefined || targetSchema === null) {
         out[prefixed(key, toPrefix)] = fieldPath(key, fromPrefix)
       }
       else {

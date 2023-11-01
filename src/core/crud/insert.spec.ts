@@ -3,7 +3,7 @@ import Chance from 'chance'
 import { describe, it } from 'mocha'
 import { ObjectId, type Db } from 'mongodb'
 import { configureDb, getDbConnection } from '../..'
-import { Bar, Foo } from '../../index.spec'
+import { Bar, Foo } from '../../__mocks__/models'
 import { insertMany, insertOne } from './insert'
 
 const chance = new Chance()

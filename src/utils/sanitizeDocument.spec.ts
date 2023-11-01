@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { describe, it } from 'mocha'
-import { Baz } from '../index.spec'
+import { Baz } from '../__mocks__/models'
 import { sanitizeDocument } from './sanitizeDocument'
 
 describe('utils/sanitizeDocument', () => {

@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import { isPlainObject } from '../helpers'
 import { type AnyDocument } from '../types'
 
 /**
@@ -9,8 +9,8 @@ import { type AnyDocument } from '../types'
  * @returns `true` if value is a document of any kind, `false` otherwise.
  */
 export function typeIsAnyDocument(value: any): value is AnyDocument {
-  if (_.isNil(value)) return false
-  if (!_.isPlainObject(value)) return false
+  if (value === undefined || value === null) return false
+  if (!isPlainObject(value)) return false
   if (Object.keys(value).some(val => val.startsWith('$'))) return false
 
   return true

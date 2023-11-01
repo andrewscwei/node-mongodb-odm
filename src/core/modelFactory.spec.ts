@@ -5,7 +5,7 @@ import _ from 'lodash'
 import { describe, it } from 'mocha'
 import { ObjectId } from 'mongodb'
 import { configureDb, getDbConnection, typeIsIdentifiableDocument } from '..'
-import { Bar, Foo, type BarProps } from '../index.spec'
+import { Bar, Foo, type BarProps } from '../__mocks__/models'
 import { type DocumentFragment } from '../types'
 
 const chance = new Chance()

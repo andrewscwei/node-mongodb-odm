@@ -2,7 +2,7 @@ import assert from 'assert'
 import _ from 'lodash'
 import { describe } from 'mocha'
 import { configureDb } from '../..'
-import { Bar, Foo } from '../../index.spec'
+import { Bar, Foo } from '../../__mocks__/models'
 import { projectStageFactory } from './project'
 
 describe('core/aggregation/project', () => {

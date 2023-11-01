@@ -2,7 +2,7 @@ import assert from 'assert'
 import { describe } from 'mocha'
 import { ObjectId } from 'mongodb'
 import { configureDb } from '../..'
-import { Bar } from '../../index.spec'
+import { Bar } from '../../__mocks__/models'
 import { typeIsValidObjectId } from '../../utils'
 import { matchStageFactory } from './match'
 

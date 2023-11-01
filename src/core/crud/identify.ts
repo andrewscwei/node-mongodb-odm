@@ -1,4 +1,3 @@
-import _ from 'lodash'
 import { ObjectId } from 'mongodb'
 import * as db from '../..'
 import { type AnyFilter, type AnyProps } from '../../types'
@@ -19,7 +18,7 @@ export async function identifyMany<P extends AnyProps = AnyProps>(schema: Schema
 
   let pipeline: Aggregation.Pipeline
 
-  if (_.isArray(filter)) {
+  if (filter instanceof Array) {
     pipeline = filter
   }
   else {

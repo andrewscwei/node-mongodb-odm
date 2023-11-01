@@ -1,5 +1,5 @@
-import _ from 'lodash'
 import { type UpdateFilter } from 'mongodb'
+import { isPlainObject } from '../helpers'
 import { type AnyProps, type Document } from '../types'
 
 /**
@@ -10,7 +10,7 @@ import { type AnyProps, type Document } from '../types'
  * @returns `true` if value is an {@link UpdateFilter}, `false` otherwise.
  */
 export function typeIsUpdateFilter<P extends AnyProps = AnyProps>(value: any): value is UpdateFilter<Document<P>> {
-  if (!_.isPlainObject(value)) return false
+  if (!isPlainObject(value)) return false
 
   return Object.keys(value).some(val => val.startsWith('$'))
 }

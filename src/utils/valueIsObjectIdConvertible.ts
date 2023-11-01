@@ -1,4 +1,3 @@
-import _ from 'lodash'
 import { ObjectId } from 'mongodb'
 
 /**
@@ -9,7 +8,7 @@ import { ObjectId } from 'mongodb'
  * @returns `true` or `false`.
  */
 export function valueIsObjectIdConvertible(value: any): boolean {
-  if (_.isNil(value)) return false
+  if (value === undefined || value === null) return false
   if (!ObjectId.isValid(value)) return false
   if (value instanceof ObjectId) return true
 

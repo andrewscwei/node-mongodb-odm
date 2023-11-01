@@ -1,7 +1,7 @@
 import assert from 'assert'
 import { describe } from 'mocha'
 import { configureDb } from '../..'
-import { Foo } from '../../index.spec'
+import { Foo } from '../../__mocks__/models'
 import { groupStageFactory } from './group'
 
 describe('core/aggregation/group', () => {

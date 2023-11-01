@@ -1,4 +1,3 @@
-import _ from 'lodash'
 import { type AggregateOptions } from 'mongodb'
 import * as db from '../..'
 import { type AnyFilter, type AnyProps, type Document } from '../../types'
@@ -27,7 +26,7 @@ export async function findMany<P extends AnyProps = AnyProps, R extends AnyProps
 
   let pipeline: Aggregation.Pipeline
 
-  if (_.isArray(filter)) {
+  if (filter instanceof Array) {
     pipeline = filter
   }
   else {

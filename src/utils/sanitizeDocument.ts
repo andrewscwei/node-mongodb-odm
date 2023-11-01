@@ -1,4 +1,3 @@
-import _ from 'lodash'
 import { type Schema } from '../core'
 import { type AnyDocumentFragment, type AnyProps, type DocumentFragment } from '../types'
 import { getFieldSpecByKey } from './getFieldSpecByKey'
@@ -38,7 +37,7 @@ export function sanitizeDocument<P extends AnyProps = AnyProps>(schema: Schema<P
     if (key !== '_id' && accountForDotNotation && !getFieldSpecByKey(schema.fields, key)) continue
 
     // Ignore fields with `undefined` or `null` values.
-    if (_.isNil(doc[key])) continue
+    if (doc[key] === undefined || doc[key] === null) continue
 
     o[key as keyof P] = doc[key]
   }

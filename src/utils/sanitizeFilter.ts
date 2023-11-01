@@ -1,4 +1,3 @@
-import _ from 'lodash'
 import { ObjectId, type Filter } from 'mongodb'
 import { type Schema } from '../core'
 import { type AnyFilter, type AnyProps, type Document } from '../types'
@@ -47,7 +46,7 @@ export function sanitizeFilter<P extends AnyProps = AnyProps>(schema: Schema<P>,
   if (typeIsValidObjectId(filter)) {
     return { _id: filter } as Filter<Document<P>>
   }
-  else if (_.isString(filter)) {
+  else if (typeof filter === 'string') {
     return { _id: new ObjectId(filter) } as Filter<Document<P>>
   }
   else if (strict) {

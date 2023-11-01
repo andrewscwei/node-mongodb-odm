@@ -1,4 +1,3 @@
-import _ from 'lodash'
 import { type AnyProps } from '../../types'
 import { type Schema } from '../Schema'
 
@@ -36,7 +35,7 @@ export function groupStageFactory<P extends AnyProps = AnyProps>(
   schema: Schema<P>,
   specs: GroupStageFactorySpecs,
 ): [GroupStage] {
-  if (_.isString(specs)) {
+  if (typeof specs === 'string') {
     return [{ $group: { _id: `$${specs}` } }]
   }
   else {

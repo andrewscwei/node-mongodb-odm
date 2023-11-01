@@ -1,7 +1,6 @@
 /* eslint-disable max-classes-per-file */
 
 import assert from 'assert'
-import _ from 'lodash'
 import { before, describe, it } from 'mocha'
 import { configureDb, getDbConnection } from '../build/index.js'
 
@@ -31,6 +30,6 @@ describe('can connect to a database', () => {
     const connection = getDbConnection()
     assert(connection)
     const db = await connection.getDbInstance()
-    assert(_.isNil(db) === false)
+    assert(db !== undefined && db !== null)
   })
 })

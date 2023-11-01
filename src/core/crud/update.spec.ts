@@ -4,7 +4,7 @@ import _ from 'lodash'
 import { describe, it } from 'mocha'
 import { ObjectId, type Db } from 'mongodb'
 import { configureDb, getDbConnection } from '../..'
-import { Bar, Foo, type BarProps } from '../../index.spec'
+import { Bar, Foo, type BarProps } from '../../__mocks__/models'
 import { type DocumentFragment } from '../../types'
 import { findManyAndUpdate, findOneAndUpdate, updateMany, updateOne } from './update'
 

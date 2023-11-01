@@ -1,6 +1,6 @@
-import _ from 'lodash'
 import { type UpdateFilter } from 'mongodb'
 import { type Schema } from '../core'
+import { cloneDeep, isEmpty } from '../helpers'
 import { type AnyProps, type AnyUpdate, type Document } from '../types'
 import { sanitizeDocument } from './sanitizeDocument'
 import { typeIsUpdateFilter } from './typeIsUpdateFilter'
@@ -24,11 +24,11 @@ export function sanitizeUpdate<P extends AnyProps = AnyProps>(schema: Schema<P>,
   let out: UpdateFilter<Document<P>>
 
   if (typeIsUpdateFilter<P>(update)) {
-    out = _.cloneDeep(update)
+    out = cloneDeep(update)
   }
   else {
     out = {
-      $set: _.cloneDeep(update as any),
+      $set: cloneDeep(update as any),
     }
   }
 
@@ -39,7 +39,7 @@ export function sanitizeUpdate<P extends AnyProps = AnyProps>(schema: Schema<P>,
   const unsetFields = Object.keys(setOperator).filter(key => setOperator[key] === null || setOperator[key] === undefined)
 
   // Add updated timestamps if applicable.
-  if (schema.timestamps === true && ignoreTimestamps !== true && !_.isDate(setOperator.updatedAt)) {
+  if (schema.timestamps === true && ignoreTimestamps !== true && !(setOperator.updatedAt instanceof Date)) {
     setOperator.updatedAt = new Date()
   }
 
@@ -77,7 +77,7 @@ export function sanitizeUpdate<P extends AnyProps = AnyProps>(schema: Schema<P>,
   let key: keyof typeof out
 
   for (key in out) {
-    if (!_.isEmpty(out[key])) continue
+    if (!isEmpty(out[key])) continue
     delete out[key]
   }
 

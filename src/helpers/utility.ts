@@ -1,0 +1,7 @@
+export { default as cloneDeep } from 'lodash/cloneDeep'
+export { default as compact } from 'lodash/compact'
+export { default as get } from 'lodash/get'
+export { default as isEmpty } from 'lodash/isEmpty'
+export { default as isPlainObject } from 'lodash/isPlainObject'
+export { default as omit } from 'lodash/omit'
+export { default as pick } from 'lodash/pick'

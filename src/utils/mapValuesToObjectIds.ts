@@ -1,5 +1,5 @@
-import _ from 'lodash'
 import { ObjectId } from 'mongodb'
+import { isPlainObject } from '../helpers'
 import { valueIsObjectIdConvertible } from './valueIsObjectIdConvertible'
 
 /**
@@ -12,10 +12,10 @@ import { valueIsObjectIdConvertible } from './valueIsObjectIdConvertible'
  * @returns The mapped value(s).
  */
 export function mapValuesToObjectIds(val: any): any {
-  if (_.isArray(val)) {
+  if (val instanceof Array) {
     return val.map(v => mapValuesToObjectIds(v))
   }
-  else if (_.isPlainObject(val)) {
+  else if (isPlainObject(val)) {
     const out: any = {}
 
     for (const k in val) {

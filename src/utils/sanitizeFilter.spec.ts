@@ -4,7 +4,7 @@ import assert from 'assert'
 import _ from 'lodash'
 import { describe, it } from 'mocha'
 import { ObjectId } from 'mongodb'
-import { Baz } from '../index.spec'
+import { Baz } from '../__mocks__/models'
 import { sanitizeFilter } from './sanitizeFilter'
 
 describe('utils/sanitizeFilter', () => {
