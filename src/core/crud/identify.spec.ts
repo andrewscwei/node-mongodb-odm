@@ -34,4 +34,13 @@ describe('core/crud/identify', () => {
     const ids = await identifyMany(Bar.schema, { aString: 'bar' })
     assert(ids.length === t.length)
   })
+
+  it('can identify a single document by its ID', async () => {
+    const t = { aString: 'foo' }
+    const collection = db?.collection('bars')
+    const doc = await collection?.insertOne(t)
+    assert(doc?.insertedId !== undefined)
+    const id = await identifyOne(Bar.schema, doc?.insertedId.toString())
+    assert(id.equals(doc.insertedId))
+  })
 })
