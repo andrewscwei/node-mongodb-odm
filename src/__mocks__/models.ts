@@ -2,7 +2,7 @@
 
 import Chance from 'chance'
 import { ObjectId } from 'mongodb'
-import { Model, type Schema } from '../'
+import { Model, type Schema } from '../index.js'
 
 const chance = new Chance()
 

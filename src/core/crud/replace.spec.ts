@@ -3,9 +3,9 @@ import Chance from 'chance'
 import _ from 'lodash'
 import { describe, it } from 'mocha'
 import { ObjectId, type Db } from 'mongodb'
-import { configureDb, getDbConnection } from '../..'
-import { Bar } from '../../__mocks__/models'
-import { findOneAndReplace } from './replace'
+import { Bar } from '../../__mocks__/models.js'
+import { configureDb, getDbConnection } from '../../index.js'
+import { findOneAndReplace } from './replace.js'
 
 const chance = new Chance()
 

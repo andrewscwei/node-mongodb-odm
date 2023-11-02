@@ -1,7 +1,7 @@
-import * as db from '../..'
-import { type AnyProps } from '../../types'
-import { fieldPath, prefixed } from '../../utils'
-import { type Schema } from '../Schema'
+import * as db from '../../index.js'
+import { type AnyProps } from '../../types/index.js'
+import { fieldPath, prefixed } from '../../utils/index.js'
+import { type Schema } from '../Schema.js'
 
 export type ProjectStageFactorySpecs = Record<string, any>
 

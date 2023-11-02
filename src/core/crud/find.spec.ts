@@ -2,9 +2,9 @@ import assert from 'assert'
 import Chance from 'chance'
 import { describe, it } from 'mocha'
 import { type Db } from 'mongodb'
-import { configureDb, getDbConnection } from '../..'
-import { Bar } from '../../__mocks__/models'
-import { findAll, findMany, findOne, findOneRandom } from './find'
+import { Bar } from '../../__mocks__/models.js'
+import { configureDb, getDbConnection } from '../../index.js'
+import { findAll, findMany, findOne, findOneRandom } from './find.js'
 
 const chance = new Chance()
 

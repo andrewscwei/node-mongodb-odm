@@ -1,8 +1,8 @@
 import { type AggregateOptions } from 'mongodb'
-import * as db from '../..'
-import { type AnyFilter, type AnyProps, type Document } from '../../types'
-import { type Schema } from '../Schema'
-import * as Aggregation from '../aggregation'
+import * as db from '../../index.js'
+import { type AnyFilter, type AnyProps, type Document } from '../../types/index.js'
+import { type Schema } from '../Schema.js'
+import * as Aggregation from '../aggregation/index.js'
 
 export async function findOne<P extends AnyProps = AnyProps, R extends AnyProps = P>(schema: Schema<P>, filter: AnyFilter<P> | Aggregation.Pipeline, options: AggregateOptions = {}): Promise<Document<R>> {
   const docs = await findMany<P, R>(schema, filter, options)

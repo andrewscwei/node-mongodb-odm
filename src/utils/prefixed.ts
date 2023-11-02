@@ -1,4 +1,4 @@
-import { compact } from '../helpers'
+import { compact } from '../helpers/index.js'
 
 /**
  * Prepends a prefix to a schema field.

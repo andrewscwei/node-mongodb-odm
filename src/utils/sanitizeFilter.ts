@@ -1,8 +1,8 @@
 import { ObjectId, type Filter } from 'mongodb'
-import { type Schema } from '../core'
-import { type AnyFilter, type AnyProps, type Document } from '../types'
-import { sanitizeDocument } from './sanitizeDocument'
-import { typeIsValidObjectId } from './typeIsValidObjectId'
+import { type Schema } from '../core/index.js'
+import { type AnyFilter, type AnyProps, type Document } from '../types/index.js'
+import { sanitizeDocument } from './sanitizeDocument.js'
+import { typeIsValidObjectId } from './typeIsValidObjectId.js'
 
 export type SanitizeFilterOptions = {
   /**

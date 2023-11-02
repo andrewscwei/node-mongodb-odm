@@ -4,9 +4,9 @@ import Chance from 'chance'
 import _ from 'lodash'
 import { describe, it } from 'mocha'
 import { ObjectId } from 'mongodb'
-import { configureDb, getDbConnection, typeIsIdentifiableDocument } from '..'
-import { Bar, Foo, type BarProps } from '../__mocks__/models'
-import { type DocumentFragment } from '../types'
+import { Bar, Foo, type BarProps } from '../__mocks__/models.js'
+import { configureDb, getDbConnection, typeIsIdentifiableDocument } from '../index.js'
+import { type DocumentFragment } from '../types/index.js'
 
 const chance = new Chance()
 

@@ -1,6 +1,6 @@
 import { type UpdateFilter } from 'mongodb'
-import { isPlainObject } from '../helpers'
-import { type AnyProps, type Document } from '../types'
+import { isPlainObject } from '../helpers/index.js'
+import { type AnyProps, type Document } from '../types/index.js'
 
 /**
  * Checks if a value is an {@link UpdateFilter}.

@@ -1,9 +1,9 @@
 import assert from 'assert'
 import _ from 'lodash'
 import { describe } from 'mocha'
-import { configureDb } from '../..'
-import { Bar, Foo } from '../../__mocks__/models'
-import { projectStageFactory } from './project'
+import { Bar, Foo } from '../../__mocks__/models.js'
+import { configureDb } from '../../index.js'
+import { projectStageFactory } from './project.js'
 
 describe('core/aggregation/project', () => {
   before(async () => {

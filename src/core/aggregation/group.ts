@@ -1,5 +1,5 @@
-import { type AnyProps } from '../../types'
-import { type Schema } from '../Schema'
+import { type AnyProps } from '../../types/index.js'
+import { type Schema } from '../Schema.js'
 
 export type GroupStage = {
   $group: Record<string, any>

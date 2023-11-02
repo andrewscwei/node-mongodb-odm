@@ -1,8 +1,8 @@
-export * from './group'
-export * from './lookup'
-export * from './match'
-export * from './project'
-export * from './sort'
+export * from './group.js'
+export * from './lookup.js'
+export * from './match.js'
+export * from './project.js'
+export * from './sort.js'
 
 export type PipelineStage = Record<string, Record<string, any>>
 

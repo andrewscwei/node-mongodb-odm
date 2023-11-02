@@ -3,10 +3,10 @@ import Chance from 'chance'
 import _ from 'lodash'
 import { describe, it } from 'mocha'
 import { ObjectId, type Db } from 'mongodb'
-import { configureDb, getDbConnection } from '../..'
-import { Bar, Foo, type BarProps } from '../../__mocks__/models'
-import { type DocumentFragment } from '../../types'
-import { findManyAndUpdate, findOneAndUpdate, updateMany, updateOne } from './update'
+import { Bar, Foo, type BarProps } from '../../__mocks__/models.js'
+import { configureDb, getDbConnection } from '../../index.js'
+import { type DocumentFragment } from '../../types/index.js'
+import { findManyAndUpdate, findOneAndUpdate, updateMany, updateOne } from './update.js'
 
 const chance = new Chance()
 

@@ -4,8 +4,8 @@ import assert from 'assert'
 import _ from 'lodash'
 import { describe, it } from 'mocha'
 import { ObjectId } from 'mongodb'
-import { Baz } from '../__mocks__/models'
-import { sanitizeFilter } from './sanitizeFilter'
+import { Baz } from '../__mocks__/models.js'
+import { sanitizeFilter } from './sanitizeFilter.js'
 
 describe('utils/sanitizeFilter', () => {
   it('can generate valid queries based on an Object ID string', () => {

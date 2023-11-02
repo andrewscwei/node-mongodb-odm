@@ -1,6 +1,6 @@
 import { ObjectId } from 'mongodb'
-import { isPlainObject } from '../helpers'
-import { valueIsObjectIdConvertible } from './valueIsObjectIdConvertible'
+import { isPlainObject } from '../helpers/index.js'
+import { valueIsObjectIdConvertible } from './valueIsObjectIdConvertible.js'
 
 /**
  * Maps a single value or a collection of values to Object IDs. If a value

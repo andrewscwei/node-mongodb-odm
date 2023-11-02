@@ -1,7 +1,7 @@
 import assert from 'assert'
 import { describe, it } from 'mocha'
 import { ObjectId } from 'mongodb'
-import { validateFieldValue } from './validateFieldValue'
+import { validateFieldValue } from './validateFieldValue.js'
 
 describe('utils/validate', () => {
   it('can validate string length', () => {

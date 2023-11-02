@@ -1,4 +1,4 @@
-import { prefixed } from './prefixed'
+import { prefixed } from './prefixed.js'
 
 /**
  * Returns the field path of a schema field with an option to prepend a prefix.

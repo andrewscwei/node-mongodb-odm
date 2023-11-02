@@ -1,9 +1,9 @@
 import { type BulkWriteOptions, type InsertOneOptions } from 'mongodb'
-import * as db from '../..'
-import { type AnyProps, type Document, type InsertableDocument } from '../../types'
-import { type Schema } from '../Schema'
-import { matchStageFactory } from '../aggregation'
-import { findMany, findOne } from './find'
+import * as db from '../../index.js'
+import { type AnyProps, type Document, type InsertableDocument } from '../../types/index.js'
+import { type Schema } from '../Schema.js'
+import { matchStageFactory } from '../aggregation/index.js'
+import { findMany, findOne } from './find.js'
 
 export async function insertOne<P extends AnyProps = AnyProps>(schema: Schema<P>, doc: InsertableDocument<P>, options: InsertOneOptions = {}): Promise<Document<P>> {
   if (schema.noInserts === true) throw new Error(`[${schema.model}] Insertions are disallowed for this model`)

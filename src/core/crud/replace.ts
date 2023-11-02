@@ -1,8 +1,8 @@
 import { type Filter, type FindOneAndReplaceOptions, type ReplaceOptions } from 'mongodb'
-import * as db from '../..'
-import { type AnyProps, type Document, type InsertableDocument } from '../../types'
-import { type Schema } from '../Schema'
-import { findOne } from './find'
+import * as db from '../../index.js'
+import { type AnyProps, type Document, type InsertableDocument } from '../../types/index.js'
+import { type Schema } from '../Schema.js'
+import { findOne } from './find.js'
 
 export async function replaceOne<P extends AnyProps = AnyProps>(schema: Schema<P>, filter: Filter<Document<P>>, replacement: InsertableDocument<P>, options: ReplaceOptions = {}): Promise<boolean> {
   const collection = await db.getCollection<Document<P>>(schema.collection)

@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb'
-import { valueIsObjectIdConvertible } from './valueIsObjectIdConvertible'
+import { valueIsObjectIdConvertible } from './valueIsObjectIdConvertible.js'
 
 /**
  * Makes an `ObjectId` from a value.

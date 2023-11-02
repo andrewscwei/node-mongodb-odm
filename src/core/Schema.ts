@@ -1,6 +1,6 @@
 import { type CreateIndexesOptions, type IndexSpecification, type ObjectId } from 'mongodb'
-import { isPlainObject } from '../helpers'
-import { type AnyProps } from '../types'
+import { isPlainObject } from '../helpers/index.js'
+import { type AnyProps } from '../types/index.js'
 
 /**
  * Data type for describing multiple (can be nested) fields in the

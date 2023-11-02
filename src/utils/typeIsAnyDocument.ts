@@ -1,5 +1,5 @@
-import { isPlainObject } from '../helpers'
-import { type AnyDocument } from '../types'
+import { isPlainObject } from '../helpers/index.js'
+import { type AnyDocument } from '../types/index.js'
 
 /**
  * Checks if a value is a document of any kind.

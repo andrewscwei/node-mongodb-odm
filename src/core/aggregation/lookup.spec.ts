@@ -1,8 +1,8 @@
 import assert from 'assert'
 import { describe } from 'mocha'
-import { configureDb } from '../..'
-import { Bar, Foo } from '../../__mocks__/models'
-import { lookupStageFactory } from './lookup'
+import { Bar, Foo } from '../../__mocks__/models.js'
+import { configureDb } from '../../index.js'
+import { lookupStageFactory } from './lookup.js'
 
 describe('core/aggregation/lookup', () => {
   before(async () => {

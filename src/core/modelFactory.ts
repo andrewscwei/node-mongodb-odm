@@ -12,14 +12,14 @@
 import bcrypt from 'bcrypt'
 import useDebug from 'debug'
 import { type Collection, type DeleteOptions, type Filter, type FindOneAndDeleteOptions, type FindOneAndReplaceOptions, type FindOneAndUpdateOptions, type ObjectId, type ReplaceOptions, type UpdateFilter, type UpdateOptions } from 'mongodb'
-import * as db from '..'
-import { cloneDeep, get, isEmpty, omit, pick } from '../helpers'
-import { type AnyDocument, type AnyFilter, type AnyProps, type AnyUpdate, type Document, type DocumentFragment, type InsertableDocument } from '../types'
-import { getFieldSpecByKey, sanitizeDocument, sanitizeFilter, sanitizeUpdate, typeIsAnyDocument, typeIsValidObjectId, validateFieldValue } from '../utils'
-import { type FieldValidationStrategy, type Model, type ModelDefaultPropertyProvider, type ModelDeleteManyOptions, type ModelDeleteOneOptions, type ModelFindManyOptions, type ModelFindOneOptions, type ModelInsertManyOptions, type ModelInsertOneOptions, type ModelPropertyFormattingProvider, type ModelPropertyValidationProvider, type ModelRandomFieldsOptions, type ModelRandomPropertyProvider, type ModelReplaceOneOptions, type ModelUpdateManyOptions, type ModelUpdateOneOptions, type ModelValidateDocumentOptions } from './Model'
-import { typeIsFieldDescriptor, type FieldDescriptor, type MultiFieldDescriptor, type Schema } from './Schema'
-import type * as Aggregation from './aggregation'
-import * as CRUD from './crud'
+import { cloneDeep, get, isEmpty, omit, pick } from '../helpers/index.js'
+import * as db from '../index.js'
+import { type AnyDocument, type AnyFilter, type AnyProps, type AnyUpdate, type Document, type DocumentFragment, type InsertableDocument } from '../types/index.js'
+import { getFieldSpecByKey, sanitizeDocument, sanitizeFilter, sanitizeUpdate, typeIsAnyDocument, typeIsValidObjectId, validateFieldValue } from '../utils/index.js'
+import { type FieldValidationStrategy, type Model, type ModelDefaultPropertyProvider, type ModelDeleteManyOptions, type ModelDeleteOneOptions, type ModelFindManyOptions, type ModelFindOneOptions, type ModelInsertManyOptions, type ModelInsertOneOptions, type ModelPropertyFormattingProvider, type ModelPropertyValidationProvider, type ModelRandomFieldsOptions, type ModelRandomPropertyProvider, type ModelReplaceOneOptions, type ModelUpdateManyOptions, type ModelUpdateOneOptions, type ModelValidateDocumentOptions } from './Model.js'
+import { typeIsFieldDescriptor, type FieldDescriptor, type MultiFieldDescriptor, type Schema } from './Schema.js'
+import type * as Aggregation from './aggregation/index.js'
+import * as CRUD from './crud/index.js'
 
 /**
  * Generates an abstract, static model class with the provided schema.

@@ -1,6 +1,6 @@
 {
   "name": "@andrewscwei/mongodb-odm",
-  "version": "0.90.1",
+  "version": "0.91.0",
   "description": "ODM for MongoDB",
   "main": "build/index.js",
   "type": "module",
@@ -8,9 +8,9 @@
     "clean": "rimraf build",
     "prebuild": "npm run lint",
     "build": "npm run clean && tsc",
-    "test": "npm run build && mocha --config .mocharc \"tests/$npm_config_files\"",
+    "test": "mocha --config .mocharc \"tests/$npm_config_files\"",
     "test:unit": "cross-env DEBUG=mongodb-odm* mocha --config .mocharc \"src/$npm_config_files\"",
-    "svc:db": "docker run --rm -p 27017:27017 mongo:7.0",
+    "svc": "docker run --rm -p 27017:27017 mongo:7.0",
     "lint": "eslint --ext .ts src",
     "lint:fix": "npm run lint -- --fix"
   },

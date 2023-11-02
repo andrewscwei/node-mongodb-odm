@@ -1,8 +1,8 @@
 import { type DeleteOptions, type Filter, type FindOneAndDeleteOptions } from 'mongodb'
-import * as db from '../..'
-import { type AnyProps, type Document } from '../../types'
-import { type Schema } from '../Schema'
-import { findMany } from './find'
+import * as db from '../../index.js'
+import { type AnyProps, type Document } from '../../types/index.js'
+import { type Schema } from '../Schema.js'
+import { findMany } from './find.js'
 
 export async function deleteOne<P extends AnyProps = AnyProps>(schema: Schema<P>, filter: Filter<Document<P>>, options: DeleteOptions = {}): Promise<boolean> {
   if (schema.noDeletes === true) throw new Error(`[${schema.model}] Deletions are disallowed for this model`)

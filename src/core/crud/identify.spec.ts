@@ -1,9 +1,9 @@
 import assert from 'assert'
 import { describe, it } from 'mocha'
 import { type Db } from 'mongodb'
-import { configureDb, getDbConnection } from '../..'
-import { Bar } from '../../__mocks__/models'
-import { identifyMany, identifyOne } from './identify'
+import { Bar } from '../../__mocks__/models.js'
+import { configureDb, getDbConnection } from '../../index.js'
+import { identifyMany, identifyOne } from './identify.js'
 
 describe('core/crud/identify', () => {
   let db: Db | undefined

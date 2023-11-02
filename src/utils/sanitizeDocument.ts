@@ -1,6 +1,6 @@
-import { type Schema } from '../core'
-import { type AnyDocumentFragment, type AnyProps, type DocumentFragment } from '../types'
-import { getFieldSpecByKey } from './getFieldSpecByKey'
+import { type Schema } from '../core/index.js'
+import { type AnyDocumentFragment, type AnyProps, type DocumentFragment } from '../types/index.js'
+import { getFieldSpecByKey } from './getFieldSpecByKey.js'
 
 export type SanitizeDocumentOptions = {
   /**

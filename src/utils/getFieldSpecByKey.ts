@@ -1,4 +1,4 @@
-import { typeIsFieldDescriptor, type FieldDescriptor } from '../core/Schema'
+import { typeIsFieldDescriptor, type FieldDescriptor } from '../core/Schema.js'
 
 /**
  * Finds and returns the spec of a field in the provided schema by its key. This

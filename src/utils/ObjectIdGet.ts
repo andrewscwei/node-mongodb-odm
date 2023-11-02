@@ -1,6 +1,6 @@
 import { type ObjectId } from 'mongodb'
-import { typeIsIdentifiableDocument } from './typeIsIdentifiableDocument'
-import { valueIsObjectIdConvertible } from './valueIsObjectIdConvertible'
+import { typeIsIdentifiableDocument } from './typeIsIdentifiableDocument.js'
+import { valueIsObjectIdConvertible } from './valueIsObjectIdConvertible.js'
 
 /**
  * Checks to see if a value is a valid `ObjectId` and returns it if it is. If

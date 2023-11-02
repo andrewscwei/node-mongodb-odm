@@ -11,8 +11,8 @@
 
 import useDebug from 'debug'
 import { type Collection } from 'mongodb'
-import { Connection, type ConnectionConfiguration, type Model } from './core'
-import { type AnyDocument } from './types'
+import { Connection, type ConnectionConfiguration, type Model } from './core/index.js'
+import { type AnyDocument } from './types/index.js'
 
 const debug = useDebug('mongodb-odm')
 
@@ -87,6 +87,6 @@ export async function getCollection<T extends AnyDocument = AnyDocument>(modelOr
 }
 
 export { ObjectId } from 'mongodb'
-export * from './core'
-export * from './types'
-export * from './utils'
+export * from './core/index.js'
+export * from './types/index.js'
+export * from './utils/index.js'

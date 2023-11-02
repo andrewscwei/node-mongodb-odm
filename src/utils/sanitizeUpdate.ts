@@ -1,9 +1,9 @@
 import { type UpdateFilter } from 'mongodb'
-import { type Schema } from '../core'
-import { cloneDeep, isEmpty } from '../helpers'
-import { type AnyProps, type AnyUpdate, type Document } from '../types'
-import { sanitizeDocument } from './sanitizeDocument'
-import { typeIsUpdateFilter } from './typeIsUpdateFilter'
+import { type Schema } from '../core/index.js'
+import { cloneDeep, isEmpty } from '../helpers/index.js'
+import { type AnyProps, type AnyUpdate, type Document } from '../types/index.js'
+import { sanitizeDocument } from './sanitizeDocument.js'
+import { typeIsUpdateFilter } from './typeIsUpdateFilter.js'
 
 export type SanitizeUpdateOptions = {
   ignoreTimestamps?: boolean

@@ -1,9 +1,9 @@
 import { ObjectId } from 'mongodb'
-import * as db from '../..'
-import { type AnyFilter, type AnyProps } from '../../types'
-import { type Schema } from '../Schema'
-import * as Aggregation from '../aggregation'
-import { findOne } from './find'
+import * as db from '../../index.js'
+import { type AnyFilter, type AnyProps } from '../../types/index.js'
+import { type Schema } from '../Schema.js'
+import * as Aggregation from '../aggregation/index.js'
+import { findOne } from './find.js'
 
 export async function identifyOne<P extends AnyProps = AnyProps>(schema: Schema<P>, filter: AnyFilter<P>): Promise<ObjectId> {
   const doc = await findOne(schema, filter).catch(err => { throw new Error(`[${schema.model}] No results found while identifying this ${schema.model} using the filter ${filter}`) })

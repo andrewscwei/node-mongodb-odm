@@ -1,10 +1,10 @@
 import assert from 'assert'
 import { describe } from 'mocha'
 import { ObjectId } from 'mongodb'
-import { configureDb } from '../..'
-import { Bar } from '../../__mocks__/models'
-import { typeIsValidObjectId } from '../../utils'
-import { matchStageFactory } from './match'
+import { Bar } from '../../__mocks__/models.js'
+import { configureDb } from '../../index.js'
+import { typeIsValidObjectId } from '../../utils/index.js'
+import { matchStageFactory } from './match.js'
 
 describe('core/aggregation/match', () => {
   before(async () => {

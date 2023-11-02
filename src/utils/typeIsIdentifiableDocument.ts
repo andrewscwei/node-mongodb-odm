@@ -1,7 +1,7 @@
 import { type ObjectId } from 'mongodb'
-import { isPlainObject } from '../helpers'
-import { type AnyProps } from '../types'
-import { typeIsValidObjectId } from './typeIsValidObjectId'
+import { isPlainObject } from '../helpers/index.js'
+import { type AnyProps } from '../types/index.js'
+import { typeIsValidObjectId } from './typeIsValidObjectId.js'
 
 /**
  * Checks if a value is an identifiable document.

@@ -1,7 +1,7 @@
 import assert from 'assert'
 import { describe, it } from 'mocha'
-import { Baz } from '../__mocks__/models'
-import { sanitizeDocument } from './sanitizeDocument'
+import { Baz } from '../__mocks__/models.js'
+import { sanitizeDocument } from './sanitizeDocument.js'
 
 describe('utils/sanitizeDocument', () => {
   it('can remove extraneous fields from a document fragment', () => {

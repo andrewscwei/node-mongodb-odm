@@ -1,7 +1,6 @@
 {
   "env": {
-    "browser": false,
-    "es6": true,
+    "es2021": true,
     "node": true
   },
   "extends": [
@@ -114,12 +113,12 @@
           "PascalCase",
           "UPPER_CASE"
         ],
-        "leadingUnderscore": "allow",
+        "leadingUnderscore": "allowSingleOrDouble",
         "selector": [
           "variableLike",
           "property"
         ],
-        "trailingUnderscore": "allow"
+        "trailingUnderscore": "allowSingleOrDouble"
       },
       {
         "format": [

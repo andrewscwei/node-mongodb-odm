@@ -1,4 +1,4 @@
-import { ObjectIdGet } from './ObjectIdGet'
+import { ObjectIdGet } from './ObjectIdGet.js'
 
 /**
  * Checks to see if 2 values are equal `ObjectId`s.

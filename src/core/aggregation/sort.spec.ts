@@ -1,8 +1,8 @@
 import assert from 'assert'
 import { describe } from 'mocha'
-import { configureDb } from '../..'
-import { Foo } from '../../__mocks__/models'
-import { sortStageFactory } from './sort'
+import { Foo } from '../../__mocks__/models.js'
+import { configureDb } from '../../index.js'
+import { sortStageFactory } from './sort.js'
 
 describe('core/aggregation/sort', () => {
   before(async () => {

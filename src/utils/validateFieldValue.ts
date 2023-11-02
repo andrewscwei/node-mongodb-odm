@@ -1,7 +1,7 @@
 import { ObjectId } from 'mongodb'
-import { type FieldDescriptor, type FieldType, type FieldValidationStrategy, type FieldValue } from '../core'
-import { isPlainObject } from '../helpers'
-import { typeIsValidObjectId } from './typeIsValidObjectId'
+import { type FieldDescriptor, type FieldType, type FieldValidationStrategy, type FieldValue } from '../core/index.js'
+import { isPlainObject } from '../helpers/index.js'
+import { typeIsValidObjectId } from './typeIsValidObjectId.js'
 
 /**
  * Checks a value against field properties definied in a schema.

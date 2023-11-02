@@ -1,8 +1,8 @@
 import { type Filter, type FindOneAndUpdateOptions, type UpdateFilter, type UpdateOptions } from 'mongodb'
-import * as db from '../..'
-import { type AnyProps, type Document } from '../../types'
-import { type Schema } from '../Schema'
-import { findMany, findOne } from './find'
+import * as db from '../../index.js'
+import { type AnyProps, type Document } from '../../types/index.js'
+import { type Schema } from '../Schema.js'
+import { findMany, findOne } from './find.js'
 
 export async function updateOne<P extends AnyProps = AnyProps>(schema: Schema<P>, filter: Filter<Document<P>>, update: UpdateFilter<Document<P>>, options: UpdateOptions = {}): Promise<boolean> {
   if (schema.noUpdates === true) throw new Error(`[${schema.model}] Updates are disallowed for this model`)
