@@ -8,8 +8,7 @@
     "clean": "rimraf build",
     "prebuild": "npm run lint && npm run clean",
     "build": "tsc",
-    "test": "concurrently -k -p none -s first --hide 0 \"npm:svc\" \"npm:test:unit\"",
-    "test:unit": "mocha --config .mocharc \"src/$npm_config_files\"",
+    "test": "mocha --config .mocharc \"src/$npm_config_files\"",
     "svc": "docker run --rm -p 27017:27017 mongo:7.0",
     "lint": "eslint --ext .ts src",
     "lint:fix": "npm run lint -- --fix"

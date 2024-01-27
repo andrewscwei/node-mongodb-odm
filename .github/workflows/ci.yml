@@ -10,7 +10,7 @@ jobs:
     with:
       service-image: mongo:7.0
       service-port: 27017:27017
-      test-command: npm run test:unit && npm test
+      test-command: npm test
   notify:
     name: Notify
     needs: [build]
