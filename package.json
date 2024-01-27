@@ -1,15 +1,15 @@
 {
   "name": "@andrewscwei/mongodb-odm",
-  "version": "0.91.0",
+  "version": "0.92.0",
   "description": "ODM for MongoDB",
   "main": "build/index.js",
   "type": "module",
   "scripts": {
     "clean": "rimraf build",
-    "prebuild": "npm run lint",
-    "build": "npm run clean && tsc",
-    "test": "mocha --config .mocharc \"tests/$npm_config_files\"",
-    "test:unit": "cross-env DEBUG=mongodb-odm* mocha --config .mocharc \"src/$npm_config_files\"",
+    "prebuild": "npm run lint && npm run clean",
+    "build": "tsc",
+    "test": "concurrently -k -p none -s first --hide 0 \"npm:svc\" \"npm:test:unit\"",
+    "test:unit": "mocha --config .mocharc \"src/$npm_config_files\"",
     "svc": "docker run --rm -p 27017:27017 mongo:7.0",
     "lint": "eslint --ext .ts src",
     "lint:fix": "npm run lint -- --fix"
@@ -34,26 +34,25 @@
   ],
   "types": "build/index.d.ts",
   "devDependencies": {
-    "@types/bcrypt": "^5.0.1",
-    "@types/chance": "^1.1.5",
-    "@types/debug": "^4.1.10",
-    "@types/lodash": "^4.14.200",
-    "@types/mocha": "^10.0.3",
-    "@typescript-eslint/eslint-plugin": "^6.9.1",
-    "@typescript-eslint/parser": "^6.9.1",
+    "@types/bcrypt": "^5.0.2",
+    "@types/chance": "^1.1.6",
+    "@types/debug": "^4.1.12",
+    "@types/lodash": "^4.14.202",
+    "@types/mocha": "^10.0.6",
+    "@typescript-eslint/eslint-plugin": "^6.19.1",
+    "@typescript-eslint/parser": "^6.19.1",
     "chance": "^1.1.11",
     "concurrently": "^8.2.2",
-    "cross-env": "^7.0.3",
-    "eslint": "^8.52.0",
+    "eslint": "^8.56.0",
     "mocha": "^10.2.0",
     "rimraf": "^5.0.5",
-    "ts-node": "^10.9.1",
-    "typescript": "5.2.2"
+    "ts-node": "^10.9.2",
+    "typescript": "5.3.3"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
     "debug": "^4.3.4",
     "lodash": "^4.17.21",
-    "mongodb": "^6.2.0"
+    "mongodb": "^6.3.0"
   }
 }
