@@ -1,16 +1,17 @@
 name: CI
 on:
+  pull_request:
   push:
-    branches: ["**"]
-    tags-ignore: ["v*"]
+    branches-ignore: [master]
 jobs:
   build:
     name: Build
-    uses: andrewscwei/workflows/.github/workflows/node-build.yml@v1
-    with:
-      service-image: mongo:7.0
-      service-port: 27017:27017
-      test-command: npm test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build
+        uses: andrewscwei/actions/node-build@v1
   notify:
     name: Notify
     needs: [build]

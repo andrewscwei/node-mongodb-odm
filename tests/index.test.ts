@@ -1,5 +1,3 @@
-/* eslint-disable max-classes-per-file */
-
 import assert from 'assert'
 import { before, describe, it } from 'mocha'
 import { configureDb, getDbConnection } from '../build/index.js'
