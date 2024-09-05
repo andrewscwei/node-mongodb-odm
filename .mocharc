@@ -8,7 +8,7 @@
     "test.ts"
   ],
   "full-trace": true,
-  "loader": "ts-node/esm",
+  "import": "tsx/esm",
   "recursive": true,
   "reporter": "spec",
   "timeout": 5000

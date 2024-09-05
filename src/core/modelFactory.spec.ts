@@ -106,7 +106,8 @@ describe('core/Model', () => {
     let didThrow = true
 
     try {
-      await Bar.insertOneStrict({ aNumber: 6 }).catch(err => { throw err })
+      await Bar.insertOneStrict({ aNumber: 6 })
+
       didThrow = false
     }
     catch (err) {}

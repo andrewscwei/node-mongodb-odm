@@ -6,7 +6,9 @@ import * as Aggregation from '../aggregation/index.js'
 import { findOne } from './find.js'
 
 export async function identifyOne<P extends AnyProps = AnyProps>(schema: Schema<P>, filter: AnyFilter<P>): Promise<ObjectId> {
-  const doc = await findOne(schema, filter).catch(err => { throw new Error(`[${schema.model}] No results found while identifying this ${schema.model} using the filter ${filter}`) })
+  const doc = await findOne(schema, filter).catch(err => {
+    throw new Error(`[${schema.model}] No results found while identifying this ${schema.model} using the filter ${filter}`)
+  })
 
   if (!ObjectId.isValid(doc._id)) throw new Error(`[${schema.model}] ID of ${doc} is not a valid ObjectId`)
 

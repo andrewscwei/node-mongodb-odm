@@ -469,7 +469,7 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
      *
      * @param docs The inserted documents.
      */
-    protected static async didInsertMany(docs: Readonly<Document<P>[]>): Promise<void> {}
+    protected static async didInsertMany(docs: readonly Document<P>[]): Promise<void> {}
 
     /**
      * Handler invoked at the beginning of {@link updateOne} to apply any custom
@@ -522,7 +522,7 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
      *                with `oldDocs` not guaranteed). They are only available if
      *                `returnDocument` was set during {@link updateMany}.
      */
-    protected static async didUpdateMany(oldDocs?: Readonly<Document<P>[]>, newDocs?: Readonly<Document<P>[]>): Promise<void> {}
+    protected static async didUpdateMany(oldDocs?: readonly Document<P>[], newDocs?: readonly Document<P>[]): Promise<void> {}
 
     /**
      * Handler invoked at the beginning of {@link deleteOne}. Throwing an error
@@ -556,7 +556,7 @@ export function modelFactory<P extends AnyProps = AnyProps>(schema: Schema<P>): 
      *
      * @param docs The deleted documents.
      */
-    protected static async didDeleteMany(docs?: Readonly<Document<P>[]>): Promise<void> {}
+    protected static async didDeleteMany(docs?: readonly Document<P>[]): Promise<void> {}
 
     /**
      * Handler invoked at the beginning of {@link replaceOne} to apply any

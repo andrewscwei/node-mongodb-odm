@@ -9,7 +9,7 @@ export async function insertOne<P extends AnyProps = AnyProps>(schema: Schema<P>
   if (schema.noInserts === true) throw new Error(`[${schema.model}] Insertions are disallowed for this model`)
 
   const collection = await db.getCollection(schema.collection)
-  const result = await collection.insertOne(doc, options).catch(error => { throw error })
+  const result = await collection.insertOne(doc, options)
 
   if (!result.acknowledged) throw new Error(`[${schema.model}] Unable to insert document`)
   if (!result.insertedId) throw new Error(`[${schema.model}] Unable to insert document`)
