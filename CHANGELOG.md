@@ -1,3 +1,10 @@
+## [0.94.1](https://github.com/andrewscwei/node-mongodb-odm/compare/v0.94.0...v0.94.1) (2024-11-11)
+
+
+### Bug Fixes
+
+* Fix update operations not setting `updatedAt` field ([7884007](https://github.com/andrewscwei/node-mongodb-odm/commit/78840075ebd76ed3f91bc010af0639022b037ce4))
+
 # [0.94.0](https://github.com/andrewscwei/node-mongodb-odm/compare/v0.93.0...v0.94.0) (2024-09-05)
 
 
