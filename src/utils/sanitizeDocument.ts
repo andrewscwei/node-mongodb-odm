@@ -33,8 +33,8 @@ export function sanitizeDocument<P extends AnyProps = AnyProps>(schema: Schema<P
     if (schema.timestamps !== true && key === 'updatedAt') continue
 
     // Ignore fields that don't exist in the schema with/without dot notation enabled.
-    if (key !== '_id' && !accountForDotNotation && !{}.hasOwnProperty.call(schema.fields, key)) continue
-    if (key !== '_id' && accountForDotNotation && !getFieldSpecByKey(schema.fields, key)) continue
+    if (key !== '_id' && !(schema.timestamps === true && (key === 'createdAt' || key === 'updatedAt')) && !accountForDotNotation && !{}.hasOwnProperty.call(schema.fields, key)) continue
+    if (key !== '_id' && !(schema.timestamps === true && (key === 'createdAt' || key === 'updatedAt')) && accountForDotNotation && !getFieldSpecByKey(schema.fields, key)) continue
 
     // Ignore fields with `undefined` or `null` values.
     if (doc[key] === undefined || doc[key] === null) continue
